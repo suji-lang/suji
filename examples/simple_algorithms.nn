@@ -1,0 +1,314 @@
+# Simple Algorithms Showcase
+# Demonstrates: basic algorithms that work with NN language features
+
+import std:println
+
+# =============================================================================
+# SORTING ALGORITHMS
+# =============================================================================
+
+# Bubble Sort
+bubble_sort = |arr| {
+    n = arr::length()
+    loop through 0..n with i {
+        loop through 0..(n - i - 1) with j {
+            # Use match for comparison
+            match arr[j] > arr[j + 1] {
+                true: {
+                    # Swap elements
+                    temp = arr[j]
+                    arr[j] = arr[j + 1]
+                    arr[j + 1] = temp
+                }
+                false: {
+                    # No swap needed
+                }
+            }
+        }
+    }
+    return arr
+}
+
+println("=== SORTING ALGORITHMS ===")
+
+# Test sorting algorithms
+test_array = [64, 34, 25, 12, 22, 11, 90, 5]
+comma = ","
+
+println("Original array: ${test_array::join(comma)}")
+
+# Bubble Sort
+bubble_result = bubble_sort([64, 34, 25, 12, 22, 11, 90, 5])
+println("Bubble sort: ${bubble_result::join(comma)}")
+
+# =============================================================================
+# MATHEMATICAL ALGORITHMS
+# =============================================================================
+
+# Prime number checker
+is_prime = |n| {
+    match n < 2 {
+        true: { return false }
+        false: {
+            match n == 2 {
+                true: { return true }
+                false: {
+                    match n % 2 == 0 {
+                        true: { return false }
+                        false: {
+                            i = 3
+                            loop {
+                                match i * i > n {
+                                    true: { break }
+                                    false: {
+                                        match n % i == 0 {
+                                            true: { return false }
+                                            false: { i = i + 2 }
+                                        }
+                                    }
+                                }
+                            }
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+# Generate prime numbers up to n
+generate_primes = |n| {
+    primes = []
+    loop through 2..(n + 1) with i {
+        match is_prime(i) {
+            true: { primes::push(i) }
+            false: { }
+        }
+    }
+    return primes
+}
+
+println()
+println("=== MATHEMATICAL ALGORITHMS ===")
+
+# Test prime numbers
+println("Prime numbers up to 30:")
+primes = generate_primes(30)
+println("Primes: ${primes::join(comma)}")
+
+# =============================================================================
+# SEARCHING ALGORITHMS
+# =============================================================================
+
+# Linear Search
+linear_search = |arr, target| {
+    loop through arr with i, item {
+        match item == target {
+            true: { return i }
+            false: { }
+        }
+    }
+    return -1
+}
+
+println()
+println("=== SEARCHING ALGORITHMS ===")
+
+# Test searching algorithms
+sorted_array = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+search_targets = [7, 12, 1, 19, 0]
+
+println("Sorted array: ${sorted_array::join(comma)}")
+
+loop through search_targets with target {
+    linear_result = linear_search(sorted_array, target)
+    println("Searching for ${target}: index ${linear_result}")
+}
+
+# =============================================================================
+# DATA PROCESSING ALGORITHMS
+# =============================================================================
+
+# Data aggregation
+aggregate_data = |data| {
+    sum = 0
+    count = data::length()
+    max_val = 0
+    min_val = data[0]
+
+    loop through data with item {
+        sum = sum + item
+
+        match item > max_val {
+            true: { max_val = item }
+            false: { }
+        }
+
+        match item < min_val {
+            true: { min_val = item }
+            false: { }
+        }
+    }
+
+    average = sum / count
+
+    return {
+        sum: sum,
+        count: count,
+        average: average,
+        max: max_val,
+        min: min_val
+    }
+}
+
+println()
+println("=== DATA PROCESSING ALGORITHMS ===")
+
+# Test data aggregation
+test_data = [10, 25, 5, 30, 15, 20, 35, 8, 12, 18]
+aggregated = aggregate_data(test_data)
+
+println("Data: ${test_data::join(comma)}")
+println("Sum: ${aggregated:sum}")
+println("Count: ${aggregated:count}")
+println("Average: ${aggregated:average}")
+println("Max: ${aggregated:max}")
+println("Min: ${aggregated:min}")
+
+# =============================================================================
+# ALGORITHM COMPLEXITY DEMONSTRATION
+# =============================================================================
+
+println()
+println("=== ALGORITHM COMPLEXITY DEMONSTRATION ===")
+
+# Demonstrate different approaches to the same problem
+# Sum of squares: O(n) vs O(1)
+
+# O(n) approach: loop through each number
+sum_squares_linear = |n| {
+    sum = 0
+    loop through 1..(n + 1) with i {
+        sum = sum + (i * i)
+    }
+    return sum
+}
+
+# O(1) approach: mathematical formula
+sum_squares_constant = |n| {
+    return (n * (n + 1) * (2 * n + 1)) / 6
+}
+
+# Test both approaches
+test_n = 10
+linear_result = sum_squares_linear(test_n)
+constant_result = sum_squares_constant(test_n)
+
+println("Sum of squares from 1 to ${test_n}:")
+println("  Linear approach (O(n)): ${linear_result}")
+println("  Constant approach (O(1)): ${constant_result}")
+
+# =============================================================================
+# PATTERN RECOGNITION ALGORITHMS
+# =============================================================================
+
+# Pattern matching in data
+find_patterns = |data| {
+    patterns = {
+        increasing: 0,
+        decreasing: 0,
+        constant: 0
+    }
+
+    loop through 1..data::length() with i {
+        current = data[i]
+        previous = data[i - 1]
+
+        match current > previous {
+            true: { patterns:increasing = patterns:increasing + 1 }
+            false: {
+                match current < previous {
+                    true: { patterns:decreasing = patterns:decreasing + 1 }
+                    false: { patterns:constant = patterns:constant + 1 }
+                }
+            }
+        }
+    }
+
+    return patterns
+}
+
+println()
+println("=== PATTERN RECOGNITION ALGORITHMS ===")
+
+# Test pattern recognition
+pattern_data = [1, 3, 5, 4, 2, 2, 2, 6, 8, 7]
+patterns = find_patterns(pattern_data)
+
+println("Data: ${pattern_data::join(comma)}")
+println("Increasing sequences: ${patterns:increasing}")
+println("Decreasing sequences: ${patterns:decreasing}")
+println("Constant sequences: ${patterns:constant}")
+
+# =============================================================================
+# STRING PROCESSING ALGORITHMS
+# =============================================================================
+
+# String analysis
+analyze_string = |text| {
+    words = text::split()
+    word_count = words::length()
+    total_chars = text::length()
+
+    # Count words of different lengths
+    short_words = 0
+    medium_words = 0
+    long_words = 0
+
+    loop through words with word {
+        word_length = word::length()
+        match word_length {
+            1: { short_words = short_words + 1 }
+            2: { short_words = short_words + 1 }
+            3: { short_words = short_words + 1 }
+            4: { medium_words = medium_words + 1 }
+            5: { medium_words = medium_words + 1 }
+            6: { medium_words = medium_words + 1 }
+            _: { long_words = long_words + 1 }
+        }
+    }
+
+    return {
+        word_count: word_count,
+        total_chars: total_chars,
+        short_words: short_words,
+        medium_words: medium_words,
+        long_words: long_words
+    }
+}
+
+println()
+println("=== STRING PROCESSING ALGORITHMS ===")
+
+# Test string analysis
+test_text = "The quick brown fox jumps over the lazy dog"
+result = analyze_string(test_text)
+
+println("Text: '${test_text}'")
+println("Word count: ${result:word_count}")
+println("Total characters: ${result:total_chars}")
+println("Short words (1-3 chars): ${result:short_words}")
+println("Medium words (4-6 chars): ${result:medium_words}")
+println("Long words (7+ chars): ${result:long_words}")
+
+println()
+println("=== SIMPLE ALGORITHMS SHOWCASE COMPLETE ===")
+println("Successfully demonstrated:")
+println("- Sorting algorithms (Bubble sort)")
+println("- Mathematical algorithms (Prime numbers)")
+println("- Searching algorithms (Linear search)")
+println("- Data processing algorithms (Aggregation)")
+println("- Algorithm complexity comparison")
+println("- Pattern recognition algorithms")
+println("- String processing algorithms")

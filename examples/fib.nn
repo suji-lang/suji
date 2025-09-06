@@ -1,0 +1,21 @@
+import std:println
+
+fib = |n| {
+    match n {
+        0: { return 0 }
+        1: { return 1 }
+        _: { return fib(n-1) + fib(n-2) }
+    }
+}
+
+loop through 0..20 with n {
+    counter = |c| {
+        match c {
+            1: { return "1st" }
+            2: { return "2nd" }
+            _: { return "${n}th" }
+        }
+    }
+
+    println("The ${counter(n+1)} Fibonacci number is ${fib(n)}")
+}
