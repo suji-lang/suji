@@ -1,0 +1,6 @@
+import std:println
+
+# Single element descending range
+result = 5..4
+
+println(result)  # [5]

@@ -1126,3 +1126,105 @@ fn test_parse_top_level_multiple_semicolons() {
         panic!("Expected program to parse successfully");
     }
 }
+
+#[test]
+fn test_parse_nil_pattern() {
+    let result = parse_statement("match x { nil: \"empty\" _: \"something\" }");
+    assert!(result.is_ok());
+
+    if let Ok(Stmt::Match { arms, .. }) = result {
+        assert_eq!(arms.len(), 2);
+
+        // First arm should be nil pattern
+        if let Pattern::Literal {
+            value: ValueLike::Nil,
+            ..
+        } = &arms[0].pattern
+        {
+            // Expected
+        } else {
+            panic!("Expected nil pattern");
+        }
+
+        // Second arm should be wildcard
+        if let Pattern::Wildcard { .. } = &arms[1].pattern {
+            // Expected
+        } else {
+            panic!("Expected wildcard pattern");
+        }
+    } else {
+        panic!("Expected match statement");
+    }
+}
+
+#[test]
+fn test_parse_nil_pattern_in_expression() {
+    let result = parse_expression("match x { nil: \"empty\" _: \"something\" }");
+    assert!(result.is_ok());
+
+    if let Ok(Expr::Match { arms, .. }) = result {
+        assert_eq!(arms.len(), 2);
+
+        // First arm should be nil pattern
+        if let Pattern::Literal {
+            value: ValueLike::Nil,
+            ..
+        } = &arms[0].pattern
+        {
+            // Expected
+        } else {
+            panic!("Expected nil pattern");
+        }
+    } else {
+        panic!("Expected match expression");
+    }
+}
+
+#[test]
+fn test_parse_return_statements_in_non_braced_match_arms() {
+    let result = parse_statement("match x { 1: return 1 2: return 2 _: return 0 }");
+    if result.is_err() {
+        println!("Parse error: {:?}", result);
+    }
+    assert!(result.is_ok());
+
+    if let Ok(Stmt::Match { arms, .. }) = result {
+        assert_eq!(arms.len(), 3);
+
+        // All arms should be single expression statements with return
+        for arm in arms {
+            if let Stmt::Return { .. } = &arm.body {
+                // Expected
+            } else {
+                panic!("Expected return statement in match arm");
+            }
+        }
+    } else {
+        panic!("Expected match statement");
+    }
+}
+
+#[test]
+fn test_parse_map_literals_in_match_arms() {
+    let result =
+        parse_statement("match x { 1: { \"status\": \"success\" } 2: { \"status\": \"error\" } }");
+    if result.is_err() {
+        println!("Parse error: {:?}", result);
+    }
+    assert!(result.is_ok());
+
+    if let Ok(Stmt::Match { arms, .. }) = result {
+        assert_eq!(arms.len(), 2);
+
+        // All arms should be single expression statements with map literals
+        for arm in arms {
+            if let Stmt::Expr(Expr::Literal(Literal::Map(..))) = &arm.body {
+                // Expected
+            } else {
+                panic!("Expected map literal in match arm");
+            }
+        }
+    } else {
+        panic!("Expected match statement");
+    }
+}

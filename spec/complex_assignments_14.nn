@@ -1,0 +1,18 @@
+import std:println
+
+# Test complex nested assignment with multiple operations (3 levels max)
+app = {
+    users: [
+        { name: "Alice", theme: "dark" },
+        { name: "Bob", theme: "light" }
+    ],
+    config: { 
+        default_theme: "auto",
+        notifications: true
+    }
+}
+
+# Test nested map access with two levels
+app:config:notifications = false
+
+println(app:config:notifications)  # false

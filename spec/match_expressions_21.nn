@@ -1,0 +1,16 @@
+import std:println
+
+# Test mixed braced and non-braced match arms
+h = || {
+    match 1 {
+        1: {
+            println("one")
+            return 1
+        }
+        2: 2    # implicit return
+        _: return 0
+    }
+}
+
+result = h()
+println(result)  # 1

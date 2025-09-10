@@ -1,0 +1,10 @@
+import std:println
+
+# Test nested list access followed by map access (3 levels)
+matrix = [
+    { x: 1, y: 2 },
+    { x: 3, y: 4 }
+]
+matrix[1]:x = 99
+
+println(matrix[1]:x)  # 99

@@ -1,0 +1,7 @@
+import std:println
+
+# Test string indexing with middle character
+text = "hello"
+char = text[2]
+
+println(char)  # l

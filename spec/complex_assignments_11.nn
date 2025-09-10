@@ -1,0 +1,12 @@
+import std:println
+
+# Test deeply nested map access with three levels
+config = {
+    user: { 
+        profile: { theme: "dark", language: "en" }
+    },
+    settings: { debug: true }
+}
+config:user:profile:theme = "light"
+
+println(config:user:profile:theme)  # light

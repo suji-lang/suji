@@ -1,0 +1,20 @@
+import std:println
+
+# Test map iteration with complex values
+complex = { 
+    list: [1, 2, 3],
+    map: { nested: "value" },
+    func: |x| x * 2
+}
+result = ""
+
+loop through complex with k, v {
+    match k {
+        "list": result = result + "list "
+        "map": result = result + "map "
+        "func": result = result + "func "
+        _: {}
+    }
+}
+
+println(result)  # list map func 

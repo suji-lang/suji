@@ -1,0 +1,17 @@
+import std:println
+
+# Test map contains method with complex nested structures
+data = { 
+    user: { name: "Alice", age: 30 },
+    settings: { theme: "dark", notifications: true }
+}
+
+# Check contains on nested maps
+user_exists = data::contains("user")
+settings_exists = data::contains("settings")
+missing_exists = data::contains("missing")
+
+# Combine results
+result = user_exists && settings_exists && !missing_exists
+
+println(result)  # true

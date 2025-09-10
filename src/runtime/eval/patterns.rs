@@ -49,6 +49,7 @@ pub fn value_like_matches(pattern_value: &crate::ast::ValueLike, value: &Value) 
         (ValueLike::Number(a), Value::Number(b)) => a == b,
         (ValueLike::Boolean(a), Value::Boolean(b)) => a == b,
         (ValueLike::String(a), Value::String(b)) => a == b,
+        (ValueLike::Nil, Value::Nil) => true,
         (ValueLike::Tuple(pattern_items), Value::Tuple(value_items)) => {
             if pattern_items.len() != value_items.len() {
                 false
@@ -177,5 +178,232 @@ mod tests {
         } else {
             panic!("Expected RegexError");
         }
+    }
+
+    #[test]
+    fn test_multiple_wildcards_in_tuple() {
+        let pattern = Pattern::Tuple {
+            patterns: vec![
+                Pattern::Wildcard {
+                    span: Span::default(),
+                },
+                Pattern::Wildcard {
+                    span: Span::default(),
+                },
+                Pattern::Literal {
+                    value: ValueLike::Number(0.0),
+                    span: Span::default(),
+                },
+            ],
+            span: Span::default(),
+        };
+
+        let matching_tuple = Value::Tuple(vec![
+            Value::String("anything".to_string()),
+            Value::Boolean(true),
+            Value::Number(0.0),
+        ]);
+
+        let non_matching_tuple = Value::Tuple(vec![
+            Value::String("anything".to_string()),
+            Value::Boolean(true),
+            Value::Number(1.0),
+        ]);
+
+        assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
+        assert!(!pattern_matches(&pattern, &non_matching_tuple).unwrap());
+    }
+
+    #[test]
+    fn test_nested_tuple_wildcards() {
+        // Test ((_, _), (_, _)) pattern
+        let pattern = Pattern::Tuple {
+            patterns: vec![
+                Pattern::Tuple {
+                    patterns: vec![
+                        Pattern::Wildcard {
+                            span: Span::default(),
+                        },
+                        Pattern::Wildcard {
+                            span: Span::default(),
+                        },
+                    ],
+                    span: Span::default(),
+                },
+                Pattern::Tuple {
+                    patterns: vec![
+                        Pattern::Wildcard {
+                            span: Span::default(),
+                        },
+                        Pattern::Wildcard {
+                            span: Span::default(),
+                        },
+                    ],
+                    span: Span::default(),
+                },
+            ],
+            span: Span::default(),
+        };
+
+        let matching_tuple = Value::Tuple(vec![
+            Value::Tuple(vec![Value::Number(1.0), Value::String("test".to_string())]),
+            Value::Tuple(vec![Value::Boolean(true), Value::Number(42.0)]),
+        ]);
+
+        let non_matching_tuple = Value::Tuple(vec![
+            Value::Tuple(vec![Value::Number(1.0)]), // Wrong length
+            Value::Tuple(vec![Value::Boolean(true), Value::Number(42.0)]),
+        ]);
+
+        assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
+        assert!(!pattern_matches(&pattern, &non_matching_tuple).unwrap());
+    }
+
+    #[test]
+    fn test_all_wildcards_tuple_pattern() {
+        let pattern = Pattern::Tuple {
+            patterns: vec![
+                Pattern::Wildcard {
+                    span: Span::default(),
+                },
+                Pattern::Wildcard {
+                    span: Span::default(),
+                },
+                Pattern::Wildcard {
+                    span: Span::default(),
+                },
+            ],
+            span: Span::default(),
+        };
+
+        let matching_tuple = Value::Tuple(vec![
+            Value::String("anything".to_string()),
+            Value::Number(42.0),
+            Value::Boolean(true),
+        ]);
+
+        let wrong_length_tuple = Value::Tuple(vec![
+            Value::String("anything".to_string()),
+            Value::Number(42.0),
+        ]);
+
+        assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
+        assert!(!pattern_matches(&pattern, &wrong_length_tuple).unwrap());
+    }
+
+    #[test]
+    fn test_single_element_tuple_wildcard() {
+        let pattern = Pattern::Tuple {
+            patterns: vec![Pattern::Wildcard {
+                span: Span::default(),
+            }],
+            span: Span::default(),
+        };
+
+        let matching_tuple = Value::Tuple(vec![Value::Number(42.0)]);
+        let wrong_length_tuple = Value::Tuple(vec![]);
+        let non_tuple_value = Value::Number(42.0);
+
+        assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
+        assert!(!pattern_matches(&pattern, &wrong_length_tuple).unwrap());
+        assert!(!pattern_matches(&pattern, &non_tuple_value).unwrap());
+    }
+
+    #[test]
+    fn test_empty_tuple_pattern() {
+        let pattern = Pattern::Tuple {
+            patterns: vec![],
+            span: Span::default(),
+        };
+
+        let matching_tuple = Value::Tuple(vec![]);
+        let non_matching_tuple = Value::Tuple(vec![Value::Number(42.0)]);
+
+        assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
+        assert!(!pattern_matches(&pattern, &non_matching_tuple).unwrap());
+    }
+
+    #[test]
+    fn test_mixed_patterns_in_tuple() {
+        let pattern = Pattern::Tuple {
+            patterns: vec![
+                Pattern::Literal {
+                    value: ValueLike::Number(1.0),
+                    span: Span::default(),
+                },
+                Pattern::Wildcard {
+                    span: Span::default(),
+                },
+                Pattern::Literal {
+                    value: ValueLike::String("test".to_string()),
+                    span: Span::default(),
+                },
+            ],
+            span: Span::default(),
+        };
+
+        let matching_tuple = Value::Tuple(vec![
+            Value::Number(1.0),
+            Value::Boolean(true),
+            Value::String("test".to_string()),
+        ]);
+
+        let non_matching_tuple = Value::Tuple(vec![
+            Value::Number(2.0), // Wrong first element
+            Value::Boolean(true),
+            Value::String("test".to_string()),
+        ]);
+
+        let non_matching_tuple2 = Value::Tuple(vec![
+            Value::Number(1.0),
+            Value::Boolean(true),
+            Value::String("wrong".to_string()), // Wrong third element
+        ]);
+
+        assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
+        assert!(!pattern_matches(&pattern, &non_matching_tuple).unwrap());
+        assert!(!pattern_matches(&pattern, &non_matching_tuple2).unwrap());
+    }
+
+    #[test]
+    fn test_deeply_nested_wildcards() {
+        // Test (((_, _), _), _) pattern
+        let pattern = Pattern::Tuple {
+            patterns: vec![
+                Pattern::Tuple {
+                    patterns: vec![
+                        Pattern::Tuple {
+                            patterns: vec![
+                                Pattern::Wildcard {
+                                    span: Span::default(),
+                                },
+                                Pattern::Wildcard {
+                                    span: Span::default(),
+                                },
+                            ],
+                            span: Span::default(),
+                        },
+                        Pattern::Wildcard {
+                            span: Span::default(),
+                        },
+                    ],
+                    span: Span::default(),
+                },
+                Pattern::Wildcard {
+                    span: Span::default(),
+                },
+            ],
+            span: Span::default(),
+        };
+
+        let matching_tuple = Value::Tuple(vec![
+            Value::Tuple(vec![
+                Value::Tuple(vec![Value::Number(1.0), Value::String("test".to_string())]),
+                Value::Boolean(true),
+            ]),
+            Value::Number(42.0),
+        ]);
+
+        assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
     }
 }

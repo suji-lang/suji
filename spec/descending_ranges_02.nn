@@ -1,0 +1,6 @@
+import std:println
+
+# Descending range with negative numbers
+result = -2..-5
+
+println(result)  # [-2, -3, -4]

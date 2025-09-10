@@ -1,0 +1,14 @@
+import std:println
+
+# Test map iteration with mixed key types
+mixed = { "string": 1, 42: "number", true: false }
+found = false
+
+loop through mixed with k, v {
+    match k {
+        "string": found = true
+        _: {}
+    }
+}
+
+println(found)  # true

@@ -1,0 +1,11 @@
+import std:println
+
+# Test empty map iteration
+empty_map = {}
+count = 0
+
+loop through empty_map with k, v {
+    count = count + 1
+}
+
+println(count)  # 0

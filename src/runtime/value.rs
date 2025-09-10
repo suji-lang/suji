@@ -121,6 +121,30 @@ pub enum RuntimeError {
 
     #[error("Control flow: {flow:?}")]
     ControlFlow { flow: ControlFlow },
+
+    #[error("String index error: {message}")]
+    StringIndexError {
+        message: String,
+        index: i64,
+        length: i64,
+    },
+
+    #[error("Range error: {message}")]
+    RangeError {
+        message: String,
+        start: Option<f64>,
+        end: Option<f64>,
+    },
+
+    #[error("List concatenation error: {message}")]
+    ListConcatenationError {
+        message: String,
+        left_type: String,
+        right_type: String,
+    },
+
+    #[error("Map contains error: {message}")]
+    MapContainsError { message: String, key_type: String },
 }
 
 impl Value {

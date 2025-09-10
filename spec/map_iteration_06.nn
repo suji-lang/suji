@@ -1,0 +1,18 @@
+import std:println
+
+# Test map iteration with nested maps
+nested = { 
+    user: { name: "Alice", age: 30 },
+    settings: { theme: "dark", lang: "en" }
+}
+result = ""
+
+loop through nested with section, data {
+    match section {
+        "user": result = result + "user "
+        "settings": result = result + "settings "
+        _: {}
+    }
+}
+
+println(result)  # user settings 

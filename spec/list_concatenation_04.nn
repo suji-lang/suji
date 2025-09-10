@@ -1,0 +1,8 @@
+import std:println
+
+# Test pass-by-value semantics
+original1 = [1, 2]
+original2 = [3, 4]
+result = original1 + original2
+
+println(original2)  # [3, 4]

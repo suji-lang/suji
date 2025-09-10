@@ -1,0 +1,9 @@
+import std:println
+
+# Test empty list concatenation
+empty = []
+numbers = [1, 2, 3]
+result1 = empty + numbers
+result2 = numbers + empty
+
+println(result2)  # [1, 2, 3]

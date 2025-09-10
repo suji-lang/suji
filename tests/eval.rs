@@ -65,11 +65,10 @@ fn test_basic_arithmetic_expressions() {
         let result = eval_string_expr("2 ^ 3").unwrap();
         println!("Debug: 2 ^ 3 = {:?}", result);
         // Only assert if it's actually working as expected
-        if let Value::Number(n) = result {
-            if n == 8.0 {
+        if let Value::Number(n) = result
+            && n == 8.0 {
                 assert_eq!(n, 8.0);
             }
-        }
     }
 }
 
@@ -89,11 +88,10 @@ fn test_operator_precedence() {
         let result = eval_string_expr("2 ^ 3 ^ 2").unwrap();
         println!("Debug: 2 ^ 3 ^ 2 = {:?}", result);
         // Only assert if it matches expected value
-        if let Value::Number(n) = result {
-            if n == 512.0 {
+        if let Value::Number(n) = result
+            && n == 512.0 {
                 assert_eq!(n, 512.0);
             }
-        }
     }
 }
 
@@ -176,7 +174,7 @@ fn test_integration_completeness() {
 fn test_numbers_and_booleans() {
     // Test basic literals that should definitely work
     assert_eq!(eval_string_expr("42").unwrap(), Value::Number(42.0));
-    assert_eq!(eval_string_expr("3.14").unwrap(), Value::Number(3.14));
+    assert_eq!(eval_string_expr("2.5").unwrap(), Value::Number(2.5));
     assert_eq!(eval_string_expr("true").unwrap(), Value::Boolean(true));
     assert_eq!(eval_string_expr("false").unwrap(), Value::Boolean(false));
 }
@@ -283,63 +281,56 @@ fn test_complex_literals_evaluation() {
     // Test that complex literals actually work end-to-end
 
     // String literals (simple ones without interpolation)
-    if can_eval(r#""hello""#) {
-        if let Value::String(s) = eval_string_expr(r#""hello""#).unwrap() {
+    if can_eval(r#""hello""#)
+        && let Value::String(s) = eval_string_expr(r#""hello""#).unwrap() {
             assert_eq!(s, "hello");
         }
-    }
 
     // List literals
-    if can_eval("[1, 2, 3]") {
-        if let Value::List(items) = eval_string_expr("[1, 2, 3]").unwrap() {
+    if can_eval("[1, 2, 3]")
+        && let Value::List(items) = eval_string_expr("[1, 2, 3]").unwrap() {
             assert_eq!(items.len(), 3);
             assert_eq!(items[0], Value::Number(1.0));
             assert_eq!(items[1], Value::Number(2.0));
             assert_eq!(items[2], Value::Number(3.0));
         }
-    }
 
     // Tuple literals
-    if can_eval("(1, 2)") {
-        if let Value::Tuple(items) = eval_string_expr("(1, 2)").unwrap() {
+    if can_eval("(1, 2)")
+        && let Value::Tuple(items) = eval_string_expr("(1, 2)").unwrap() {
             assert_eq!(items.len(), 2);
             assert_eq!(items[0], Value::Number(1.0));
             assert_eq!(items[1], Value::Number(2.0));
         }
-    }
 
     // Single-element tuple
-    if can_eval("(42,)") {
-        if let Value::Tuple(items) = eval_string_expr("(42,)").unwrap() {
+    if can_eval("(42,)")
+        && let Value::Tuple(items) = eval_string_expr("(42,)").unwrap() {
             assert_eq!(items.len(), 1);
             assert_eq!(items[0], Value::Number(42.0));
         }
-    }
 
     // Map literals
-    if can_eval(r#"{ "a": 1 }"#) {
-        if let Value::Map(_map) = eval_string_expr(r#"{ "a": 1 }"#).unwrap() {
+    if can_eval(r#"{ "a": 1 }"#)
+        && let Value::Map(_map) = eval_string_expr(r#"{ "a": 1 }"#).unwrap() {
             // Map content verification would require more complex testing
             // This at least verifies it parses and evaluates to a map
         }
-    }
 
     // Regex literals
-    if can_eval(r"/hello/") {
-        if let Value::Regex(_regex) = eval_string_expr(r"/hello/").unwrap() {
+    if can_eval(r"/hello/")
+        && let Value::Regex(_regex) = eval_string_expr(r"/hello/").unwrap() {
             // Regex verification - at least it parses and evaluates to a regex
         }
-    }
 
     // Range expressions
-    if can_eval("1..4") {
-        if let Value::List(items) = eval_string_expr("1..4").unwrap() {
+    if can_eval("1..4")
+        && let Value::List(items) = eval_string_expr("1..4").unwrap() {
             assert_eq!(items.len(), 3);
             assert_eq!(items[0], Value::Number(1.0));
             assert_eq!(items[1], Value::Number(2.0));
             assert_eq!(items[2], Value::Number(3.0));
         }
-    }
 }
 
 #[test]
@@ -950,4 +941,267 @@ fn test_optional_braces_wildcard_match() {
         eval_program("match 42 { 1: result = \"one\" 2: result = \"two\" _: result = \"other\" }");
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::String("other".to_string()));
+}
+
+#[test]
+fn test_map_iteration_no_bindings() {
+    let result = eval_program(
+        r#"
+        map = { a: 1, b: 2 }
+        count = 0
+        loop through map {
+            count = count + 1
+        }
+        count
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(2.0));
+}
+
+#[test]
+fn test_map_iteration_one_binding() {
+    let result = eval_program(
+        r#"
+        map = { a: 1, b: 2 }
+        result = ""
+        loop through map with k {
+            result = result + k + " "
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    let result_str = match result.unwrap() {
+        Value::String(s) => s,
+        _ => panic!("Expected string result"),
+    };
+    // Order is not guaranteed, so check both keys are present
+    assert!(result_str.contains("a "));
+    assert!(result_str.contains("b "));
+}
+
+#[test]
+fn test_map_iteration_two_bindings() {
+    let result = eval_program(
+        r#"
+        map = { a: 10, b: 20 }
+        total = 0
+        loop through map with k, v {
+            total = total + v
+        }
+        total
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(30.0));
+}
+
+#[test]
+fn test_map_iteration_empty_map() {
+    let result = eval_program(
+        r#"
+        empty = {}
+        count = 0
+        loop through empty with k, v {
+            count = count + 1
+        }
+        count
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(0.0));
+}
+
+#[test]
+fn test_map_iteration_variable_scoping() {
+    let result = eval_program(
+        r#"
+        outer = "original"
+        map = { key: "value" }
+        loop through map with k, v {
+            inner = "inside"
+            outer = "modified"
+        }
+        outer
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("modified".to_string()));
+}
+
+#[test]
+fn test_map_iteration_control_flow_break() {
+    let result = eval_program(
+        r#"
+        map = { a: 1, b: 2, c: 3, d: 4 }
+        result = ""
+        loop through map with k, v {
+            match k {
+                "c": { break }
+                _: result = result + k
+            }
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    let result_str = match result.unwrap() {
+        Value::String(s) => s,
+        _ => panic!("Expected string result"),
+    };
+    // Should break when it hits "c", so "c" and "d" should not be in result
+    assert!(!result_str.contains("c"));
+    // The exact order is not guaranteed, but it should contain some keys before "c"
+    assert!(!result_str.is_empty());
+}
+
+#[test]
+fn test_map_iteration_mixed_key_types() {
+    let result = eval_program(
+        r#"
+        mixed = { "string": 1, 42: "number", true: false }
+        count = 0
+        loop through mixed with k, v {
+            count = count + 1
+        }
+        count
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(3.0));
+}
+
+#[test]
+fn test_map_iteration_nested_maps() {
+    let result = eval_program(
+        r#"
+        nested = { 
+            user: { name: "Alice" },
+            settings: { theme: "dark" }
+        }
+        count = 0
+        loop through nested with section, data {
+            count = count + 1
+        }
+        count
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(2.0));
+}
+
+#[test]
+fn test_nil_pattern_matching() {
+    let result = eval_program(
+        r#"
+        user = nil
+        result = match user {
+            nil: "No user found"
+            _: "Some user found"
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("No user found".to_string()));
+}
+
+#[test]
+fn test_return_statements_in_match_arms() {
+    let result = eval_program(
+        r#"
+        f = || {
+            match 1 {
+                1: return 1
+                2: return 2
+                _: return 0
+            }
+        }
+        f()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(1.0));
+}
+
+#[test]
+fn test_implicit_returns_in_match_arms() {
+    let result = eval_program(
+        r#"
+        g = || {
+            match 1 {
+                1: 1    # implicitly returned
+                2: 2    # implicitly returned
+                _: 0    # implicitly returned
+            }
+        }
+        g()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(1.0));
+}
+
+#[test]
+fn test_map_literals_in_match_arms() {
+    let result = eval_program(
+        r#"
+        result = match 1 {
+            1: { "status": "success", "value": 42 }
+            2: { "status": "error", "message": "failed" }
+            _: { "status": "unknown" }
+        }
+        result:status
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("success".to_string()));
+}
+
+#[test]
+fn test_mixed_match_arm_syntax() {
+    let result = eval_program(
+        r#"
+        import std:println
+        h = || {
+            match 1 {
+                1: {
+                    println("one")
+                    return 1
+                }
+                2: 2    # implicit return
+                _: return 0
+            }
+        }
+        h()
+    "#,
+    );
+    if result.is_err() {
+        println!("Eval error: {:?}", result);
+    }
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(1.0));
+}
+
+#[test]
+fn test_complex_nil_handling() {
+    let result = eval_program(
+        r#"
+        find_user = |id| {
+            match id {
+                1: { "name": "Alice" }
+                2: { "name": "Bob" }
+                _: nil
+            }
+        }
+        user_info = match find_user(3) {
+            nil: "User not found"
+            user: "User: " + user:name
+        }
+        user_info
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("User not found".to_string()));
 }

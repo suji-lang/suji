@@ -1,0 +1,10 @@
+import std:println
+
+# Test wildcard with specific values in tuple
+data = (1, "test", true)
+result = match data {
+    (1, _, true): "first and last match"
+    _: "no match"
+}
+
+println(result)  # first and last match

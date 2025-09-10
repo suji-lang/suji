@@ -458,6 +458,99 @@ fn print_runtime_error(error: RuntimeError, context: &DiagnosticContext) {
                 .print((&context.file_id, Source::from(&context.source)))
                 .unwrap();
         }
+        RuntimeError::StringIndexError {
+            message,
+            index,
+            length,
+        } => {
+            let report = Report::build(ReportKind::Error, (&context.file_id, 0..0))
+                .with_code(22)
+                .with_message("String index error")
+                .with_note(message)
+                .with_note(format!(
+                    "Attempted to access index {} on string of length {}",
+                    index, length
+                ))
+                .with_note(format!("String has {} characters (0-indexed)", length))
+                .with_note(format!(
+                    "Valid indices: 0 to {} or -{} to -1",
+                    length - 1,
+                    length
+                ))
+                .with_note("Use string::length() to check the string size before indexing")
+                .finish();
+
+            report
+                .print((&context.file_id, Source::from(&context.source)))
+                .unwrap();
+        }
+        RuntimeError::RangeError {
+            message,
+            start,
+            end,
+        } => {
+            let range_size = if let (Some(s), Some(e)) = (start, end) {
+                Some((s - e).abs() as u64)
+            } else {
+                None
+            };
+
+            let mut report = Report::build(ReportKind::Error, (&context.file_id, 0..0))
+                .with_code(23)
+                .with_message("Range error")
+                .with_note(message);
+
+            if let Some(size) = range_size
+                && size > 100_000
+            {
+                report = report.with_note("Large ranges may consume significant memory");
+            }
+
+            report
+                .with_note("Range bounds must be integers")
+                .with_note("Use smaller ranges or consider alternative approaches")
+                .finish()
+                .print((&context.file_id, Source::from(&context.source)))
+                .unwrap();
+        }
+        RuntimeError::ListConcatenationError {
+            message,
+            left_type,
+            right_type,
+        } => {
+            let report = Report::build(ReportKind::Error, (&context.file_id, 0..0))
+                .with_code(24)
+                .with_message("List concatenation error")
+                .with_note(message)
+                .with_note(format!(
+                    "Cannot concatenate {} and {}",
+                    left_type, right_type
+                ))
+                .with_note("List concatenation requires both operands to be lists")
+                .with_note("Use list::push() to add individual items to a list")
+                .finish();
+
+            report
+                .print((&context.file_id, Source::from(&context.source)))
+                .unwrap();
+        }
+        RuntimeError::MapContainsError { message, key_type } => {
+            let report = Report::build(ReportKind::Error, (&context.file_id, 0..0))
+                .with_code(25)
+                .with_message("Map contains error")
+                .with_note(message)
+                .with_note(format!(
+                    "Key type '{}' is not valid for map contains",
+                    key_type
+                ))
+                .with_note("Valid key types: number, boolean, string, tuple")
+                .with_note("Example: map::contains(\"key\") or map::contains(42)")
+                .finish();
+
+            report
+                .print((&context.file_id, Source::from(&context.source)))
+                .unwrap();
+        }
     }
 }
 

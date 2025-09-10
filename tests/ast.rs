@@ -260,7 +260,7 @@ fn test_compound_op_variants() {
     // Ensure all operators implement required traits
     for op in ops {
         let _ = format!("{:?}", op);
-        let _ = op.clone();
+        let _ = op;
         let _ = op == CompoundOp::PlusAssign;
     }
 }

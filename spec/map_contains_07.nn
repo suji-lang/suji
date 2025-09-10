@@ -1,0 +1,26 @@
+import std:println
+
+# Test map contains method with mixed key types
+mixed_map = { 
+    "string_key": "value1",
+    42: "value2",
+    true: "value3",
+    (1, "tuple"): "value4"
+}
+
+# Check contains with different key types
+result1 = mixed_map::contains("string_key")
+result2 = mixed_map::contains(42)
+result3 = mixed_map::contains(true)
+result4 = mixed_map::contains((1, "tuple"))
+
+# Check non-existing keys
+result5 = mixed_map::contains("missing")
+result6 = mixed_map::contains(99)
+result7 = mixed_map::contains(false)
+result8 = mixed_map::contains((2, "other"))
+
+# Combine results
+all_correct = result1 && result2 && result3 && result4 && !result5 && !result6 && !result7 && !result8
+
+println(all_correct)  # true

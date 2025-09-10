@@ -12,12 +12,12 @@ quicksort = |list| {
         _: {
             # Choose pivot (first element)
             pivot = list[0]
-            
+
             # Partition the list into elements less than, equal to, and greater than pivot
             less = []
             equal = []
             greater = []
-            
+
             # Iterate through the list and partition
             loop through list with element {
                 match element < pivot {
@@ -30,21 +30,13 @@ quicksort = |list| {
                     }
                 }
             }
-            
+
             # Recursively sort the partitions and combine
             sorted_less = quicksort(less)
             sorted_greater = quicksort(greater)
-            
+
             # Combine: less + equal + greater
-            result = sorted_less
-            loop through equal with elem {
-                result::push(elem)
-            }
-            loop through sorted_greater with elem {
-                result::push(elem)
-            }
-            
-            result
+            sorted_less + equal + sorted_greater
         }
     }
 }

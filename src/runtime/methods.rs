@@ -387,6 +387,20 @@ fn call_map_method(
                 unreachable!()
             }
         }
+        "contains" => {
+            if args.len() != 1 {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "contains() takes exactly one argument".to_string(),
+                });
+            }
+
+            let key = args[0].clone().try_into_map_key()?;
+            if let Value::Map(map_data) = receiver.get() {
+                Ok(Value::Boolean(map_data.contains_key(&key)))
+            } else {
+                unreachable!()
+            }
+        }
         _ => Err(RuntimeError::MethodError {
             message: format!("Map has no method '{}'", method),
         }),
@@ -424,7 +438,7 @@ fn eval_closure(closure: &Value, args: Vec<Value>) -> Result<Value, RuntimeError
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::runtime::value::MapKey;
+    use crate::runtime::value::{MapKey, OrderedFloat};
     use indexmap::IndexMap;
 
     #[test]
@@ -594,10 +608,10 @@ mod tests {
         let result = call_method(receiver, "to_string", vec![]).unwrap();
         assert_eq!(result, Value::String("42".to_string()));
 
-        let n2 = Value::Number(3.14);
+        let n2 = Value::Number(2.5);
         let receiver2 = ValueRef::Immutable(&n2);
         let result2 = call_method(receiver2, "to_string", vec![]).unwrap();
-        assert_eq!(result2, Value::String("3.14".to_string()));
+        assert_eq!(result2, Value::String("2.5".to_string()));
     }
 
     #[test]
@@ -607,7 +621,7 @@ mod tests {
         let result = call_method(receiver, "is_int", vec![]).unwrap();
         assert_eq!(result, Value::Boolean(true));
 
-        let n2 = Value::Number(3.14);
+        let n2 = Value::Number(2.5);
         let receiver2 = ValueRef::Immutable(&n2);
         let result2 = call_method(receiver2, "is_int", vec![]).unwrap();
         assert_eq!(result2, Value::Boolean(false));
@@ -700,5 +714,154 @@ mod tests {
         let receiver = ValueRef::Immutable(&list);
         let result = call_method(receiver, "sum", vec![]);
         assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+    }
+
+    // Map contains method tests
+    #[test]
+    fn test_map_contains_string_keys() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("city".to_string()),
+            Value::String("New York".to_string()),
+        );
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Test existing keys
+        let result1 = call_method(
+            receiver,
+            "contains",
+            vec![Value::String("name".to_string())],
+        )
+        .unwrap();
+        assert_eq!(result1, Value::Boolean(true));
+
+        let receiver2 = ValueRef::Immutable(&map);
+        let result2 = call_method(
+            receiver2,
+            "contains",
+            vec![Value::String("age".to_string())],
+        )
+        .unwrap();
+        assert_eq!(result2, Value::Boolean(true));
+
+        // Test non-existing key
+        let receiver3 = ValueRef::Immutable(&map);
+        let result3 = call_method(
+            receiver3,
+            "contains",
+            vec![Value::String("email".to_string())],
+        )
+        .unwrap();
+        assert_eq!(result3, Value::Boolean(false));
+    }
+
+    #[test]
+    fn test_map_contains_numeric_keys() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(MapKey::Number(OrderedFloat(1.0)), Value::Number(100.0));
+        map_data.insert(MapKey::Number(OrderedFloat(2.0)), Value::Number(85.0));
+        map_data.insert(MapKey::Number(OrderedFloat(3.0)), Value::Number(92.0));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Test existing numeric key
+        let result1 = call_method(receiver, "contains", vec![Value::Number(2.0)]).unwrap();
+        assert_eq!(result1, Value::Boolean(true));
+
+        // Test non-existing numeric key
+        let receiver2 = ValueRef::Immutable(&map);
+        let result2 = call_method(receiver2, "contains", vec![Value::Number(4.0)]).unwrap();
+        assert_eq!(result2, Value::Boolean(false));
+    }
+
+    #[test]
+    fn test_map_contains_boolean_keys() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(MapKey::Boolean(true), Value::String("yes".to_string()));
+        map_data.insert(MapKey::Boolean(false), Value::String("no".to_string()));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Test existing boolean key
+        let result1 = call_method(receiver, "contains", vec![Value::Boolean(true)]).unwrap();
+        assert_eq!(result1, Value::Boolean(true));
+
+        // Test existing boolean key (false)
+        let receiver2 = ValueRef::Immutable(&map);
+        let result2 = call_method(receiver2, "contains", vec![Value::Boolean(false)]).unwrap();
+        assert_eq!(result2, Value::Boolean(true));
+    }
+
+    #[test]
+    fn test_map_contains_tuple_keys() {
+        let mut map_data = IndexMap::new();
+        let key1 = MapKey::Tuple(vec![
+            MapKey::String("user".to_string()),
+            MapKey::Number(OrderedFloat(1.0)),
+        ]);
+        let key2 = MapKey::Tuple(vec![
+            MapKey::String("admin".to_string()),
+            MapKey::Number(OrderedFloat(2.0)),
+        ]);
+
+        map_data.insert(key1, Value::String("regular user".to_string()));
+        map_data.insert(key2, Value::String("administrator".to_string()));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Test existing tuple key
+        let tuple_key = Value::Tuple(vec![Value::String("user".to_string()), Value::Number(1.0)]);
+        let result1 = call_method(receiver, "contains", vec![tuple_key]).unwrap();
+        assert_eq!(result1, Value::Boolean(true));
+
+        // Test non-existing tuple key
+        let receiver2 = ValueRef::Immutable(&map);
+        let tuple_key2 = Value::Tuple(vec![Value::String("guest".to_string()), Value::Number(3.0)]);
+        let result2 = call_method(receiver2, "contains", vec![tuple_key2]).unwrap();
+        assert_eq!(result2, Value::Boolean(false));
+    }
+
+    #[test]
+    fn test_map_contains_arity_mismatch() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Test no arguments
+        let result1 = call_method(receiver, "contains", vec![]);
+        assert!(matches!(result1, Err(RuntimeError::ArityMismatch { .. })));
+
+        // Test too many arguments
+        let receiver2 = ValueRef::Immutable(&map);
+        let result2 = call_method(
+            receiver2,
+            "contains",
+            vec![
+                Value::String("key1".to_string()),
+                Value::String("key2".to_string()),
+            ],
+        );
+        assert!(matches!(result2, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_map_contains_invalid_key_type() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Test with invalid key type (list)
+        let result = call_method(receiver, "contains", vec![Value::List(vec![])]);
+        assert!(matches!(result, Err(RuntimeError::InvalidKeyType { .. })));
     }
 }

@@ -1,0 +1,17 @@
+import std:println
+
+# Test map contains method with numeric keys
+scores = { 1: 100, 2: 85, 3: 92 }
+
+# Check for existing numeric keys
+result1 = scores::contains(1)
+result2 = scores::contains(2)
+result3 = scores::contains(3)
+
+# Check for non-existing numeric key
+result4 = scores::contains(4)
+
+# Combine results
+all_results = result1 && result2 && result3 && !result4
+
+println(all_results)  # true

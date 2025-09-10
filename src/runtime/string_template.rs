@@ -68,11 +68,10 @@ mod tests {
             Expr::Literal(Literal::Number(n, _)) => Ok(Value::Number(*n)),
             Expr::Literal(Literal::StringTemplate(parts, _)) => {
                 // For test purposes, if it's a simple string template, return the first text part
-                if parts.len() == 1 {
-                    if let StringPart::Text(s) = &parts[0] {
+                if parts.len() == 1
+                    && let StringPart::Text(s) = &parts[0] {
                         return Ok(Value::String(s.clone()));
                     }
-                }
                 Ok(Value::String("${...}".to_string()))
             }
             Expr::Literal(Literal::Boolean(b, _)) => Ok(Value::Boolean(*b)),

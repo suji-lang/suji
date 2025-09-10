@@ -1,0 +1,10 @@
+import std:println
+
+# Test string indexing edge cases
+empty = ""
+single = "a"
+
+# Test single character string
+char = single[0]
+
+println(char)  # a

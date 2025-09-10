@@ -1,0 +1,11 @@
+import std:println
+
+# Test map iteration with string keys
+config = { name: "Alice", age: 30, city: "New York" }
+count = 0
+
+loop through config with key, value {
+    count = count + 1
+}
+
+println(count)  # 3

@@ -1,6 +1,6 @@
 import std:println
 
-# Empty range when start >= end
+# Descending range when start > end (0.1.2 feature)
 result = 5..3
 
-println(result)  # []
+println(result)  # [5, 4]

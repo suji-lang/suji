@@ -236,12 +236,14 @@ fn test_ranges() {
         panic!("Expected list from negative range");
     }
 
-    // Empty range when start >= end (per spec)
+    // Descending range when start > end (0.1.2 feature)
     let result = eval_string_expr("5..3").unwrap();
     if let Value::List(items) = result {
-        assert_eq!(items.len(), 0);
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0], Value::Number(5.0));
+        assert_eq!(items[1], Value::Number(4.0));
     } else {
-        panic!("Expected empty list from start >= end range");
+        panic!("Expected descending range from start > end range");
     }
 
     let result = eval_string_expr("3..3").unwrap();
@@ -1121,7 +1123,25 @@ fn test_indexing_errors() {
 
     // Indexing non-indexable type
     assert!(eval_string_expr("42[0]").is_err());
-    assert!(eval_string_expr("\"hello\"[0]").is_err());
+
+    // String indexing should now work
+    let result = eval_string_expr("\"hello\"[0]").unwrap();
+    assert_eq!(result, Value::String("h".to_string()));
+
+    // Test negative string indexing
+    let result2 = eval_string_expr("\"hello\"[-1]").unwrap();
+    assert_eq!(result2, Value::String("o".to_string()));
+
+    // Test string indexing with different character
+    let result3 = eval_string_expr("\"test\"[2]").unwrap();
+    assert_eq!(result3, Value::String("s".to_string()));
+
+    // Test string indexing out of bounds
+    assert!(eval_string_expr("\"hello\"[5]").is_err());
+    assert!(eval_string_expr("\"hello\"[-6]").is_err());
+
+    // Test string indexing with non-integer
+    assert!(eval_string_expr("\"hello\"[1.5]").is_err());
 }
 
 /// Test slicing edge cases

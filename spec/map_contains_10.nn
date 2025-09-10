@@ -1,0 +1,16 @@
+import std:println
+
+# Test map contains with very large map (performance test)
+large_map = {}
+loop through 1..1000 with n {
+    large_map[n] = n * 2
+}
+
+# Test contains on large map
+result1 = large_map::contains(500)
+result2 = large_map::contains(1000)
+result3 = large_map::contains(1)
+
+all_results = result1 && !result2 && result3
+
+println(all_results)  # true

@@ -1,0 +1,7 @@
+import std:println
+
+# Test string indexing with negative indices
+text = "hello"
+last = text[-1]
+
+println(last)  # o

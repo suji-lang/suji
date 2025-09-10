@@ -103,10 +103,11 @@ println("Primes: ${primes::join(comma)}")
 
 # Linear Search
 linear_search = |arr, target| {
-    loop through arr with i, item {
+    i = 0
+    loop through arr with item {
         match item == target {
-            true: { return i }
-            false: { }
+            true: return i
+            false: i++
         }
     }
     return -1

@@ -1,0 +1,21 @@
+import std:println
+
+# Test map contains method with tuple keys
+permissions = { 
+    ("user", 1): "read", 
+    ("admin", 2): "write", 
+    ("guest", 3): "none" 
+}
+
+# Check for existing tuple keys
+result1 = permissions::contains(("user", 1))
+result2 = permissions::contains(("admin", 2))
+result3 = permissions::contains(("guest", 3))
+
+# Check for non-existing tuple key
+result4 = permissions::contains(("root", 0))
+
+# Combine results
+all_results = result1 && result2 && result3 && !result4
+
+println(all_results)  # true

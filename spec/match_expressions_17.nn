@@ -1,0 +1,10 @@
+import std:println
+
+# Test nil pattern in match arms
+user = nil
+result = match user {
+    nil: "No user found"
+    _: "Some user found"
+}
+
+println(result)  # No user found

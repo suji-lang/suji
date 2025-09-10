@@ -1,0 +1,23 @@
+import std:println
+
+# Test map contains method with dynamic key checking
+config = { 
+    debug: true, 
+    port: 8080, 
+    host: "localhost" 
+}
+
+# Dynamic key checking function
+check_config = |key| {
+    return config::contains(key)
+}
+
+# Test with different keys
+debug_exists = check_config("debug")
+port_exists = check_config("port")
+missing_exists = check_config("missing")
+
+# Combine results
+result = debug_exists && port_exists && !missing_exists
+
+println(result)  # true

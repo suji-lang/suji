@@ -119,6 +119,14 @@ impl Parser {
             });
         }
 
+        if self.match_token(Token::Nil) {
+            let span = self.previous().span.clone();
+            return Ok(crate::ast::Pattern::Literal {
+                value: crate::ast::ValueLike::Nil,
+                span,
+            });
+        }
+
         if self.match_token(Token::StringStart) {
             // String literal pattern
             let span = self.previous().span.clone();

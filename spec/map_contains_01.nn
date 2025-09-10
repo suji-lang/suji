@@ -1,0 +1,22 @@
+import std:println
+
+# Test map contains method with string keys
+config = { 
+    name: "Alice", 
+    age: 30, 
+    city: "New York" 
+}
+
+# Check for existing keys
+result1 = config::contains("name")
+result2 = config::contains("age")
+result3 = config::contains("city")
+
+# Check for non-existing keys
+result4 = config::contains("email")
+result5 = config::contains("phone")
+
+# Combine results
+all_results = result1 && result2 && result3 && !result4 && !result5
+
+println(all_results)  # true

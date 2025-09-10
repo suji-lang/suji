@@ -71,12 +71,12 @@ fn test_identifiers() {
 
 #[test]
 fn test_numbers() {
-    let input = "42 3.14 0 999.999 0.5";
+    let input = "42 2.5 0 999.999 0.5";
     let tokens = Lexer::lex(input).unwrap();
 
     let expected = vec![
         Token::Number(42.0),
-        Token::Number(3.14),
+        Token::Number(2.5),
         Token::Number(0.0),
         Token::Number(999.999),
         Token::Number(0.5),

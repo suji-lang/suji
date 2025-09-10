@@ -1,0 +1,17 @@
+import std:println
+
+# Test map contains edge cases with special values
+special_map = { 
+    true: "boolean key",
+    false: "boolean key",
+    "": "empty string key"
+}
+
+# Test contains with special key types
+result1 = special_map::contains(true)
+result2 = special_map::contains(false)
+result3 = special_map::contains("")
+
+all_results = result1 && result2 && result3
+
+println(all_results)  # true

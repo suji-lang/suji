@@ -1,0 +1,6 @@
+import std:println
+
+# Basic descending range
+result = 5..0
+
+println(result)  # [5, 4, 3, 2, 1]

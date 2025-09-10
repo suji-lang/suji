@@ -1,0 +1,10 @@
+import std:println
+
+# Descending range in loop
+result = ""
+loop through 5..0 with i {
+    result = result + i::to_string() + " "
+}
+# Remove trailing space
+result = result[:-1]
+println(result)  # 5 4 3 2 1

@@ -49,6 +49,37 @@ pub fn eval_index(target: &Expr, index: &Expr, env: Rc<Env>) -> EvalResult<Value
 
             Ok(items[normalized_idx as usize].clone())
         }
+        Value::String(ref s) => {
+            let chars: Vec<char> = s.chars().collect();
+            let len = chars.len() as i64;
+
+            match index_value {
+                Value::Number(n) => {
+                    if n.fract() != 0.0 {
+                        return Err(RuntimeError::TypeError {
+                            message: "String index must be an integer".to_string(),
+                        });
+                    }
+
+                    let idx = n as i64;
+                    let normalized_idx = if idx < 0 { len + idx } else { idx };
+
+                    if normalized_idx < 0 || normalized_idx >= len {
+                        return Err(RuntimeError::IndexOutOfBounds {
+                            message: format!(
+                                "String index {} out of bounds for length {}",
+                                idx, len
+                            ),
+                        });
+                    }
+
+                    Ok(Value::String(chars[normalized_idx as usize].to_string()))
+                }
+                _ => Err(RuntimeError::TypeError {
+                    message: "String index must be a number".to_string(),
+                }),
+            }
+        }
         Value::Map(ref map) => {
             let key = index_value.try_into_map_key()?;
             match map.get(&key) {
@@ -390,5 +421,164 @@ mod tests {
         let start = Expr::Literal(Literal::Number(2.0, Span::default()));
         let result2 = eval_slice(&target, Some(&start), None, env).unwrap();
         assert_eq!(result2, Value::String("llo".to_string()));
+    }
+
+    #[test]
+    fn test_string_indexing_basic() {
+        let env = create_test_env();
+
+        let s = Value::String("hello".to_string());
+        env.define_or_set("my_string", s);
+
+        let target = Expr::Literal(Literal::Identifier(
+            "my_string".to_string(),
+            Span::default(),
+        ));
+
+        // Test positive indexing
+        let index0 = Expr::Literal(Literal::Number(0.0, Span::default()));
+        let result0 = eval_index(&target, &index0, env.clone()).unwrap();
+        assert_eq!(result0, Value::String("h".to_string()));
+
+        let index1 = Expr::Literal(Literal::Number(1.0, Span::default()));
+        let result1 = eval_index(&target, &index1, env.clone()).unwrap();
+        assert_eq!(result1, Value::String("e".to_string()));
+
+        let index4 = Expr::Literal(Literal::Number(4.0, Span::default()));
+        let result4 = eval_index(&target, &index4, env).unwrap();
+        assert_eq!(result4, Value::String("o".to_string()));
+    }
+
+    #[test]
+    fn test_string_indexing_negative() {
+        let env = create_test_env();
+
+        let s = Value::String("hello".to_string());
+        env.define_or_set("my_string", s);
+
+        let target = Expr::Literal(Literal::Identifier(
+            "my_string".to_string(),
+            Span::default(),
+        ));
+
+        // Test negative indexing
+        let index_neg1 = Expr::Literal(Literal::Number(-1.0, Span::default()));
+        let result_neg1 = eval_index(&target, &index_neg1, env.clone()).unwrap();
+        assert_eq!(result_neg1, Value::String("o".to_string()));
+
+        let index_neg2 = Expr::Literal(Literal::Number(-2.0, Span::default()));
+        let result_neg2 = eval_index(&target, &index_neg2, env.clone()).unwrap();
+        assert_eq!(result_neg2, Value::String("l".to_string()));
+
+        let index_neg5 = Expr::Literal(Literal::Number(-5.0, Span::default()));
+        let result_neg5 = eval_index(&target, &index_neg5, env).unwrap();
+        assert_eq!(result_neg5, Value::String("h".to_string()));
+    }
+
+    #[test]
+    fn test_string_indexing_unicode() {
+        let env = create_test_env();
+
+        let s = Value::String("café".to_string());
+        env.define_or_set("my_string", s);
+
+        let target = Expr::Literal(Literal::Identifier(
+            "my_string".to_string(),
+            Span::default(),
+        ));
+
+        // Test Unicode character indexing
+        let index3 = Expr::Literal(Literal::Number(3.0, Span::default()));
+        let result3 = eval_index(&target, &index3, env).unwrap();
+        assert_eq!(result3, Value::String("é".to_string()));
+    }
+
+    #[test]
+    fn test_string_indexing_out_of_bounds() {
+        let env = create_test_env();
+
+        let s = Value::String("hello".to_string());
+        env.define_or_set("my_string", s);
+
+        let target = Expr::Literal(Literal::Identifier(
+            "my_string".to_string(),
+            Span::default(),
+        ));
+
+        // Test out of bounds positive index
+        let index5 = Expr::Literal(Literal::Number(5.0, Span::default()));
+        let result = eval_index(&target, &index5, env.clone());
+        assert!(result.is_err());
+        if let Err(RuntimeError::IndexOutOfBounds { message }) = result {
+            assert!(message.contains("String index 5 out of bounds for length 5"));
+        } else {
+            panic!("Expected IndexOutOfBounds error");
+        }
+
+        // Test out of bounds negative index
+        let index_neg6 = Expr::Literal(Literal::Number(-6.0, Span::default()));
+        let result2 = eval_index(&target, &index_neg6, env);
+        assert!(result2.is_err());
+        if let Err(RuntimeError::IndexOutOfBounds { message }) = result2 {
+            assert!(message.contains("String index -6 out of bounds for length 5"));
+        } else {
+            panic!("Expected IndexOutOfBounds error");
+        }
+    }
+
+    #[test]
+    fn test_string_indexing_empty_string() {
+        let env = create_test_env();
+
+        let s = Value::String("".to_string());
+        env.define_or_set("empty_string", s);
+
+        let target = Expr::Literal(Literal::Identifier(
+            "empty_string".to_string(),
+            Span::default(),
+        ));
+
+        // Test indexing empty string
+        let index0 = Expr::Literal(Literal::Number(0.0, Span::default()));
+        let result = eval_index(&target, &index0, env);
+        assert!(result.is_err());
+        if let Err(RuntimeError::IndexOutOfBounds { message }) = result {
+            assert!(message.contains("String index 0 out of bounds for length 0"));
+        } else {
+            panic!("Expected IndexOutOfBounds error");
+        }
+    }
+
+    #[test]
+    fn test_string_indexing_type_errors() {
+        let env = create_test_env();
+
+        let s = Value::String("hello".to_string());
+        env.define_or_set("my_string", s);
+
+        let target = Expr::Literal(Literal::Identifier(
+            "my_string".to_string(),
+            Span::default(),
+        ));
+
+        // Test non-integer number index
+        let index_float = Expr::Literal(Literal::Number(1.5, Span::default()));
+        let result = eval_index(&target, &index_float, env.clone());
+        assert!(result.is_err());
+        if let Err(RuntimeError::TypeError { message }) = result {
+            assert_eq!(message, "String index must be an integer");
+        } else {
+            panic!("Expected TypeError for non-integer index");
+        }
+
+        // Test non-number index
+        let index_bool = Expr::Literal(Literal::Boolean(true, Span::default()));
+        let result2 = eval_index(&target, &index_bool, env);
+        assert!(result2.is_err());
+        if let Err(RuntimeError::TypeError { message }) = result2 {
+            assert_eq!(message, "String index must be a number");
+        } else {
+            panic!("Expected TypeError for non-number index");
+        }
     }
 }

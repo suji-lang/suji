@@ -1,0 +1,12 @@
+import std:println
+
+# Test map iteration variable scoping
+outer = "outer"
+data = { key: "value" }
+
+loop through data with k, v {
+    inner = "inner"
+    outer = "modified"
+}
+
+println(outer)  # modified

@@ -1,0 +1,8 @@
+import std:println
+
+# Test very large lists (performance test)
+large1 = 1..1000
+large2 = 1000..2000
+result = large1 + large2
+
+println(result::length())  # 1999

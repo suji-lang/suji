@@ -1,0 +1,6 @@
+import std:println
+
+# Test very large descending range (performance test)
+result = 1000..0
+
+println(result::length())  # 1000

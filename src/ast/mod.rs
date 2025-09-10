@@ -100,6 +100,7 @@ pub enum ValueLike {
     Boolean(bool),
     String(String),
     Tuple(Vec<ValueLike>),
+    Nil,
 }
 
 /// Compound assignment operators

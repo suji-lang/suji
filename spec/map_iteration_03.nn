@@ -1,0 +1,11 @@
+import std:println
+
+# Test map iteration with numeric keys
+scores = { 1: 100, 2: 85, 3: 92 }
+total = 0
+
+loop through scores with id, score {
+    total = total + score
+}
+
+println(total)  # 277

@@ -77,6 +77,12 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
         BinaryOp::Add => match (&left, &right) {
             (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a + b)),
             (Value::String(a), Value::String(b)) => Ok(Value::String(format!("{}{}", a, b))),
+            (Value::List(a), Value::List(b)) => {
+                // List concatenation: pass-by-value semantics
+                let mut result = a.clone();
+                result.extend(b.clone());
+                Ok(Value::List(result))
+            }
             _ => Err(RuntimeError::TypeError {
                 message: format!("Cannot add {} and {}", left.type_name(), right.type_name()),
             }),
@@ -536,5 +542,114 @@ mod tests {
 
         assert_eq!(result, Value::Number(2.0));
         assert_eq!(env.get("x").unwrap(), Value::Number(2.0));
+    }
+
+    #[test]
+    fn test_list_concatenation() {
+        // Test basic list concatenation
+        let list1 = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+        let list2 = Value::List(vec![Value::Number(3.0), Value::Number(4.0)]);
+        let result = eval_binary_op(&BinaryOp::Add, list1.clone(), list2.clone()).unwrap();
+
+        let expected = Value::List(vec![
+            Value::Number(1.0),
+            Value::Number(2.0),
+            Value::Number(3.0),
+            Value::Number(4.0),
+        ]);
+        assert_eq!(result, expected);
+
+        // Test empty list concatenation
+        let empty = Value::List(vec![]);
+        let numbers = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+
+        let result1 = eval_binary_op(&BinaryOp::Add, empty.clone(), numbers.clone()).unwrap();
+        assert_eq!(result1, numbers);
+
+        let result2 = eval_binary_op(&BinaryOp::Add, numbers.clone(), empty.clone()).unwrap();
+        assert_eq!(result2, numbers);
+
+        // Test both empty lists
+        let result3 = eval_binary_op(&BinaryOp::Add, empty.clone(), empty.clone()).unwrap();
+        assert_eq!(result3, empty);
+
+        // Test mixed types in lists
+        let mixed1 = Value::List(vec![
+            Value::Number(1.0),
+            Value::String("hello".to_string()),
+            Value::Boolean(true),
+        ]);
+        let mixed2 = Value::List(vec![
+            Value::Number(2.5),
+            Value::String("world".to_string()),
+            Value::Boolean(false),
+        ]);
+        let result = eval_binary_op(&BinaryOp::Add, mixed1.clone(), mixed2.clone()).unwrap();
+
+        let expected = Value::List(vec![
+            Value::Number(1.0),
+            Value::String("hello".to_string()),
+            Value::Boolean(true),
+            Value::Number(2.5),
+            Value::String("world".to_string()),
+            Value::Boolean(false),
+        ]);
+        assert_eq!(result, expected);
+
+        // Test pass-by-value semantics (original lists unchanged)
+        assert_eq!(
+            list1,
+            Value::List(vec![Value::Number(1.0), Value::Number(2.0)])
+        );
+        assert_eq!(
+            list2,
+            Value::List(vec![Value::Number(3.0), Value::Number(4.0)])
+        );
+        assert_eq!(
+            mixed1,
+            Value::List(vec![
+                Value::Number(1.0),
+                Value::String("hello".to_string()),
+                Value::Boolean(true)
+            ])
+        );
+        assert_eq!(
+            mixed2,
+            Value::List(vec![
+                Value::Number(2.5),
+                Value::String("world".to_string()),
+                Value::Boolean(false)
+            ])
+        );
+    }
+
+    #[test]
+    fn test_list_concatenation_errors() {
+        // Test list + number (should fail)
+        let list = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+        let number = Value::Number(3.0);
+        let result = eval_binary_op(&BinaryOp::Add, list, number);
+        assert!(result.is_err());
+        if let Err(RuntimeError::TypeError { message }) = result {
+            assert!(message.contains("Cannot add list and number"));
+        }
+
+        // Test list + string (should fail)
+        let list = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+        let string = Value::String("hello".to_string());
+        let result = eval_binary_op(&BinaryOp::Add, list, string);
+        assert!(result.is_err());
+        if let Err(RuntimeError::TypeError { message }) = result {
+            assert!(message.contains("Cannot add list and string"));
+        }
+
+        // Test list + map (should fail)
+        let list = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+        let map = Value::Map(indexmap::IndexMap::new());
+        let result = eval_binary_op(&BinaryOp::Add, list, map);
+        assert!(result.is_err());
+        if let Err(RuntimeError::TypeError { message }) = result {
+            assert!(message.contains("Cannot add list and map"));
+        }
     }
 }

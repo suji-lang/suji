@@ -1,0 +1,11 @@
+import std:println
+
+# Test basic map iteration with key-value pairs
+kv = { one: 1, two: 2, three: 3 }
+result = ""
+
+loop through kv with k, v {
+    result = result + k + "=" + v::to_string() + " "
+}
+
+println(result)  # one=1 two=2 three=3 

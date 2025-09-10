@@ -1,0 +1,6 @@
+import std:println
+
+# Empty range when start == end (unchanged behavior)
+result = 3..3
+
+println(result)  # []

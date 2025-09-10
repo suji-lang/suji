@@ -1,0 +1,15 @@
+import std:println
+
+# Test very large map iteration (performance test)
+large_map = {}
+i = 0
+loop through 1..1000 with n {
+    large_map[n] = n * 2
+}
+
+count = 0
+loop through large_map with k, v {
+    count = count + 1
+}
+
+println(count)  # 999

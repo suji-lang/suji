@@ -1,0 +1,10 @@
+import std:println
+
+# Test deeply nested map access followed by indexing
+data = {
+    items: [1, 99, 3],
+    config: { values: [10, 20] }
+}
+data:config:values[0] = 100
+
+println(data:config:values)   # [100, 20]

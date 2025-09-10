@@ -1,0 +1,13 @@
+import std:println
+
+# Test map contains method with boolean keys
+flags = { true: "enabled", false: "disabled" }
+
+# Check for existing boolean keys
+result1 = flags::contains(true)
+result2 = flags::contains(false)
+
+# Combine results
+all_results = result1 && result2
+
+println(all_results)  # true

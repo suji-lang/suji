@@ -1,0 +1,8 @@
+import std:println
+
+# Test mixed types in lists
+mixed1 = [1, "hello", true]
+mixed2 = [3.14, "world", false]
+result = mixed1 + mixed2
+
+println(result)  # [1, hello, true, 3.14, world, false]

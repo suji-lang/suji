@@ -86,29 +86,79 @@ pub fn eval_index_assignment(
             key: nested_key,
             ..
         } => {
-            // Mixed nested access: target:key[index] = value
-            let nested_target_value = eval_expr(nested_target, env.clone())?;
+            // Handle different types of nested targets
+            match &**nested_target {
+                Expr::Literal(Literal::Identifier(name, _)) => {
+                    // Mixed nested access: target:key[index] = value
+                    let nested_target_value = eval_expr(nested_target, env.clone())?;
 
-            // Get the nested item
-            let nested_item = get_map_access_value(&nested_target_value, nested_key)?;
+                    // Get the nested item
+                    let nested_item = get_map_access_value(&nested_target_value, nested_key)?;
 
-            // Update the nested item
-            let updated_nested_item = update_index_value(&nested_item, &index_value, &value)?;
+                    // Update the nested item
+                    let updated_nested_item =
+                        update_index_value(&nested_item, &index_value, &value)?;
 
-            // Update the parent structure
-            let updated_parent =
-                update_map_access_value(&nested_target_value, nested_key, &updated_nested_item)?;
+                    // Update the parent structure
+                    let updated_parent = update_map_access_value(
+                        &nested_target_value,
+                        nested_key,
+                        &updated_nested_item,
+                    )?;
 
-            // Update the variable
-            if let Expr::Literal(Literal::Identifier(name, _)) = &**nested_target {
-                env.set_existing(name, updated_parent)?;
-            } else {
-                return Err(RuntimeError::InvalidOperation {
+                    // Update the variable
+                    env.set_existing(name, updated_parent)?;
+                    Ok(value)
+                }
+                Expr::MapAccessByName {
+                    target: grandparent_target,
+                    key: grandparent_key,
+                    ..
+                } => {
+                    // Deeply nested access: target:key1:key2[index] = value
+                    let grandparent_value = eval_expr(grandparent_target, env.clone())?;
+
+                    // Get the intermediate map
+                    let intermediate_map =
+                        get_map_access_value(&grandparent_value, grandparent_key)?;
+
+                    // Get the final nested item
+                    let nested_item = get_map_access_value(&intermediate_map, nested_key)?;
+
+                    // Update the nested item
+                    let updated_nested_item =
+                        update_index_value(&nested_item, &index_value, &value)?;
+
+                    // Update the intermediate map
+                    let updated_intermediate_map = update_map_access_value(
+                        &intermediate_map,
+                        nested_key,
+                        &updated_nested_item,
+                    )?;
+
+                    // Update the grandparent structure
+                    let updated_grandparent = update_map_access_value(
+                        &grandparent_value,
+                        grandparent_key,
+                        &updated_intermediate_map,
+                    )?;
+
+                    // Update the variable
+                    if let Expr::Literal(Literal::Identifier(name, _)) = &**grandparent_target {
+                        env.set_existing(name, updated_grandparent)?;
+                    } else {
+                        return Err(RuntimeError::InvalidOperation {
+                            message: "Complex nested assignment targets not yet supported"
+                                .to_string(),
+                        });
+                    }
+
+                    Ok(value)
+                }
+                _ => Err(RuntimeError::InvalidOperation {
                     message: "Complex nested assignment targets not yet supported".to_string(),
-                });
+                }),
             }
-
-            Ok(value)
         }
         _ => Err(RuntimeError::InvalidOperation {
             message: "Complex assignment targets not yet supported".to_string(),
@@ -168,29 +218,77 @@ pub fn eval_map_key_assignment(
             key: nested_key,
             ..
         } => {
-            // Nested map access: target:key1:key2 = value
-            let nested_target_value = eval_expr(nested_target, env.clone())?;
+            // Handle different types of nested targets
+            match &**nested_target {
+                Expr::Literal(Literal::Identifier(name, _)) => {
+                    // Nested map access: target:key1:key2 = value
+                    let nested_target_value = eval_expr(nested_target, env.clone())?;
 
-            // Get the nested item
-            let nested_item = get_map_access_value(&nested_target_value, nested_key)?;
+                    // Get the nested item
+                    let nested_item = get_map_access_value(&nested_target_value, nested_key)?;
 
-            // Update the nested item
-            let updated_nested_item = update_map_access_value(&nested_item, key, &value)?;
+                    // Update the nested item
+                    let updated_nested_item = update_map_access_value(&nested_item, key, &value)?;
 
-            // Update the parent structure
-            let updated_parent =
-                update_map_access_value(&nested_target_value, nested_key, &updated_nested_item)?;
+                    // Update the parent structure
+                    let updated_parent = update_map_access_value(
+                        &nested_target_value,
+                        nested_key,
+                        &updated_nested_item,
+                    )?;
 
-            // Update the variable
-            if let Expr::Literal(Literal::Identifier(name, _)) = &**nested_target {
-                env.set_existing(name, updated_parent)?;
-            } else {
-                return Err(RuntimeError::InvalidOperation {
+                    // Update the variable
+                    env.set_existing(name, updated_parent)?;
+                    Ok(value)
+                }
+                Expr::MapAccessByName {
+                    target: grandparent_target,
+                    key: grandparent_key,
+                    ..
+                } => {
+                    // Deeply nested access: target:key1:key2:key3 = value
+                    let grandparent_value = eval_expr(grandparent_target, env.clone())?;
+
+                    // Get the intermediate map
+                    let intermediate_map =
+                        get_map_access_value(&grandparent_value, grandparent_key)?;
+
+                    // Get the final nested item
+                    let nested_item = get_map_access_value(&intermediate_map, nested_key)?;
+
+                    // Update the nested item
+                    let updated_nested_item = update_map_access_value(&nested_item, key, &value)?;
+
+                    // Update the intermediate map
+                    let updated_intermediate_map = update_map_access_value(
+                        &intermediate_map,
+                        nested_key,
+                        &updated_nested_item,
+                    )?;
+
+                    // Update the grandparent structure
+                    let updated_grandparent = update_map_access_value(
+                        &grandparent_value,
+                        grandparent_key,
+                        &updated_intermediate_map,
+                    )?;
+
+                    // Update the variable
+                    if let Expr::Literal(Literal::Identifier(name, _)) = &**grandparent_target {
+                        env.set_existing(name, updated_grandparent)?;
+                    } else {
+                        return Err(RuntimeError::InvalidOperation {
+                            message: "Complex nested assignment targets not yet supported"
+                                .to_string(),
+                        });
+                    }
+
+                    Ok(value)
+                }
+                _ => Err(RuntimeError::InvalidOperation {
                     message: "Complex nested assignment targets not yet supported".to_string(),
-                });
+                }),
             }
-
-            Ok(value)
         }
         _ => Err(RuntimeError::InvalidOperation {
             message: "Complex assignment targets not yet supported".to_string(),

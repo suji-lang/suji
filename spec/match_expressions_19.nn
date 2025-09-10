@@ -1,0 +1,13 @@
+import std:println
+
+# Test implicit returns in non-braced match arms
+g = || {
+    match 1 {
+        1: 1    # implicitly returned
+        2: 2    # implicitly returned
+        _: 0    # implicitly returned
+    }
+}
+
+result = g()
+println(result)  # 1

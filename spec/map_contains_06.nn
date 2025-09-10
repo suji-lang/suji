@@ -1,0 +1,14 @@
+import std:println
+
+# Test map contains method with empty map
+empty_map = {}
+
+# Check contains on empty map
+result1 = empty_map::contains("any_key")
+result2 = empty_map::contains(42)
+result3 = empty_map::contains(true)
+
+# All should be false
+all_false = !result1 && !result2 && !result3
+
+println(all_false)  # true

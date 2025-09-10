@@ -1,0 +1,7 @@
+import std:println
+
+# Test basic string indexing with positive indices
+text = "hello"
+first = text[0]
+
+println(first)  # h

@@ -1,0 +1,10 @@
+import std:println
+
+# Test multiple wildcards in tuple pattern
+point = (10, 20, 30)
+location = match point {
+    (_, _, 0): "on xy-plane"
+    _: "somewhere in 3D space"
+}
+
+println(location)  # somewhere in 3D space

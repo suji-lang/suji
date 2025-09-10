@@ -1,0 +1,7 @@
+import std:println
+
+# Test string indexing with Unicode characters
+text = "cafe"
+char = text[3]
+
+println(char)  # e
