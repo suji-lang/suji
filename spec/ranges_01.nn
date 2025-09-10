@@ -1,0 +1,6 @@
+import std:println
+
+# Basic range
+result = 0..3
+
+println(result)  # [0, 1, 2]

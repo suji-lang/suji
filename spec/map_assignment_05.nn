@@ -1,0 +1,10 @@
+import std:println
+
+# Map assignment functionality
+m = {}
+m[1] = "number"
+m["string"] = 42
+m[true] = "boolean"
+result = m[true]
+
+println(result)  # boolean

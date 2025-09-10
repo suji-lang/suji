@@ -1,0 +1,6 @@
+import std:println
+
+# Less than
+result = 2 < 1
+
+println(result)  # false

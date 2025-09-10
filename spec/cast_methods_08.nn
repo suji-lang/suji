@@ -1,0 +1,8 @@
+import std:println
+
+# Test round-trip conversion with decimal
+decimal_str = "3.14"
+decimal_num = decimal_str::to_number()
+decimal_back = decimal_num::to_string()
+
+println(decimal_back)  # 3.14

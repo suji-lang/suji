@@ -1,0 +1,6 @@
+import std:println
+
+# Basic regex not-match
+result = "hello" !~ /world/
+
+println(result)  # true

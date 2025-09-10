@@ -1,0 +1,6 @@
+import std:println
+
+# Basic positive indexing
+result = [10, 20, 30, 40][0]
+
+println(result)  # 10

@@ -1,0 +1,7 @@
+import std:println
+
+# Bracket syntax (no conversion)
+m = { name: "Ada", age: 37 }
+result = m["age"]
+
+println(result)  # 37

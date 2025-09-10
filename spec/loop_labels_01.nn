@@ -1,0 +1,12 @@
+import std:println
+
+# Test basic loop labels
+outer = 0
+loop as outer_loop {
+    outer++
+    match outer {
+        2: { break outer_loop }
+    }
+}
+
+println(outer)  # 2

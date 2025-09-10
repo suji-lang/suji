@@ -1,0 +1,7 @@
+import std:println
+
+# Test basic escape sequences
+text = "Hello\nWorld\tTabbed"
+
+println(text)  # Hello
+# World	Tabbed

@@ -1,0 +1,10 @@
+import std:println
+
+# Test match expression with boolean patterns
+flag = true
+result = match flag {
+    true: "yes"
+    false: "no"
+}
+
+println(result)  # yes

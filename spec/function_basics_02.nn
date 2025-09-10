@@ -1,0 +1,7 @@
+import std:println
+
+# Function with single parameter
+square = |x| { return x * x }
+result = square(5)
+
+println(result)  # 25

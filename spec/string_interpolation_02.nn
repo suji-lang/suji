@@ -1,0 +1,8 @@
+import std:println
+
+# Expression interpolation
+a = 3
+b = 4
+result = "${a} + ${b} = ${a + b}"
+
+println(result)  # 3 + 4 = 7

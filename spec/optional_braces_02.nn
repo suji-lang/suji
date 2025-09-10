@@ -1,0 +1,8 @@
+import std:println
+
+# Test function with single expression (no braces needed)
+multiply = |x, y| x * y
+
+result1 = multiply(3, 4)     # 12
+
+println(result1)  # 12

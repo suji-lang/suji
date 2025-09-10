@@ -1,0 +1,6 @@
+import std:println
+
+# Modulo operation
+result = 17 % 5
+
+println(result)  # 2

@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::index_of() with space
+text = "hello world"
+space_index = text::index_of(" ")
+
+println(space_index)   # 5

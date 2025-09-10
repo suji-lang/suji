@@ -1,0 +1,6 @@
+import std:println
+
+# String inequality
+result = "abc" != "def"
+
+println(result)  # true

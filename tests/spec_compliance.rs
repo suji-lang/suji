@@ -25,7 +25,7 @@ fn eval_program(input: &str) -> Result<Value, Box<dyn std::error::Error>> {
     let env = create_test_env();
     let mut loop_stack = Vec::new();
 
-    let mut result = Value::Null;
+    let mut result = Value::Nil;
     for stmt in statements {
         if let Some(value) = eval_stmt(&stmt, env.clone(), &mut loop_stack)? {
             result = value;

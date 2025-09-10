@@ -1,0 +1,13 @@
+import std:println
+
+# Match expression in return statement
+f = || {
+  x = 3
+  return match x {
+    1: "first"
+    2: "second"
+    3: "third"
+  }
+}
+
+println(f())  # third

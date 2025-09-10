@@ -156,7 +156,7 @@ impl Repl {
                 ) {
                     Ok(Some(value)) => {
                         // Print the result if it's not null
-                        if !matches!(value, Value::Null) {
+                        if !matches!(value, Value::Nil) {
                             println!("{}", value);
                         }
                     }
@@ -177,7 +177,7 @@ impl Repl {
     /// Print a parse error with enhanced formatting
     fn print_parse_error(&self, error: &ParseError, input: &str) {
         let context = DiagnosticContext::new(input.to_string());
-        if let Err(_) = print_diagnostic(DiagnosticKind::Parse((*error).clone()), &context) {
+        if print_diagnostic(DiagnosticKind::Parse((*error).clone()), &context).is_err() {
             // Fallback to simple error if diagnostics fail
             println!("{}: {}", "Parse Error".fg(Color::Red), error);
         }
@@ -186,7 +186,7 @@ impl Repl {
     /// Print a runtime error with enhanced formatting  
     fn print_runtime_error(&self, error: &RuntimeError, input: &str) {
         let context = DiagnosticContext::new(input.to_string());
-        if let Err(_) = print_diagnostic(DiagnosticKind::Runtime((*error).clone()), &context) {
+        if print_diagnostic(DiagnosticKind::Runtime((*error).clone()), &context).is_err() {
             // Fallback to simple error if diagnostics fail
             println!("{}: {}", "Runtime Error".fg(Color::Red), error);
         }

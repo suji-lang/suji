@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::index_of() with missing number
+numbers = [10, 20, 30, 40, 50]
+index_35 = numbers::index_of(35)
+
+println(index_35)  # -1

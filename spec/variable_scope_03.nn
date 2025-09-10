@@ -1,0 +1,9 @@
+import std:println
+
+# Test no shadowing in loop scope
+counter = 0
+loop through 0..3 with i {
+    counter = i + 10  # modifies outer counter
+}
+
+println(counter)  # 12

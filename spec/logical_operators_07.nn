@@ -1,0 +1,6 @@
+import std:println
+
+# Double negation
+result = !!true
+
+println(result)  # true

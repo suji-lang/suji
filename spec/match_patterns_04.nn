@@ -1,0 +1,11 @@
+import std:println
+
+# Wildcard pattern
+x = 99
+result = "default"
+match x {
+  1: { result = "one" }
+  _: { result = "wildcard" }
+}
+
+println(result)  # wildcard

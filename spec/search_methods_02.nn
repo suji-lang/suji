@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::index_of() method
+text = "hello world"
+world_index = text::index_of("world")
+
+println(world_index)   # 6

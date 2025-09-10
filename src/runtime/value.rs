@@ -24,8 +24,8 @@ pub enum Value {
     Regex(Regex),
     /// Function with closure
     Function(FunctionValue),
-    /// Null value (for functions without explicit return)
-    Null,
+    /// Nil value (absence of value)
+    Nil,
 }
 
 /// Function value with parameters, body, and captured environment
@@ -78,7 +78,7 @@ pub struct OrderedFloat(pub f64);
 /// Control flow signals for break/continue/return
 #[derive(Debug, Clone, PartialEq)]
 pub enum ControlFlow {
-    Return(Value),
+    Return(Box<Value>),
     Break(Option<String>),    // Optional label
     Continue(Option<String>), // Optional label
 }
@@ -116,6 +116,9 @@ pub enum RuntimeError {
     #[error("Method error: {message}")]
     MethodError { message: String },
 
+    #[error("Invalid number conversion: {message}")]
+    InvalidNumberConversion { message: String },
+
     #[error("Control flow: {flow:?}")]
     ControlFlow { flow: ControlFlow },
 }
@@ -132,50 +135,13 @@ impl Value {
             Value::Tuple(_) => "tuple",
             Value::Regex(_) => "regex",
             Value::Function(_) => "function",
-            Value::Null => "null",
+            Value::Nil => "nil",
         }
     }
 
     /// Check if this value is truthy (only true for Boolean(true))
     pub fn is_truthy(&self) -> bool {
         matches!(self, Value::Boolean(true))
-    }
-
-    /// Convert value to string representation
-    pub fn to_string(&self) -> String {
-        match self {
-            Value::Number(n) => {
-                if n.fract() == 0.0 {
-                    format!("{}", *n as i64)
-                } else {
-                    format!("{}", n)
-                }
-            }
-            Value::Boolean(b) => b.to_string(),
-            Value::String(s) => s.clone(),
-            Value::List(items) => {
-                let item_strings: Vec<String> = items.iter().map(|v| v.to_string()).collect();
-                format!("[{}]", item_strings.join(", "))
-            }
-            Value::Map(map) => {
-                let entries: Vec<String> = map
-                    .iter()
-                    .map(|(k, v)| format!("{}: {}", k.to_string(), v.to_string()))
-                    .collect();
-                format!("{{{}}}", entries.join(", "))
-            }
-            Value::Tuple(items) => {
-                let item_strings: Vec<String> = items.iter().map(|v| v.to_string()).collect();
-                if items.len() == 1 {
-                    format!("({},)", item_strings[0])
-                } else {
-                    format!("({})", item_strings.join(", "))
-                }
-            }
-            Value::Regex(regex) => format!("/{}/", regex.as_str()),
-            Value::Function(_) => "<function>".to_string(),
-            Value::Null => "null".to_string(),
-        }
     }
 
     /// Try to convert this value to a MapKey
@@ -200,7 +166,37 @@ impl Value {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        match self {
+            Value::Number(n) => {
+                if n.fract() == 0.0 {
+                    write!(f, "{}", *n as i64)
+                } else {
+                    write!(f, "{}", n)
+                }
+            }
+            Value::Boolean(b) => write!(f, "{}", b),
+            Value::String(s) => write!(f, "{}", s),
+            Value::List(items) => {
+                let item_strings: Vec<String> = items.iter().map(|v| v.to_string()).collect();
+                write!(f, "[{}]", item_strings.join(", "))
+            }
+            Value::Map(map) => {
+                let entries: Vec<String> =
+                    map.iter().map(|(k, v)| format!("{}: {}", k, v)).collect();
+                write!(f, "{{{}}}", entries.join(", "))
+            }
+            Value::Tuple(items) => {
+                let item_strings: Vec<String> = items.iter().map(|v| v.to_string()).collect();
+                if items.len() == 1 {
+                    write!(f, "({},)", item_strings[0])
+                } else {
+                    write!(f, "({})", item_strings.join(", "))
+                }
+            }
+            Value::Regex(regex) => write!(f, "/{}/", regex.as_str()),
+            Value::Function(_) => write!(f, "<function>"),
+            Value::Nil => write!(f, "nil"),
+        }
     }
 }
 
@@ -215,7 +211,7 @@ impl PartialEq for Value {
             (Value::Tuple(a), Value::Tuple(b)) => a == b,
             (Value::Regex(a), Value::Regex(b)) => a.as_str() == b.as_str(),
             (Value::Function(a), Value::Function(b)) => a == b,
-            (Value::Null, Value::Null) => true,
+            (Value::Nil, Value::Nil) => true,
             _ => false,
         }
     }
@@ -248,16 +244,11 @@ impl MapKey {
             MapKey::Tuple(items) => Value::Tuple(items.iter().map(|k| k.to_value()).collect()),
         }
     }
-
-    /// Convert to string representation
-    pub fn to_string(&self) -> String {
-        self.to_value().to_string()
-    }
 }
 
 impl fmt::Display for MapKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", self.to_value())
     }
 }
 

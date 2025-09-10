@@ -1,0 +1,7 @@
+import std:println
+
+# Test string slicing with last 3 characters
+text = "programming"
+last_three = text[-3:]  # "ing"
+
+println(last_three) # ing

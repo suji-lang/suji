@@ -1,0 +1,6 @@
+import std:println
+
+# Unary negation
+result = -5
+
+println(result)  # -5

@@ -1,0 +1,10 @@
+import std:println
+
+# Test nested map assignments with bracket syntax - theme
+config = { 
+    user: { name: "Alice", age: 31 },
+    settings: { theme: "dark" }
+}
+config["settings"]["theme"] = "light"
+
+println(config["settings"]["theme"])  # light

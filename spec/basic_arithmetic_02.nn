@@ -1,0 +1,6 @@
+import std:println
+
+# Subtraction operation
+result = 10 - 4
+
+println(result)  # 6

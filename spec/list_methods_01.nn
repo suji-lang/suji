@@ -1,0 +1,6 @@
+import std:println
+
+# List length method
+result = [1, 2, 3]::length()
+
+println(result)  # 3

@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::product() method
+numbers = [1, 2, 3, 4, 5]
+product_total = numbers::product()
+
+println(product_total) # 120

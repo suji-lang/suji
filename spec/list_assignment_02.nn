@@ -1,0 +1,7 @@
+import std:println
+
+# Negative index assignment
+xs = [10, 20, 30]
+xs[-1] = 0
+
+println(xs[2])  # 0

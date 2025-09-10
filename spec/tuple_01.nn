@@ -1,0 +1,7 @@
+import std:println
+
+# Test basic tuple literals
+point = (3, 4)
+mixed = ("x", true, 3.14)
+
+println(point)  # (3, 4)

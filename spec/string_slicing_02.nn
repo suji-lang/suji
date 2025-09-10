@@ -1,0 +1,7 @@
+import std:println
+
+# Test string slicing with longer text
+text = "programming"
+middle = text[3:7]      # "gram"
+
+println(middle)     # gram

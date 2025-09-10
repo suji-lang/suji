@@ -1,6 +1,6 @@
 use super::{ParseError, ParseResult, Parser};
 use crate::ast::{Expr, Literal};
-use crate::token::Token;
+use crate::token::{Span, Token};
 
 impl Parser {
     /// Parse a primary expression
@@ -15,15 +15,18 @@ impl Parser {
             return Ok(Expr::Literal(Literal::Boolean(false, span)));
         }
 
+        if self.match_token(Token::Nil) {
+            let span = self.previous().span.clone();
+            return Ok(Expr::Literal(Literal::Nil(span)));
+        }
+
         if let Token::Number(n) = self.peek().token {
-            let n = n;
             self.advance();
             let span = self.previous().span.clone();
             return Ok(Expr::Literal(Literal::Number(n, span)));
         }
 
         if let Token::Identifier(name) = self.peek().token {
-            let name = name;
             self.advance();
             let span = self.previous().span.clone();
             return Ok(Expr::Literal(Literal::Identifier(name, span)));
@@ -62,6 +65,10 @@ impl Parser {
             return self.parse_shell_command_template();
         }
 
+        if self.match_token(Token::Match) {
+            return self.parse_match_expression();
+        }
+
         let current = self.peek();
         Err(ParseError::UnexpectedToken {
             token: current.token,
@@ -69,28 +76,43 @@ impl Parser {
         })
     }
 
-    /// Parse empty function literal || { body }
+    /// Parse function body - either { statements } or single expression
+    pub(super) fn parse_function_body(
+        &mut self,
+        start_span: Span,
+    ) -> ParseResult<crate::ast::Stmt> {
+        if self.match_token(Token::LeftBrace) {
+            // Traditional block syntax: { statements }
+            let statements = self.parse_block()?;
+            Ok(crate::ast::Stmt::Block {
+                statements,
+                span: start_span,
+            })
+        } else {
+            // Single expression syntax: expression
+            let expr = self.expression()?;
+            Ok(crate::ast::Stmt::Expr(expr))
+        }
+    }
+
+    /// Parse empty function literal || { body } or || expression
     pub(super) fn parse_empty_function_literal(&mut self) -> ParseResult<Expr> {
         let start_span = self.previous().span.clone();
 
         // No parameters for empty function literal
         let params = Vec::new();
 
-        // Parse function body
-        self.consume(Token::LeftBrace, "Expected '{' after function parameters")?;
-        let body = self.parse_block()?;
+        // Parse function body (either block or single expression)
+        let body = self.parse_function_body(start_span.clone())?;
 
         Ok(Expr::FunctionLiteral {
             params,
-            body: Box::new(crate::ast::Stmt::Block {
-                statements: body,
-                span: start_span.clone(),
-            }),
+            body: Box::new(body),
             span: start_span,
         })
     }
 
-    /// Parse function literal |param1, param2| { body }
+    /// Parse function literal |param1, param2| { body } or |param1, param2| expression
     pub(super) fn parse_function_literal(&mut self) -> ParseResult<Expr> {
         let start_span = self.previous().span.clone();
         let mut params = Vec::new();
@@ -132,17 +154,49 @@ impl Parser {
 
         self.consume(Token::Pipe, "Expected '|' after function parameters")?;
 
-        // Parse function body
-        self.consume(Token::LeftBrace, "Expected '{' after function parameters")?;
-        let body = self.parse_block()?;
+        // Parse function body (either block or single expression)
+        let body = self.parse_function_body(start_span.clone())?;
 
         Ok(Expr::FunctionLiteral {
             params,
-            body: Box::new(crate::ast::Stmt::Block {
-                statements: body,
-                span: start_span.clone(),
-            }),
+            body: Box::new(body),
             span: start_span,
+        })
+    }
+
+    /// Parse match expression: match expr { pattern: expr, ... }
+    pub(super) fn parse_match_expression(&mut self) -> ParseResult<Expr> {
+        let span = self.previous().span.clone();
+        let scrutinee = self.expression()?;
+
+        self.consume(Token::LeftBrace, "Expected '{' after match expression")?;
+
+        let mut arms = Vec::new();
+        while !self.check(Token::RightBrace) && !self.is_at_end() {
+            // Parse pattern
+            let pattern = self.parse_pattern()?;
+            self.consume(Token::Colon, "Expected ':' after match pattern")?;
+
+            // Parse body (either block or single expression)
+            let body = self.parse_match_arm_body(span.clone())?;
+
+            arms.push(crate::ast::MatchArm {
+                pattern,
+                body,
+                span: span.clone(),
+            });
+
+            // Optional comma
+            self.match_token(Token::Comma);
+            self.skip_newlines();
+        }
+
+        self.consume(Token::RightBrace, "Expected '}' after match arms")?;
+
+        Ok(Expr::Match {
+            scrutinee: Box::new(scrutinee),
+            arms,
+            span,
         })
     }
 }

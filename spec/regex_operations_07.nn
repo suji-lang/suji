@@ -1,0 +1,6 @@
+import std:println
+
+# Dot metacharacter
+result = "cat" ~ /c.t/
+
+println(result)  # true

@@ -238,6 +238,62 @@ impl Parser {
             });
         }
 
+        // Compound assignment operators
+        if self.match_token(Token::PlusAssign) {
+            let span = self.previous().span.clone();
+            let value = self.assignment()?; // Right-associative
+            return Ok(Expr::CompoundAssign {
+                target: Box::new(expr),
+                op: crate::ast::CompoundOp::PlusAssign,
+                value: Box::new(value),
+                span,
+            });
+        }
+
+        if self.match_token(Token::MinusAssign) {
+            let span = self.previous().span.clone();
+            let value = self.assignment()?; // Right-associative
+            return Ok(Expr::CompoundAssign {
+                target: Box::new(expr),
+                op: crate::ast::CompoundOp::MinusAssign,
+                value: Box::new(value),
+                span,
+            });
+        }
+
+        if self.match_token(Token::MultiplyAssign) {
+            let span = self.previous().span.clone();
+            let value = self.assignment()?; // Right-associative
+            return Ok(Expr::CompoundAssign {
+                target: Box::new(expr),
+                op: crate::ast::CompoundOp::MultiplyAssign,
+                value: Box::new(value),
+                span,
+            });
+        }
+
+        if self.match_token(Token::DivideAssign) {
+            let span = self.previous().span.clone();
+            let value = self.assignment()?; // Right-associative
+            return Ok(Expr::CompoundAssign {
+                target: Box::new(expr),
+                op: crate::ast::CompoundOp::DivideAssign,
+                value: Box::new(value),
+                span,
+            });
+        }
+
+        if self.match_token(Token::ModuloAssign) {
+            let span = self.previous().span.clone();
+            let value = self.assignment()?; // Right-associative
+            return Ok(Expr::CompoundAssign {
+                target: Box::new(expr),
+                op: crate::ast::CompoundOp::ModuloAssign,
+                value: Box::new(value),
+                span,
+            });
+        }
+
         Ok(expr)
     }
 

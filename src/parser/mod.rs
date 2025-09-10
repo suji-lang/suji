@@ -119,6 +119,44 @@ impl Parser {
             });
         }
 
+        if self.match_token(Token::StringStart) {
+            // String literal pattern
+            let span = self.previous().span.clone();
+            let mut parts = Vec::new();
+
+            while !self.check(Token::StringEnd) && !self.is_at_end() {
+                if let Token::StringText(text) = &self.peek().token {
+                    let text = text.clone();
+                    self.advance();
+                    parts.push(crate::ast::StringPart::Text(text));
+                } else if self.match_token(Token::InterpStart) {
+                    let expr = self.expression()?;
+                    parts.push(crate::ast::StringPart::Expr(expr));
+                    self.consume(Token::InterpEnd, "Expected '}' after string interpolation")?;
+                } else {
+                    return Err(ParseError::Generic {
+                        message: "Expected string content or interpolation".to_string(),
+                    });
+                }
+            }
+
+            self.consume(Token::StringEnd, "Expected end of string literal")?;
+
+            // For pattern matching, we only support simple string literals (no interpolation)
+            if parts.len() == 1
+                && let crate::ast::StringPart::Text(text) = &parts[0]
+            {
+                return Ok(crate::ast::Pattern::Literal {
+                    value: crate::ast::ValueLike::String(text.clone()),
+                    span,
+                });
+            }
+
+            return Err(ParseError::Generic {
+                message: "String patterns cannot contain interpolation".to_string(),
+            });
+        }
+
         if let Token::Identifier(name) = &self.peek().token {
             let name = name.clone();
             let span = self.advance().span.clone();
@@ -142,6 +180,9 @@ impl Parser {
 
         while !self.is_at_end() {
             statements.push(self.statement()?);
+
+            // Handle statement separators (semicolons and newlines)
+            self.handle_statement_separator(false)?;
         }
 
         Ok(statements)

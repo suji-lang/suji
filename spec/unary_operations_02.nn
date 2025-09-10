@@ -1,0 +1,6 @@
+import std:println
+
+# Double negation
+result = -(-10)
+
+println(result)  # 10

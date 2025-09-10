@@ -1,0 +1,11 @@
+import std:println
+
+# Boolean pattern matching
+flag = true
+result = "default"
+match flag {
+  false: { result = "false" }
+  true: { result = "true" }
+}
+
+println(result)  # true

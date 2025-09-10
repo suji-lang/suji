@@ -1,0 +1,8 @@
+import std:println
+
+# Factory function creating closures
+makeadder = |base| { return |x| { return base + x } }
+add10 = makeadder(10)
+result = add10(7)
+
+println(result)  # 17

@@ -1,0 +1,9 @@
+import std:println
+
+# Mixed key types
+m = {}
+m[1] = "number"
+m["string"] = 42
+m[true] = "boolean"
+
+println(m[1])  # number

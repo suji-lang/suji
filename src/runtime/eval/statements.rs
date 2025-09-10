@@ -48,7 +48,7 @@ pub fn eval_infinite_loop(
                     Some(target_label) => {
                         if label.map(|l| l == target_label).unwrap_or(false) {
                             // This break targets our loop
-                            break Ok(Some(Value::Null));
+                            break Ok(Some(Value::Nil));
                         } else {
                             // Break targets outer loop, propagate
                             break Err(RuntimeError::ControlFlow {
@@ -58,7 +58,7 @@ pub fn eval_infinite_loop(
                     }
                     None => {
                         // Unlabeled break targets innermost loop (us)
-                        break Ok(Some(Value::Null));
+                        break Ok(Some(Value::Nil));
                     }
                 }
             }
@@ -118,7 +118,7 @@ pub fn eval_loop_through(
             match bindings {
                 LoopBindings::None => {
                     // loop through list { ... } - no bindings
-                    let mut iter_result = Ok(Some(Value::Null));
+                    let mut iter_result = Ok(Some(Value::Nil));
                     for _ in items {
                         match eval_stmt(body, env.clone(), loop_stack) {
                             Ok(_) => continue,
@@ -126,7 +126,7 @@ pub fn eval_loop_through(
                                 flow: ControlFlow::Break(break_label),
                             }) => {
                                 if should_break_loop(label, &break_label) {
-                                    iter_result = Ok(Some(Value::Null));
+                                    iter_result = Ok(Some(Value::Nil));
                                     break;
                                 } else {
                                     iter_result = Err(RuntimeError::ControlFlow {
@@ -157,7 +157,7 @@ pub fn eval_loop_through(
                 }
                 LoopBindings::One(var_name) => {
                     // loop through list with x { ... }
-                    let mut iter_result = Ok(Some(Value::Null));
+                    let mut iter_result = Ok(Some(Value::Nil));
                     for item in items {
                         let loop_env = Rc::new(Env::new_child(env.clone()));
                         loop_env.define_or_set(var_name, item);
@@ -168,7 +168,7 @@ pub fn eval_loop_through(
                                 flow: ControlFlow::Break(break_label),
                             }) => {
                                 if should_break_loop(label, &break_label) {
-                                    iter_result = Ok(Some(Value::Null));
+                                    iter_result = Ok(Some(Value::Nil));
                                     break;
                                 } else {
                                     iter_result = Err(RuntimeError::ControlFlow {
@@ -206,7 +206,7 @@ pub fn eval_loop_through(
             match bindings {
                 LoopBindings::None => {
                     // loop through map { ... } - no bindings
-                    let mut iter_result = Ok(Some(Value::Null));
+                    let mut iter_result = Ok(Some(Value::Nil));
                     for _ in map.iter() {
                         match eval_stmt(body, env.clone(), loop_stack) {
                             Ok(_) => continue,
@@ -214,7 +214,7 @@ pub fn eval_loop_through(
                                 flow: ControlFlow::Break(break_label),
                             }) => {
                                 if should_break_loop(label, &break_label) {
-                                    iter_result = Ok(Some(Value::Null));
+                                    iter_result = Ok(Some(Value::Nil));
                                     break;
                                 } else {
                                     iter_result = Err(RuntimeError::ControlFlow {
@@ -245,7 +245,7 @@ pub fn eval_loop_through(
                 }
                 LoopBindings::One(var_name) => {
                     // loop through map with k { ... } - bind keys only
-                    let mut iter_result = Ok(Some(Value::Null));
+                    let mut iter_result = Ok(Some(Value::Nil));
                     for (key, _) in map.iter() {
                         let loop_env = Rc::new(Env::new_child(env.clone()));
                         loop_env.define_or_set(var_name, key.to_value());
@@ -256,7 +256,7 @@ pub fn eval_loop_through(
                                 flow: ControlFlow::Break(break_label),
                             }) => {
                                 if should_break_loop(label, &break_label) {
-                                    iter_result = Ok(Some(Value::Null));
+                                    iter_result = Ok(Some(Value::Nil));
                                     break;
                                 } else {
                                     iter_result = Err(RuntimeError::ControlFlow {
@@ -287,7 +287,7 @@ pub fn eval_loop_through(
                 }
                 LoopBindings::Two(key_name, value_name) => {
                     // loop through map with k, v { ... }
-                    let mut iter_result = Ok(Some(Value::Null));
+                    let mut iter_result = Ok(Some(Value::Nil));
                     for (key, value) in map.iter() {
                         let loop_env = Rc::new(Env::new_child(env.clone()));
                         loop_env.define_or_set(key_name, key.to_value());
@@ -299,7 +299,7 @@ pub fn eval_loop_through(
                                 flow: ControlFlow::Break(break_label),
                             }) => {
                                 if should_break_loop(label, &break_label) {
-                                    iter_result = Ok(Some(Value::Null));
+                                    iter_result = Ok(Some(Value::Nil));
                                     break;
                                 } else {
                                     iter_result = Err(RuntimeError::ControlFlow {
@@ -356,12 +356,39 @@ pub fn eval_match(
 
     for arm in arms {
         if pattern_matches(&arm.pattern, &scrutinee_value)? {
-            return eval_stmt(&arm.body, env, loop_stack);
+            // Evaluate the arm body and handle implicit returns
+            match eval_stmt(&arm.body, env.clone(), loop_stack) {
+                Ok(result) => {
+                    // Handle implicit returns
+                    match result {
+                        Some(value) => return Ok(Some(value)), // Statement returned a value
+                        None => {
+                            // No explicit return, check if arm body was a single expression
+                            match &arm.body {
+                                Stmt::Expr(expr) => {
+                                    // Single expression arm body - return its value
+                                    return Ok(Some(eval_expr(expr, env)?));
+                                }
+                                Stmt::Block { statements, .. } => {
+                                    // Block arm body - check if last statement was an expression
+                                    if let Some(Stmt::Expr(expr)) = statements.last() {
+                                        return Ok(Some(eval_expr(expr, env)?));
+                                    } else {
+                                        return Ok(Some(Value::Nil)); // Last statement was not an expression or empty block
+                                    }
+                                }
+                                _ => return Ok(Some(Value::Nil)), // Other statement types
+                            }
+                        }
+                    }
+                }
+                Err(e) => return Err(e),
+            }
         }
     }
 
     // No pattern matched - this is valid, just do nothing
-    Ok(Some(Value::Null))
+    Ok(Some(Value::Nil))
 }
 
 #[cfg(test)]
@@ -414,5 +441,77 @@ mod tests {
         let result = eval_loop_through(None, &iterable, &bindings, &body, env, &mut loop_stack);
 
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_match_expressions() {
+        let env = create_test_env();
+
+        // Test match with single expression arms (implicit returns)
+        let scrutinee = Expr::Literal(Literal::Number(3.0, Span::default()));
+        let arms = vec![
+            crate::ast::MatchArm {
+                pattern: crate::ast::Pattern::Literal {
+                    value: crate::ast::ValueLike::Number(3.0),
+                    span: Span::default(),
+                },
+                body: Stmt::Expr(Expr::Binary {
+                    left: Box::new(Expr::Literal(Literal::Number(5.0, Span::default()))),
+                    op: crate::ast::BinaryOp::Add,
+                    right: Box::new(Expr::Literal(Literal::Number(5.0, Span::default()))),
+                    span: Span::default(),
+                }),
+                span: Span::default(),
+            },
+            crate::ast::MatchArm {
+                pattern: crate::ast::Pattern::Literal {
+                    value: crate::ast::ValueLike::Number(4.0),
+                    span: Span::default(),
+                },
+                body: Stmt::Expr(Expr::Binary {
+                    left: Box::new(Expr::Literal(Literal::Number(2.0, Span::default()))),
+                    op: crate::ast::BinaryOp::Multiply,
+                    right: Box::new(Expr::Literal(Literal::Number(3.0, Span::default()))),
+                    span: Span::default(),
+                }),
+                span: Span::default(),
+            },
+            crate::ast::MatchArm {
+                pattern: crate::ast::Pattern::Wildcard {
+                    span: Span::default(),
+                },
+                body: Stmt::Expr(Expr::Literal(Literal::Number(0.0, Span::default()))),
+                span: Span::default(),
+            },
+        ];
+
+        let mut loop_stack = Vec::new();
+        let result = eval_match(&scrutinee, &arms, env.clone(), &mut loop_stack).unwrap();
+        assert_eq!(result, Some(Value::Number(10.0))); // 5 + 5 = 10
+
+        // Test match with block arms (last statement as expression)
+        let scrutinee2 = Expr::Literal(Literal::Number(4.0, Span::default()));
+        let arms2 = vec![crate::ast::MatchArm {
+            pattern: crate::ast::Pattern::Literal {
+                value: crate::ast::ValueLike::Number(4.0),
+                span: Span::default(),
+            },
+            body: Stmt::Block {
+                statements: vec![
+                    Stmt::Expr(Expr::Literal(Literal::Number(10.0, Span::default()))),
+                    Stmt::Expr(Expr::Binary {
+                        left: Box::new(Expr::Literal(Literal::Number(2.0, Span::default()))),
+                        op: crate::ast::BinaryOp::Multiply,
+                        right: Box::new(Expr::Literal(Literal::Number(3.0, Span::default()))),
+                        span: Span::default(),
+                    }),
+                ],
+                span: Span::default(),
+            },
+            span: Span::default(),
+        }];
+
+        let result2 = eval_match(&scrutinee2, &arms2, env, &mut loop_stack).unwrap();
+        assert_eq!(result2, Some(Value::Number(6.0))); // 2 * 3 = 6
     }
 }

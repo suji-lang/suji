@@ -1,0 +1,9 @@
+import std:println
+
+# Test boolean comparisons
+a = true
+b = false
+
+result = a == b
+
+println(result)  # false

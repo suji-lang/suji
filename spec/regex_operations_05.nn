@@ -1,0 +1,6 @@
+import std:println
+
+# Word boundaries and anchors
+result = "hello world" ~ /^hello/
+
+println(result)  # true

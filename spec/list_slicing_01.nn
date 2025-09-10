@@ -1,0 +1,6 @@
+import std:println
+
+# Basic slicing
+result = [10, 20, 30, 40][1:3]
+
+println(result)  # [20, 30]

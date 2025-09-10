@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::index_of() with empty string
+empty_string = ""
+string_result = empty_string::index_of("anything")
+
+println(string_result) # -1

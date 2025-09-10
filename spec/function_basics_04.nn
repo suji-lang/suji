@@ -1,0 +1,7 @@
+import std:println
+
+# Function returning boolean
+ispositive = |x| { return x > 0 }
+result = ispositive(-3)
+
+println(result)  # false

@@ -1,0 +1,6 @@
+import std:println
+
+# Case sensitive matching
+result = "Hello" ~ /hello/
+
+println(result)  # false

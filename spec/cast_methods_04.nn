@@ -1,0 +1,8 @@
+import std:println
+
+# Test round-trip conversions
+original = "987"
+as_number = original::to_number()
+back_to_string = as_number::to_string()
+
+println(back_to_string)  # 987

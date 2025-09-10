@@ -1,0 +1,6 @@
+import std:println
+
+# List methods
+result = ["single"]::join()
+
+println(result)  # single

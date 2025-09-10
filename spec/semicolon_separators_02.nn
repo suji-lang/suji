@@ -1,0 +1,7 @@
+import std:println
+
+# Test mixed usage with newlines and semicolons
+x = 5; y = 10
+z = x + y
+
+println(z)  # 15

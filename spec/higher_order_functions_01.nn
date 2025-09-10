@@ -1,0 +1,8 @@
+import std:println
+
+# Function taking another function as parameter
+apply = |f, x| { return f(x) }
+double = |n| { return n * 2 }
+result = apply(double, 6)
+
+println(result)  # 12

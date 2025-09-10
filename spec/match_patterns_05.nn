@@ -1,0 +1,11 @@
+import std:println
+
+# First match wins
+x = 5
+result = "default"
+match x {
+  5: { result = "first" }
+  5: { result = "second" }
+}
+
+println(result)  # first

@@ -1,0 +1,21 @@
+import std:println
+
+# Test nested labeled loops
+outer = 0
+inner = 0
+loop as outer_loop {
+    outer++
+    loop as inner_loop {
+        inner++
+
+        match outer {
+            2: { break outer_loop }
+        }
+
+        match inner >= 3 {
+            true: { continue outer_loop }
+        }
+    }
+}
+
+println(outer)  # 2

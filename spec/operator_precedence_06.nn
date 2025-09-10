@@ -1,0 +1,6 @@
+import std:println
+
+# Unary vs exponentiation
+result = -2 ^ 2
+
+println(result)  # -4

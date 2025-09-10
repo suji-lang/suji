@@ -1,0 +1,6 @@
+import std:println
+
+# Exponentiation vs multiplication
+result = 2 ^ 3 * 4
+
+println(result)  # 32

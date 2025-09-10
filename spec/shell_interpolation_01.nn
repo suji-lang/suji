@@ -1,0 +1,7 @@
+import std:println
+
+# Test basic shell interpolation
+name = "world"
+out = `echo Hello, ${name}`
+
+println(out)  # Hello, world

@@ -1,0 +1,8 @@
+import std:println
+
+# Function returning another function
+makemultiplier = |factor| { return |x| { return x * factor } }
+triple = makemultiplier(3)
+result = triple(4)
+
+println(result)  # 12

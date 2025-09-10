@@ -1,0 +1,10 @@
+import std:println
+
+# Basic match expression in assignment
+x = 42
+result = match x {
+  42: "found"
+  99: "not found"
+}
+
+println(result)  # found

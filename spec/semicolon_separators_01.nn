@@ -1,0 +1,6 @@
+import std:println
+
+# Test multiple statements on one line with semicolons
+import std:println; x = 10; y = 20
+
+println(x + y)  # 30

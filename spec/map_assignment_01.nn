@@ -1,0 +1,7 @@
+import std:println
+
+# Colon syntax assignment
+m = { name: "Ada" }
+m:name = "Lovelace"
+
+println(m:name)  # Lovelace

@@ -1,0 +1,6 @@
+import std:println
+
+# Basic shell command execution
+result = `echo "hello world"`
+
+println(result)  # hello world

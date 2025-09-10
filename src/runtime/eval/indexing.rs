@@ -142,6 +142,76 @@ pub fn eval_slice(
                 Ok(Value::List(items[clamped_start..clamped_end].to_vec()))
             }
         }
+        Value::String(ref s) => {
+            let len = s.chars().count() as i64;
+            let chars: Vec<char> = s.chars().collect();
+
+            // Evaluate start index
+            let start_idx = match start {
+                Some(expr) => {
+                    let val = eval_expr(expr, env.clone())?;
+                    match val {
+                        Value::Number(n) => {
+                            if n.fract() != 0.0 {
+                                return Err(RuntimeError::TypeError {
+                                    message: "String slice start must be an integer".to_string(),
+                                });
+                            }
+                            n as i64
+                        }
+                        _ => {
+                            return Err(RuntimeError::TypeError {
+                                message: "String slice start must be a number".to_string(),
+                            });
+                        }
+                    }
+                }
+                None => 0,
+            };
+
+            // Evaluate end index
+            let end_idx = match end {
+                Some(expr) => {
+                    let val = eval_expr(expr, env)?;
+                    match val {
+                        Value::Number(n) => {
+                            if n.fract() != 0.0 {
+                                return Err(RuntimeError::TypeError {
+                                    message: "String slice end must be an integer".to_string(),
+                                });
+                            }
+                            n as i64
+                        }
+                        _ => {
+                            return Err(RuntimeError::TypeError {
+                                message: "String slice end must be a number".to_string(),
+                            });
+                        }
+                    }
+                }
+                None => len,
+            };
+
+            // Normalize negative indices
+            let norm_start = if start_idx < 0 {
+                len + start_idx
+            } else {
+                start_idx
+            };
+            let norm_end = if end_idx < 0 { len + end_idx } else { end_idx };
+
+            // Clamp to bounds
+            let clamped_start = norm_start.max(0).min(len) as usize;
+            let clamped_end = norm_end.max(0).min(len) as usize;
+
+            // Return slice
+            if clamped_start > clamped_end {
+                Ok(Value::String(String::new()))
+            } else {
+                let sliced_chars: String = chars[clamped_start..clamped_end].iter().collect();
+                Ok(Value::String(sliced_chars))
+            }
+        }
         _ => Err(RuntimeError::TypeError {
             message: format!("Cannot slice {}", target_value.type_name()),
         }),
@@ -268,5 +338,57 @@ mod tests {
 
         let result = eval_map_access_by_name(&target, "name", env).unwrap();
         assert_eq!(result, Value::String("Alice".to_string()));
+    }
+
+    #[test]
+    fn test_string_slicing() {
+        let env = create_test_env();
+
+        let s = Value::String("hello".to_string());
+        env.define_or_set("my_string", s);
+
+        let target = Expr::Literal(Literal::Identifier(
+            "my_string".to_string(),
+            Span::default(),
+        ));
+        let start = Expr::Literal(Literal::Number(1.0, Span::default()));
+        let end = Expr::Literal(Literal::Number(3.0, Span::default()));
+
+        let result = eval_slice(&target, Some(&start), Some(&end), env.clone()).unwrap();
+        assert_eq!(result, Value::String("el".to_string()));
+
+        // Test negative indices
+        let start_neg = Expr::Literal(Literal::Number(-2.0, Span::default()));
+        let result2 = eval_slice(&target, Some(&start_neg), None, env.clone()).unwrap();
+        assert_eq!(result2, Value::String("lo".to_string()));
+
+        // Test empty slice
+        let start_empty = Expr::Literal(Literal::Number(3.0, Span::default()));
+        let end_empty = Expr::Literal(Literal::Number(1.0, Span::default()));
+        let result3 = eval_slice(&target, Some(&start_empty), Some(&end_empty), env).unwrap();
+        assert_eq!(result3, Value::String("".to_string()));
+    }
+
+    #[test]
+    fn test_string_slicing_edge_cases() {
+        let env = create_test_env();
+
+        let s = Value::String("hello".to_string());
+        env.define_or_set("my_string", s);
+
+        let target = Expr::Literal(Literal::Identifier(
+            "my_string".to_string(),
+            Span::default(),
+        ));
+
+        // Test [:2] (first two characters)
+        let end = Expr::Literal(Literal::Number(2.0, Span::default()));
+        let result = eval_slice(&target, None, Some(&end), env.clone()).unwrap();
+        assert_eq!(result, Value::String("he".to_string()));
+
+        // Test [2:] (from third character to end)
+        let start = Expr::Literal(Literal::Number(2.0, Span::default()));
+        let result2 = eval_slice(&target, Some(&start), None, env).unwrap();
+        assert_eq!(result2, Value::String("llo".to_string()));
     }
 }

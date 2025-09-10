@@ -1,0 +1,7 @@
+import std:println
+
+# Function with no parameters
+getfive = || { return 5 }
+result = getfive()
+
+println(result)  # 5

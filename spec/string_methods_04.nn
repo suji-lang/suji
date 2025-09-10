@@ -1,0 +1,6 @@
+import std:println
+
+# String split with no matches
+result = "hello"::split(",")
+
+println(result)  # [hello]

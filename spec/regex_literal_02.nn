@@ -1,0 +1,9 @@
+import std:println
+
+# Test complex regex patterns
+email_pattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+email = "ada@example.com"
+
+result = email ~ email_pattern
+
+println(result)  # true

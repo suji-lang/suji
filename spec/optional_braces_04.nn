@@ -1,0 +1,11 @@
+import std:println
+
+# Test that braces are still required for multiple statements
+complex_function = |x| {
+    doubled = x * 2
+    doubled + 1    # this is returned
+}
+
+result1 = complex_function(5)  # 11
+
+println(result1)  # 11

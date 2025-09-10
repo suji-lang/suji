@@ -35,7 +35,7 @@ fn eval_program(input: &str) -> Result<nnlang::runtime::value::Value, Box<dyn st
     let env = create_test_env();
     let mut loop_stack = Vec::new();
 
-    let mut result = nnlang::runtime::value::Value::Null;
+    let mut result = nnlang::runtime::value::Value::Nil;
     for stmt in statements {
         if let Some(value) = eval_stmt(&stmt, env.clone(), &mut loop_stack)? {
             result = value;
@@ -715,11 +715,11 @@ fn test_function_calls_comprehensive() {
 
     // Test builtin function calls through import system
     let result = eval_program("import std:println\nprintln(1)").unwrap();
-    assert_eq!(result, Value::Null);
+    assert_eq!(result, Value::Nil);
     println!("✅ Builtin function call println(1) works");
 
     let result = eval_program("import std:println\nprintln(1, 2, 3)").unwrap();
-    assert_eq!(result, Value::Null);
+    assert_eq!(result, Value::Nil);
     println!("✅ Builtin function call with multiple args works");
 
     // Test user-defined function calls
@@ -776,7 +776,7 @@ fn test_map_access_comprehensive() {
 
     // Test non-existent key access (should return null or error)
     match eval_string_expr("{\"a\": 1}:nonexistent") {
-        Ok(Value::Null) => println!("✅ Non-existent key returns null"),
+        Ok(Value::Nil) => println!("✅ Non-existent key returns nil"),
         Ok(other) => println!("✅ Non-existent key returns: {:?}", other),
         Err(_) => println!("✅ Non-existent key returns error (valid behavior)"),
     }
@@ -831,4 +831,123 @@ fn test_shell_command_templates() {
     } else {
         println!("❌ Variable assignment parsing failed");
     }
+}
+
+// Phase 6 Tests - Optional Braces for Single Expressions
+
+#[test]
+fn test_optional_braces_function_evaluation() {
+    // Test that functions with single expression bodies work correctly
+    let result = eval_program("multiply = |x, y| x * y\nresult = multiply(3, 4)");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(12.0));
+
+    let result = eval_program("square = |x| x * x\nresult = square(5)");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(25.0));
+
+    let result = eval_program("greet = |name| \"Hello, \" + name\nresult = greet(\"world\")");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("Hello, world".to_string()));
+}
+
+#[test]
+fn test_optional_braces_match_evaluation() {
+    // Test that match statements with single expression arms work correctly
+    let result = eval_program(
+        "x = 3\nmatch x { 1: result = \"one\" 2: result = \"two\" 3: result = \"three\" _: result = \"other\" }",
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("three".to_string()));
+
+    let result = eval_program(
+        "x = 5\nmatch x { 1: result = 10 2: result = 20 3: result = 30 _: result = 0 }",
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(0.0));
+}
+
+#[test]
+fn test_optional_braces_mixed_evaluation() {
+    // Test mixing single expressions and blocks
+    let result = eval_program(
+        "x = 2\nmatch x { 1: result = x * 2 2: { doubled = x * 2; result = doubled + 1 } _: result = 0 }",
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(5.0));
+}
+
+#[test]
+fn test_optional_braces_implicit_return() {
+    // Test that single expression functions return their value
+    let result = eval_program("add = |x, y| x + y\nresult = add(3, 4)");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(7.0));
+
+    let result =
+        eval_program("complex = |x| { doubled = x * 2; doubled + 1 }\nresult = complex(5)");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(11.0));
+}
+
+#[test]
+fn test_optional_braces_empty_function() {
+    // Test empty function with single expression body
+    let result = eval_program("constant = || 42\nresult = constant()");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(42.0));
+}
+
+#[test]
+fn test_optional_braces_function_with_default_params() {
+    // Test function with default parameters and single expression body
+    let result = eval_program("add = |x = 0, y = 1| x + y\nresult = add(3, 4)");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(7.0));
+
+    let result = eval_program("add = |x = 0, y = 1| x + y\nresult = add()");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(1.0));
+}
+
+#[test]
+fn test_optional_braces_nested_expressions() {
+    // Test complex nested expressions without braces
+    let result =
+        eval_program("x = 2\nmatch x { 1: result = x * 2 2: result = x + 10 _: result = 0 }");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(12.0));
+}
+
+#[test]
+fn test_optional_braces_backward_compatibility() {
+    // Test that existing syntax with braces still works
+    let result = eval_program("add = |x, y| { return x + y }\nresult = add(3, 4)");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(7.0));
+
+    let result = eval_program("match 1 { 1: { result = \"one\" } 2: { result = \"two\" } }");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("one".to_string()));
+}
+
+#[test]
+fn test_optional_braces_boolean_match() {
+    // Test match with boolean patterns and single expressions
+    let result = eval_program("match true { true: result = 1 false: result = 0 }");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(1.0));
+
+    let result = eval_program("match false { true: result = 1 false: result = 0 }");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(0.0));
+}
+
+#[test]
+fn test_optional_braces_wildcard_match() {
+    // Test match with wildcard pattern and single expression
+    let result =
+        eval_program("match 42 { 1: result = \"one\" 2: result = \"two\" _: result = \"other\" }");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("other".to_string()));
 }

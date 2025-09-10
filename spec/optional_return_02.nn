@@ -1,0 +1,11 @@
+import std:println
+
+# Test multiple expressions - last one is returned
+process = |x| {
+    doubled = x * 2
+    doubled + 1    # this is returned
+}
+
+result = process(5)
+
+println(result)  # 11

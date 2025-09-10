@@ -1,0 +1,7 @@
+import std:println
+
+# Test index_of with empty list
+empty_list = []
+list_result = empty_list::index_of("anything")
+
+println(list_result)   # -1

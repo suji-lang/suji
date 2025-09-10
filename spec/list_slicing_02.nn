@@ -1,0 +1,6 @@
+import std:println
+
+# Start from beginning
+result = [10, 20, 30, 40][:2]
+
+println(result)  # [10, 20]

@@ -1,0 +1,7 @@
+import std:println
+
+# Function basics
+greet = |name| { return "Hello, ${name}!" }
+result = greet("world")
+
+println(result)  # Hello, world!

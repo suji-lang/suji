@@ -1,0 +1,6 @@
+import std:println
+
+# Comparison operators
+result = true == true
+
+println(result)  # true

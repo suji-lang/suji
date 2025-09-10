@@ -1,0 +1,7 @@
+import std:println
+
+# List push method
+list = [1, 2]
+list::push(3)
+
+println(list)  # [1, 2, 3]

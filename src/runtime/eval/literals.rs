@@ -46,6 +46,7 @@ pub fn eval_literal(literal: &Literal, env: Rc<Env>) -> EvalResult<Value> {
             })?;
             Ok(Value::Regex(regex))
         }
+        Literal::Nil(_) => Ok(Value::Nil),
     }
 }
 
@@ -86,5 +87,13 @@ mod tests {
         let literal = Literal::Identifier("x".to_string(), Span::default());
         let result = eval_literal(&literal, env).unwrap();
         assert_eq!(result, Value::Number(100.0));
+    }
+
+    #[test]
+    fn test_nil_literal() {
+        let env = create_test_env();
+        let literal = Literal::Nil(Span::default());
+        let result = eval_literal(&literal, env).unwrap();
+        assert_eq!(result, Value::Nil);
     }
 }

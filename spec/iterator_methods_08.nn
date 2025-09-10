@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::fold() with product
+numbers = [1, 2, 3, 4, 5]
+product = numbers::fold(1, |acc, x| { return acc * x })
+
+println(product)  # 120

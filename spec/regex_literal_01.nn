@@ -1,0 +1,9 @@
+import std:println
+
+# Test basic regex literals
+pattern = /hello/
+text = "hello world"
+
+result = text ~ pattern
+
+println(result)  # true

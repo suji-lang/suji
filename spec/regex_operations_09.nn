@@ -1,0 +1,6 @@
+import std:println
+
+# Regex operations
+result = "world hello" ~ /world$/
+
+println(result)  # false

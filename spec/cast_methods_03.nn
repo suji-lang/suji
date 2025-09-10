@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::to_list() method
+text = "hello"
+chars = text::to_list()
+
+println(chars)  # [h, e, l, l, o]

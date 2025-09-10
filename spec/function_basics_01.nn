@@ -1,0 +1,7 @@
+import std:println
+
+# Simple function definition and call
+add = |x, y| { return x + y }
+result = add(3, 4)
+
+println(result)  # 7

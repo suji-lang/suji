@@ -1,0 +1,6 @@
+import std:println
+
+# Logical NOT on true
+result = !true
+
+println(result)  # false

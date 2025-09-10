@@ -1,0 +1,8 @@
+import std:println
+
+# Basic closure capturing outer variable
+x = 10
+addx = |y| { return x + y }
+result = addx(5)
+
+println(result)  # 15

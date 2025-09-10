@@ -45,7 +45,7 @@ fn run_file(filename: &str) -> Result<(), Box<dyn std::error::Error>> {
         Ok(stmts) => stmts,
         Err(e) => {
             let context = DiagnosticContext::from_file(filename)?;
-            if let Err(_) = print_diagnostic(DiagnosticKind::Parse(e.clone()), &context) {
+            if print_diagnostic(DiagnosticKind::Parse(e.clone()), &context).is_err() {
                 eprintln!("Parse error: {}", e);
             }
             process::exit(1);
@@ -61,25 +61,15 @@ fn run_file(filename: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     // Evaluate the program
     match eval_program_with_modules(&statements, env, &module_registry) {
-        Ok(Some(value)) => {
-            // Print the result if it's not null
-            if !matches!(value, nnlang::runtime::value::Value::Null) {
-                println!("{}", value);
-            }
-        }
-        Ok(None) => {
-            // Program completed without a value
-        }
+        Ok(_) => process::exit(0),
         Err(e) => {
             let context = DiagnosticContext::from_file(filename)?;
-            if let Err(_) = print_diagnostic(DiagnosticKind::Runtime(e.clone()), &context) {
+            if print_diagnostic(DiagnosticKind::Runtime(e.clone()), &context).is_err() {
                 eprintln!("Runtime error: {}", e);
             }
             process::exit(1);
         }
     }
-
-    Ok(())
 }
 
 fn run_repl() -> Result<(), Box<dyn std::error::Error>> {

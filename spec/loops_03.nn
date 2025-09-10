@@ -1,0 +1,9 @@
+import std:println
+
+# Loop through range with single variable
+sum = 0
+loop through 0..5 with i {
+  sum = sum + i
+}
+
+println(sum)  # 10

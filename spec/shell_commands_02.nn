@@ -1,0 +1,6 @@
+import std:println
+
+# Simple shell command with exit status
+result = `echo test`
+
+println(result)  # test

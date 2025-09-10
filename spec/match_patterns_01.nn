@@ -1,0 +1,11 @@
+import std:println
+
+# Basic value matching with exact match
+x = 42
+result = "default"
+match x {
+  42: { result = "found" }
+  99: { result = "not found" }
+}
+
+println(result)  # found

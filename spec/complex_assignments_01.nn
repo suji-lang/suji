@@ -1,0 +1,7 @@
+import std:println
+
+# Test nested list assignments
+matrix = [[1, 2], [3, 4]]
+matrix[0][1] = 99
+
+println(matrix)  # [[1, 99], [3, 4]]

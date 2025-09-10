@@ -1,0 +1,7 @@
+import std:println
+
+# Multiple parameters with defaults
+format = |prefix = ">", text = "empty"| { return "${prefix} ${text}" }
+result = format()
+
+println(result)  # > empty

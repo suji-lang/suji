@@ -1,0 +1,8 @@
+import std:println
+
+# Expression interpolation
+x = 3
+y = 4
+result = `echo ${x + y}`
+
+println(result)  # 7

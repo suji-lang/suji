@@ -1,0 +1,6 @@
+import std:println
+
+# Test number::is_int() method
+x = 42
+
+println(x::is_int())    # true

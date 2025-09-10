@@ -1,0 +1,9 @@
+import std:println
+
+point = (1, 2)
+result = match point {
+  (1, 2): "match"
+  _: "no match"
+}
+
+println(result)  # match

@@ -1,0 +1,7 @@
+import std:println
+
+# Test modulo compound assignment
+x = 20
+x %= 7    # x is now 6
+
+println(x)  # 6

@@ -1,0 +1,9 @@
+import std:println
+
+# Test boolean in expressions
+x = true
+y = false
+
+result = x && y
+
+println(result)  # false

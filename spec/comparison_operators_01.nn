@@ -1,0 +1,6 @@
+import std:println
+
+# Greater than
+result = 5 > 3
+
+println(result)  # true

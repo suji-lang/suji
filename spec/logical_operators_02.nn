@@ -1,0 +1,6 @@
+import std:println
+
+# Logical AND - first false
+result = false && true
+
+println(result)  # false

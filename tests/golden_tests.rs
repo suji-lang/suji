@@ -170,7 +170,7 @@ fn execute_nn_program(source: &str, _config: &GoldenTestConfig) -> ExecutionResu
         Ok(value) => {
             // Capture the return value if it's not Null
             if let Some(val) = value {
-                if !matches!(val, Value::Null) {
+                if !matches!(val, Value::Nil) {
                     return_value = Some(val.to_string());
                 }
             }

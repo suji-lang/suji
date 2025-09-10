@@ -1,0 +1,6 @@
+import std:println
+
+# Pattern matching with metacharacters
+result = "abc123" ~ /[0-9]+/
+
+println(result)  # true

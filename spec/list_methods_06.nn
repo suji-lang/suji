@@ -1,0 +1,6 @@
+import std:println
+
+# List join with single element
+result = ["single"]::join()
+
+println(result)  # single

@@ -1,0 +1,7 @@
+import std:println
+
+# Variable interpolation
+name = "Ada"
+result = "Hello, ${name}"
+
+println(result)  # Hello, Ada

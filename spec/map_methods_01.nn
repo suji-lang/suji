@@ -1,0 +1,7 @@
+import std:println
+
+# Map delete method - existing key
+m = { a: 1, b: 2, c: 3 }
+deleted = m::delete("b")
+
+println(deleted)  # true

@@ -1,0 +1,7 @@
+import std:println
+
+# Test string slicing edge cases
+text = "abc"
+single_char = text[1:2]  # "b"
+
+println(single_char)  # b

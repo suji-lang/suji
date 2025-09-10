@@ -1,0 +1,9 @@
+import std:println
+
+# Test no variable shadowing - assignment in nested scope modifies outer variable
+x = 1
+{
+    x = 2        # assigns to the outer x (no shadowing)
+}
+
+println(x)       # 2

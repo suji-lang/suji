@@ -1,0 +1,6 @@
+import std:println
+
+# Shell command that produces numbers
+result = `echo 42`
+
+println(result)  # 42

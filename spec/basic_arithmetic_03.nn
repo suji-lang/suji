@@ -1,0 +1,6 @@
+import std:println
+
+# Multiplication operation
+result = 3 * 4
+
+println(result)  # 12

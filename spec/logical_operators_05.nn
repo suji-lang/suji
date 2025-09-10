@@ -1,0 +1,6 @@
+import std:println
+
+# Logical OR - first true
+result = true || false
+
+println(result)  # true

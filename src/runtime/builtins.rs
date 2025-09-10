@@ -41,7 +41,7 @@ pub fn builtin_println(args: &[Value]) -> Result<Value, RuntimeError> {
         let output: Vec<String> = args.iter().map(|v| v.to_string()).collect();
         println!("{}", output.join(" "));
     }
-    Ok(Value::Null)
+    Ok(Value::Nil)
 }
 
 /// Get all built-in functions
@@ -97,11 +97,11 @@ mod tests {
     #[test]
     fn test_println_builtin() {
         // Test println with no arguments
-        assert_eq!(builtin_println(&[]).unwrap(), Value::Null);
+        assert_eq!(builtin_println(&[]).unwrap(), Value::Nil);
 
         // Test println with one argument
         let args = vec![Value::String("Hello".to_string())];
-        assert_eq!(builtin_println(&args).unwrap(), Value::Null);
+        assert_eq!(builtin_println(&args).unwrap(), Value::Nil);
 
         // Test println with multiple arguments
         let args = vec![
@@ -109,7 +109,7 @@ mod tests {
             Value::Number(42.0),
             Value::Boolean(true),
         ];
-        assert_eq!(builtin_println(&args).unwrap(), Value::Null);
+        assert_eq!(builtin_println(&args).unwrap(), Value::Nil);
     }
 
     #[test]
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn test_call_builtin() {
         let args = vec![Value::String("test".to_string())];
-        assert_eq!(call_builtin("println", &args).unwrap(), Value::Null);
+        assert_eq!(call_builtin("println", &args).unwrap(), Value::Nil);
 
         assert!(call_builtin("invalid", &args).is_err());
     }

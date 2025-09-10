@@ -1,0 +1,7 @@
+import std:println
+
+# Mixed key types
+m = { 1: "one", "two": 2, true: "boolean" }
+result = m[true]
+
+println(result)  # boolean

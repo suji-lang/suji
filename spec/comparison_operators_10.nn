@@ -1,0 +1,6 @@
+import std:println
+
+# Boolean equality
+result = true == true
+
+println(result)  # true

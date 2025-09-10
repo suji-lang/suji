@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::to_number() method
+s = "123"
+n = s::to_number()
+
+println(n)  # 123

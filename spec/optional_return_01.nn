@@ -1,0 +1,10 @@
+import std:println
+
+# Test implicit return - last expression is returned
+multiply = |x, y| {
+    x * y    # this value is automatically returned
+}
+
+result = multiply(3, 4)
+
+println(result)  # 12

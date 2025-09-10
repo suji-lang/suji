@@ -1,0 +1,7 @@
+import std:println
+
+# Boolean interpolation
+flag = true
+result = "The flag is ${flag}"
+
+println(result)  # The flag is true

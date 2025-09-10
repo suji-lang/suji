@@ -1,0 +1,12 @@
+import std:println
+
+# Test no shadowing in function scope
+outer = 10
+test_scope = || {
+    outer = 20   # modifies outer variable, doesn't create new one
+    return outer
+}
+
+result = test_scope()
+
+println(outer)   # 20

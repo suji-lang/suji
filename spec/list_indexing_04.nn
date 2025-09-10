@@ -1,0 +1,6 @@
+import std:println
+
+# List indexing
+result = ["hello", 42, true][2]
+
+println(result)  # true

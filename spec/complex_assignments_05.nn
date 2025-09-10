@@ -1,0 +1,10 @@
+import std:println
+
+# Test mixed nested structures - map with lists
+data = { 
+    items: [1, 2, 3],
+    config: { values: [10, 20] }
+}
+data:items[1] = 99
+
+println(data:items)           # [1, 99, 3]

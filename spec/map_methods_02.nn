@@ -1,0 +1,7 @@
+import std:println
+
+# Map delete method - non-existing key
+m = { a: 1 }
+deleted = m::delete("missing")
+
+println(deleted)  # false

@@ -1,0 +1,12 @@
+import std:println
+
+# Match expression in function parameter
+f = |x| {
+  return match x {
+    1: "first"
+    2: "second"
+    _: "other"
+  }
+}
+
+println(f(2))  # second

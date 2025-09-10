@@ -1,0 +1,6 @@
+import std:println
+
+# Operator precedence tests
+result = 2 + 3 * 4
+
+println(result)  # 14

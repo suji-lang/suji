@@ -1,0 +1,6 @@
+import std:println
+
+# Mixed types indexing
+result = ["hello", 42, true][1]
+
+println(result)  # 42

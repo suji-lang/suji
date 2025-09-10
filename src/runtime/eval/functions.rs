@@ -101,11 +101,37 @@ pub fn eval_function_call(callee: &Expr, args: &[Expr], env: Rc<Env>) -> EvalRes
 
             // Execute function body
             let mut loop_stack = Vec::new();
-            match eval_stmt(&func.body, call_env, &mut loop_stack) {
-                Ok(result) => Ok(result.unwrap_or(Value::Null)),
+            match eval_stmt(&func.body, call_env.clone(), &mut loop_stack) {
+                Ok(result) => {
+                    // Handle implicit returns
+                    match result {
+                        Some(value) => Ok(value), // Statement returned a value
+                        None => {
+                            // No explicit return, check if function body was a single expression
+                            match &func.body {
+                                Stmt::Expr(expr) => {
+                                    // Single expression function body - return its value
+                                    eval_expr(expr, call_env)
+                                }
+                                Stmt::Block { statements, .. } => {
+                                    // Block function body - check if last statement was an expression
+                                    if let Some(last_stmt) = statements.last() {
+                                        match last_stmt {
+                                            Stmt::Expr(expr) => eval_expr(expr, call_env),
+                                            _ => Ok(Value::Nil), // Last statement was not an expression
+                                        }
+                                    } else {
+                                        Ok(Value::Nil) // Empty block
+                                    }
+                                }
+                                _ => Ok(Value::Nil), // Other statement types
+                            }
+                        }
+                    }
+                }
                 Err(RuntimeError::ControlFlow {
                     flow: ControlFlow::Return(value),
-                }) => Ok(value),
+                }) => Ok(*value),
                 Err(other_error) => Err(other_error),
             }
         }
@@ -184,8 +210,62 @@ mod tests {
         let result = eval_function_call(&callee, &args, env);
         // println returns null
         match &result {
-            Ok(value) => assert_eq!(*value, Value::Null),
+            Ok(value) => assert_eq!(*value, Value::Nil),
             Err(error) => panic!("Test failed with error: {:?}", error),
         }
+    }
+
+    #[test]
+    fn test_implicit_returns() {
+        let env = create_test_env();
+
+        // Test single expression function body (implicit return)
+        let params = vec![Param {
+            name: "x".to_string(),
+            default: None,
+            span: Span::default(),
+        }];
+
+        let body = Stmt::Expr(Expr::Binary {
+            left: Box::new(Expr::Literal(Literal::Identifier(
+                "x".to_string(),
+                Span::default(),
+            ))),
+            op: crate::ast::BinaryOp::Add,
+            right: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+            span: Span::default(),
+        });
+
+        let func = eval_function_literal(&params, &body, env.clone()).unwrap();
+        let callee = Expr::Literal(Literal::Identifier("func".to_string(), Span::default()));
+        env.define_or_set("func", func);
+
+        let args = vec![Expr::Literal(Literal::Number(5.0, Span::default()))];
+        let result = eval_function_call(&callee, &args, env.clone()).unwrap();
+        assert_eq!(result, Value::Number(6.0));
+
+        // Test block with last statement as expression (implicit return)
+        let block_body = Stmt::Block {
+            statements: vec![
+                Stmt::Expr(Expr::Literal(Literal::Number(10.0, Span::default()))),
+                Stmt::Expr(Expr::Binary {
+                    left: Box::new(Expr::Literal(Literal::Identifier(
+                        "x".to_string(),
+                        Span::default(),
+                    ))),
+                    op: crate::ast::BinaryOp::Multiply,
+                    right: Box::new(Expr::Literal(Literal::Number(2.0, Span::default()))),
+                    span: Span::default(),
+                }),
+            ],
+            span: Span::default(),
+        };
+
+        let func2 = eval_function_literal(&params, &block_body, env.clone()).unwrap();
+        env.define_or_set("func2", func2);
+
+        let callee2 = Expr::Literal(Literal::Identifier("func2".to_string(), Span::default()));
+        let result2 = eval_function_call(&callee2, &args, env).unwrap();
+        assert_eq!(result2, Value::Number(10.0)); // 5 * 2 = 10
     }
 }

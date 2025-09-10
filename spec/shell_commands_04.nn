@@ -1,0 +1,6 @@
+import std:println
+
+# Multiple word output
+result = `echo one two three`
+
+println(result)  # one two three

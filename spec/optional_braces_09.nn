@@ -1,0 +1,8 @@
+import std:println
+
+# Test simple function without braces
+simple_function = |x| x * 2
+
+result2 = simple_function(5)   # 10
+
+println(result2)  # 10

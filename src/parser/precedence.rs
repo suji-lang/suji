@@ -30,7 +30,12 @@ impl Precedence {
     /// Get the precedence of a token when used as a binary operator
     pub fn of_binary_op(token: &Token) -> Self {
         match token {
-            Token::Assign => Self::Assignment,
+            Token::Assign
+            | Token::PlusAssign
+            | Token::MinusAssign
+            | Token::MultiplyAssign
+            | Token::DivideAssign
+            | Token::ModuloAssign => Self::Assignment,
             Token::Or => Self::LogicalOr,
             Token::And => Self::LogicalAnd,
             Token::RegexMatch | Token::RegexNotMatch => Self::RegexMatch,

@@ -1,0 +1,10 @@
+import std:println
+
+a = 10
+
+a += 5  # 15
+a -= 3  # 12
+a *= 2  # 24
+a /= 4  # 6
+
+println(a)  # 6

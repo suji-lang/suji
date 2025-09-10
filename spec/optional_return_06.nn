@@ -1,0 +1,10 @@
+import std:println
+
+# Test implicit return with string formatting
+format_number = |n| {
+    n::to_string() + " is the number"    # this is returned
+}
+
+result2 = format_number(42)
+
+println(result2)  # 42 is the number

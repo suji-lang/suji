@@ -1,0 +1,6 @@
+import std:println
+
+# String less than
+result = "abc" < "def"
+
+println(result)  # true

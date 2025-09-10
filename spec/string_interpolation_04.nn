@@ -1,0 +1,8 @@
+import std:println
+
+# Multiple interpolations
+first = "Ada"
+last = "Lovelace"
+result = "${first} ${last} was a mathematician"
+
+println(result)  # Ada Lovelace was a mathematician

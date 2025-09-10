@@ -1,0 +1,8 @@
+import std:println
+
+# Map delete all keys
+m = { a: 1, b: 2 }
+m::delete("a")
+m::delete("b")
+
+println(m)  # {}

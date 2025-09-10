@@ -1,0 +1,6 @@
+import std:println
+
+# String length method
+result = "hello"::length()
+
+println(result)  # 5

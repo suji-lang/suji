@@ -1,0 +1,8 @@
+import std:println
+
+# Map delete with dynamic key
+m = { x: 1, y: 2 }
+k = "x"
+deleted = m::delete(k)
+
+println(deleted)  # true

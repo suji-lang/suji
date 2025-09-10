@@ -1,0 +1,7 @@
+import std:println
+
+# Test identifier to string conversion
+m = { name: "Ada", age: 37 }
+name_value = m:name
+
+println(name_value)  # Ada

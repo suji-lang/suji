@@ -1,0 +1,7 @@
+import std:println
+
+# Postfix increment
+x = 5
+x++
+
+println(x)  # 6

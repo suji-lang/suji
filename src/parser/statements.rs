@@ -186,6 +186,19 @@ impl Parser {
         })
     }
 
+    /// Parse match arm body - either { statements } or single expression
+    pub(super) fn parse_match_arm_body(&mut self, span: Span) -> ParseResult<Stmt> {
+        if self.match_token(Token::LeftBrace) {
+            // Traditional block syntax: { statements }
+            let statements = self.parse_block()?;
+            Ok(Stmt::Block { statements, span })
+        } else {
+            // Single expression syntax: expression
+            let expr = self.expression()?;
+            Ok(Stmt::Expr(expr))
+        }
+    }
+
     /// Parse match statement: match expr { pattern: stmt, ... }
     fn parse_match_statement(&mut self) -> ParseResult<Stmt> {
         let span = self.previous().span.clone();
@@ -199,8 +212,8 @@ impl Parser {
             let pattern = self.parse_pattern()?;
             self.consume(Token::Colon, "Expected ':' after match pattern")?;
 
-            // Parse body statement
-            let body = self.statement()?;
+            // Parse body (either block or single expression)
+            let body = self.parse_match_arm_body(span.clone())?;
 
             arms.push(crate::ast::MatchArm {
                 pattern,
@@ -344,12 +357,8 @@ impl Parser {
         while !self.check(Token::RightBrace) && !self.is_at_end() {
             statements.push(self.statement()?);
 
-            // Since advance() already skips newlines and comments,
-            // we just need to ensure we don't hit EOF or closing brace
-            if !self.check(Token::RightBrace) && !self.is_at_end() {
-                // Continue parsing more statements
-                continue;
-            }
+            // Handle statement separators (semicolons and newlines)
+            self.handle_statement_separator(true)?;
         }
 
         self.consume(Token::RightBrace, "Expected '}' after block")?;

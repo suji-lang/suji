@@ -1,0 +1,6 @@
+import std:println
+
+# Full slice
+result = [10, 20, 30, 40][:]
+
+println(result)  # [10, 20, 30, 40]

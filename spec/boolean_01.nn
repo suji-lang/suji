@@ -1,0 +1,7 @@
+import std:println
+
+# Test basic boolean literals
+x = true
+y = false
+
+println(x)  # true

@@ -1,0 +1,7 @@
+import std:println
+
+# Test mixed positive/negative slicing
+xs = [10, 20, 30, 40, 50]
+middle = xs[1:-1]
+
+println(middle)  # [20, 30, 40]

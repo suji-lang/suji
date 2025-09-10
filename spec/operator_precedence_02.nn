@@ -1,0 +1,6 @@
+import std:println
+
+# Addition before multiplication (parentheses)
+result = (2 + 3) * 4
+
+println(result)  # 20

@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::index_of() method
+fruits = ["apple", "banana", "cherry"]
+banana_index = fruits::index_of("banana")
+
+println(banana_index)  # 1

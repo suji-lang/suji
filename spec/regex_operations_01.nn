@@ -1,0 +1,6 @@
+import std:println
+
+# Basic regex match
+result = "hello" ~ /hello/
+
+println(result)  # true

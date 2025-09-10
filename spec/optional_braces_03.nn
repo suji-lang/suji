@@ -1,0 +1,12 @@
+import std:println
+
+# Test mixed usage - braces optional for single expressions
+process = |x| match x {
+    1: x * 2
+    2: x + 10
+    _: 0
+}
+
+result1 = process(1)  # 2
+
+println(result1)  # 2

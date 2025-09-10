@@ -1,0 +1,7 @@
+import std:println
+
+# Test string slicing with 2 to end
+text = "hello"
+slice_2_end = text[2:]
+
+println(slice_2_end)   # llo

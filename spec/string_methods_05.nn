@@ -1,0 +1,6 @@
+import std:println
+
+# String methods
+result = "hello"::split(",")
+
+println(result)  # [hello]

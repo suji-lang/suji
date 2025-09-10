@@ -1,0 +1,7 @@
+import std:println
+
+# Test mixed nested structures - list of maps - second item
+data = [{ name: "updated" }, { name: "item2" }]
+data[1]["name"] = "also updated"
+
+println(data[1]:name)  # also updated

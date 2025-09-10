@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::fold() method
+numbers = [1, 2, 3, 4, 5]
+total = numbers::fold(0, |acc, x| { return acc + x })
+
+println(total)  # 15

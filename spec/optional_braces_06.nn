@@ -1,0 +1,8 @@
+import std:println
+
+# Test function with single expression - greet
+greet = |name| "Hello, " + name
+
+result3 = greet("world")     # "Hello, world"
+
+println(result3)  # Hello, world

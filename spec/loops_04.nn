@@ -1,0 +1,10 @@
+import std:println
+
+# Loop through list with single variable
+nums = [10, 20, 30]
+sum = 0
+loop through nums with n {
+  sum = sum + n
+}
+
+println(sum)  # 60

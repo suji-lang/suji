@@ -1,0 +1,10 @@
+import std:println
+
+# Test nested map assignments with colon syntax
+config = { 
+    user: { name: "Alice", age: 30 },
+    settings: { theme: "dark" }
+}
+config:user:age = 31
+
+println(config:user:age)        # 31

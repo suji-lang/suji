@@ -1,0 +1,6 @@
+import std:println
+
+# Test single-element tuples
+single = (42,)
+
+println(single)  # (42,)

@@ -1,0 +1,7 @@
+import std:println
+
+# Override both parameters
+calc = |base, multiplier = 2| { return base * multiplier }
+result = calc(5, 3)
+
+println(result)  # 15

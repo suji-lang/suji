@@ -1,0 +1,7 @@
+import std:println
+
+# Bracket syntax assignment
+m = { name: "Ada" }
+m["age"] = 37
+
+println(m["age"])  # 37

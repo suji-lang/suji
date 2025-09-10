@@ -101,3 +101,26 @@ pub enum ValueLike {
     String(String),
     Tuple(Vec<ValueLike>),
 }
+
+/// Compound assignment operators
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CompoundOp {
+    PlusAssign,     // +=
+    MinusAssign,    // -=
+    MultiplyAssign, // *=
+    DivideAssign,   // /=
+    ModuloAssign,   // %=
+}
+
+impl CompoundOp {
+    pub fn from_token(token: &crate::token::Token) -> Option<Self> {
+        match token {
+            crate::token::Token::PlusAssign => Some(CompoundOp::PlusAssign),
+            crate::token::Token::MinusAssign => Some(CompoundOp::MinusAssign),
+            crate::token::Token::MultiplyAssign => Some(CompoundOp::MultiplyAssign),
+            crate::token::Token::DivideAssign => Some(CompoundOp::DivideAssign),
+            crate::token::Token::ModuloAssign => Some(CompoundOp::ModuloAssign),
+            _ => None,
+        }
+    }
+}

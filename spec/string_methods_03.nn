@@ -1,0 +1,6 @@
+import std:println
+
+# String split method with custom separator
+result = "a,b,c"::split(",")
+
+println(result)  # [a, b, c]

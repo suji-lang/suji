@@ -1,0 +1,9 @@
+import std:println
+
+# Closure capturing multiple variables
+a = 5
+b = 3
+combine = |x| { return a * x + b }
+result = combine(4)
+
+println(result)  # 23

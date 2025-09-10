@@ -1,0 +1,6 @@
+import std:println
+
+# Equality
+result = 5 == 5
+
+println(result)  # true

@@ -1,0 +1,7 @@
+import std:println
+
+# Colon syntax (identifier to string conversion)
+m = { name: "Ada", age: 37 }
+result = m:name
+
+println(result)  # Ada

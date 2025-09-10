@@ -1,0 +1,6 @@
+import std:println
+
+# String equality
+result = "abc" == "abc"
+
+println(result)  # true

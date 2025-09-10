@@ -1,0 +1,6 @@
+import std:println
+
+# Exponentiation right-associativity
+result = 2 ^ 3 ^ 2
+
+println(result)  # 512

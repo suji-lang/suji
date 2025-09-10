@@ -1,0 +1,6 @@
+import std:println
+
+# List join method with custom separator
+result = ["a", "b", "c"]::join(",")
+
+println(result)  # a,b,c

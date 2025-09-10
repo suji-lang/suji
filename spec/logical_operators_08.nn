@@ -1,0 +1,6 @@
+import std:println
+
+# Complex logical expression
+result = (true && false) || (false || true)
+
+println(result)  # true

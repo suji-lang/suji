@@ -58,6 +58,8 @@ pub enum Token {
     True,
     #[token("false")]
     False,
+    #[token("nil")]
+    Nil,
 
     // Literals
     #[regex(r"[0-9]+(\.[0-9]+)?", |lex| lex.slice().parse::<f64>().ok())]
@@ -105,6 +107,18 @@ pub enum Token {
     Increment,
     #[token("--")]
     Decrement,
+
+    // Compound assignment operators
+    #[token("+=")]
+    PlusAssign,
+    #[token("-=")]
+    MinusAssign,
+    #[token("*=")]
+    MultiplyAssign,
+    #[token("/=")]
+    DivideAssign,
+    #[token("%=")]
+    ModuloAssign,
 
     // Comparison operators
     #[token("==")]
@@ -159,6 +173,8 @@ pub enum Token {
     DoubleColon,
     #[token("|")]
     Pipe,
+    #[token(";")]
+    Semicolon,
 
     // Special tokens
     #[regex(r"#[^\r\n]*", |lex| lex.slice().to_owned())]
@@ -213,6 +229,7 @@ impl Token {
                 | Token::Export
                 | Token::True
                 | Token::False
+                | Token::Nil
         )
     }
 
@@ -221,6 +238,11 @@ impl Token {
         matches!(
             self,
             Token::Assign
+                | Token::PlusAssign
+                | Token::MinusAssign
+                | Token::MultiplyAssign
+                | Token::DivideAssign
+                | Token::ModuloAssign
                 | Token::Plus
                 | Token::Minus
                 | Token::Multiply

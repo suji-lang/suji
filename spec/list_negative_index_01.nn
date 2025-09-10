@@ -1,0 +1,8 @@
+import std:println
+
+# Test basic negative indexing
+xs = [10, 20, 30, 40]
+last = xs[-1]
+second_last = xs[-2]
+
+println(last)  # 40

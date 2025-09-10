@@ -1,0 +1,9 @@
+import std:println
+
+# Match expression in function call
+x = 2
+println(match x {
+  1: "one"
+  2: "two"
+  3: "three"
+})  # two

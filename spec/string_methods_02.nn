@@ -1,0 +1,6 @@
+import std:println
+
+# String split method with default separator
+result = "hello world"::split()
+
+println(result)  # [hello, world]

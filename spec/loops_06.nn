@@ -1,0 +1,12 @@
+import std:println
+
+# Basic loops
+counter = 0
+loop {
+  counter++
+  match counter {
+    5: { break }
+  }
+}
+
+println(counter)  # 5

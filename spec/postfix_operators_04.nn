@@ -1,0 +1,8 @@
+import std:println
+
+# Postfix increment and decrement
+z = 7
+z++
+z++
+
+println(z)  # 9

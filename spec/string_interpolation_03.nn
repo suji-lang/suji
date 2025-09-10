@@ -1,0 +1,7 @@
+import std:println
+
+# Complex expression interpolation
+x = 5
+result = "Square of ${x} is ${x ^ 2}"
+
+println(result)  # Square of 5 is 25

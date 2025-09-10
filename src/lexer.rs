@@ -157,8 +157,11 @@ impl<'a> Lexer<'a> {
                 Token::ShellStart
             }
             '/' => {
-                // Regex vs division disambiguation
-                if self.should_parse_as_regex() {
+                // Check for compound assignment first
+                if self.match_char('=') {
+                    Token::DivideAssign
+                } else if self.should_parse_as_regex() {
+                    // Regex vs division disambiguation
                     self.state = LexState::InRegex { start_pos };
                     Token::RegexStart
                 } else {
@@ -175,6 +178,8 @@ impl<'a> Lexer<'a> {
             '+' => {
                 if self.match_char('+') {
                     Token::Increment
+                } else if self.match_char('=') {
+                    Token::PlusAssign
                 } else {
                     Token::Plus
                 }
@@ -182,12 +187,26 @@ impl<'a> Lexer<'a> {
             '-' => {
                 if self.match_char('-') {
                     Token::Decrement
+                } else if self.match_char('=') {
+                    Token::MinusAssign
                 } else {
                     Token::Minus
                 }
             }
-            '*' => Token::Multiply,
-            '%' => Token::Modulo,
+            '*' => {
+                if self.match_char('=') {
+                    Token::MultiplyAssign
+                } else {
+                    Token::Multiply
+                }
+            }
+            '%' => {
+                if self.match_char('=') {
+                    Token::ModuloAssign
+                } else {
+                    Token::Modulo
+                }
+            }
             '^' => Token::Power,
             '=' => {
                 if self.match_char('=') {
@@ -256,6 +275,7 @@ impl<'a> Lexer<'a> {
                 }
             }
             '~' => Token::RegexMatch,
+            ';' => Token::Semicolon,
             '#' => self.scan_comment(),
             '\n' => {
                 self.line += 1;
@@ -620,7 +640,7 @@ impl<'a> Lexer<'a> {
         // Look for decimal point
         if !self.is_at_end()
             && self.peek() == '.'
-            && self.peek_next().map_or(false, |c| c.is_ascii_digit())
+            && self.peek_next().is_some_and(|c| c.is_ascii_digit())
         {
             self.advance(); // consume the '.'
             while !self.is_at_end() && self.peek().is_ascii_digit() {
@@ -670,6 +690,7 @@ impl<'a> Lexer<'a> {
             "export" => Token::Export,
             "true" => Token::True,
             "false" => Token::False,
+            "nil" => Token::Nil,
             _ => Token::Identifier(text.to_string()),
         }
     }

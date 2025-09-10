@@ -1,0 +1,10 @@
+import std:println
+
+# Test mixed colon and bracket access
+m = { name: "Ada", age: 37 }
+name_colon = m:name
+age_bracket = m["age"]
+
+result = name_colon + " is " + age_bracket::to_string()
+
+println(result)  # Ada is 37

@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::map() method
+numbers = [1, 2, 3, 4, 5]
+squares = numbers::map(|x| { return x * x })
+
+println(squares)  # [1, 4, 9, 16, 25]

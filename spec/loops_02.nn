@@ -1,0 +1,9 @@
+import std:println
+
+# Loop through range without bindings
+count = 0
+loop through 0..5 {
+  count++
+}
+
+println(count)  # 5

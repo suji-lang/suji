@@ -1,0 +1,6 @@
+import std:println
+
+# Division operation
+result = 15 / 3
+
+println(result)  # 5

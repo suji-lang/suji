@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::to_list() with different string
+text = "abc"
+chars = text::to_list()
+
+println(chars)  # [a, b, c]

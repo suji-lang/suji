@@ -1,0 +1,6 @@
+import std:println
+
+# Exponentiation operation
+result = 2 ^ 3
+
+println(result)  # 8

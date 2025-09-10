@@ -1,0 +1,6 @@
+import std:println
+
+# Test explicit nil assignment
+x = nil
+
+println(x)  # nil

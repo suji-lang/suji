@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::sum() method
+numbers = [1, 2, 3, 4, 5]
+sum_total = numbers::sum()
+
+println(sum_total)     # 15

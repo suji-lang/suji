@@ -1,0 +1,11 @@
+import std:println
+
+# Closures and variable capture
+makeadder = |base| { return |x| { return base + x } }
+add5 = makeadder(5)
+add20 = makeadder(20)
+result1 = add5(3)
+result2 = add20(3)
+result = result1 + result2
+
+println(result)  # 31

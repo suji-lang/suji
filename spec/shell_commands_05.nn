@@ -1,0 +1,7 @@
+import std:println
+
+# Variable interpolation in shell commands
+name = "world"
+result = `echo Hello, ${name}`
+
+println(result)  # Hello, world

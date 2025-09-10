@@ -435,9 +435,21 @@ fn print_runtime_error(error: RuntimeError, context: &DiagnosticContext) {
                 .print((&context.file_id, Source::from(&context.source)))
                 .unwrap();
         }
-        RuntimeError::ControlFlow { flow } => {
+        RuntimeError::InvalidNumberConversion { message } => {
             let report = Report::build(ReportKind::Error, (&context.file_id, 0..0))
                 .with_code(20)
+                .with_message("Invalid number conversion")
+                .with_note(message)
+                .with_note("Use string::to_number() to convert strings to numbers")
+                .finish();
+
+            report
+                .print((&context.file_id, Source::from(&context.source)))
+                .unwrap();
+        }
+        RuntimeError::ControlFlow { flow } => {
+            let report = Report::build(ReportKind::Error, (&context.file_id, 0..0))
+                .with_code(21)
                 .with_message("Internal control flow error")
                 .with_note(format!("Unexpected control flow: {:?}", flow))
                 .finish();
@@ -461,11 +473,7 @@ fn find_variable_usage(variable_name: &str, source: &str) -> Option<std::ops::Ra
     };
 
     // Find the first match
-    if let Some(mat) = regex.find(source) {
-        Some(mat.start()..mat.end())
-    } else {
-        None
-    }
+    regex.find(source).map(|mat| mat.start()..mat.end())
 }
 
 /// Find similar variable names in the source code for suggestions

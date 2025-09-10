@@ -1,0 +1,8 @@
+import std:println
+
+# Shell command execution
+x = 3
+y = 4
+result = `echo ${x + y}`
+
+println(result)  # 7

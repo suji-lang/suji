@@ -1,4 +1,4 @@
-use super::{BinaryOp, Param, Stmt, StringPart, UnaryOp};
+use super::{BinaryOp, CompoundOp, MatchArm, Param, Stmt, StringPart, UnaryOp};
 use crate::token::Span;
 
 /// Expression nodes representing all NN language expressions
@@ -77,11 +77,26 @@ pub enum Expr {
         span: Span,
     },
 
+    /// Compound assignment: target += value, target -= value, etc.
+    CompoundAssign {
+        target: Box<Expr>,
+        op: CompoundOp,
+        value: Box<Expr>,
+        span: Span,
+    },
+
     /// Method call: receiver::method(args)
     MethodCall {
         target: Box<Expr>,
         method: String,
         args: Vec<Expr>,
+        span: Span,
+    },
+
+    /// Match expression: match expr { pattern: expr, ... }
+    Match {
+        scrutinee: Box<Expr>,
+        arms: Vec<MatchArm>,
         span: Span,
     },
 }
@@ -112,6 +127,9 @@ pub enum Literal {
 
     /// Regex literal: /pattern/
     RegexLiteral(String, Span),
+
+    /// Null literal: nil
+    Nil(Span),
 }
 
 impl Expr {
@@ -131,18 +149,20 @@ impl Expr {
             Expr::Slice { span, .. } => span,
             Expr::MapAccessByName { span, .. } => span,
             Expr::Assign { span, .. } => span,
+            Expr::CompoundAssign { span, .. } => span,
             Expr::MethodCall { span, .. } => span,
+            Expr::Match { span, .. } => span,
         }
     }
 
     /// Check if this expression is a valid assignment target
     pub fn is_assignable(&self) -> bool {
-        match self {
-            Expr::Literal(Literal::Identifier(..)) => true,
-            Expr::Index { .. } => true,
-            Expr::MapAccessByName { .. } => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Expr::Literal(Literal::Identifier(..))
+                | Expr::Index { .. }
+                | Expr::MapAccessByName { .. }
+        )
     }
 }
 
@@ -158,6 +178,7 @@ impl Literal {
             Literal::Map(_, span) => span,
             Literal::Tuple(_, span) => span,
             Literal::RegexLiteral(_, span) => span,
+            Literal::Nil(span) => span,
         }
     }
 }

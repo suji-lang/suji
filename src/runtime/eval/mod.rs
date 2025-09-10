@@ -35,13 +35,6 @@ pub use statements::*;
 /// Result type for evaluation that can return control flow signals
 pub type EvalResult<T> = Result<T, RuntimeError>;
 
-/// Reference to a value that can be assigned to
-pub enum AssignableRef {
-    Variable(String),
-    Index { target: Value, index: Value },
-    MapAccess { target: Value, key: String },
-}
-
 /// Evaluate an expression in the given environment
 pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
     match expr {
@@ -78,12 +71,20 @@ pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
 
         Expr::Assign { target, value, .. } => eval_assignment(target, value, env),
 
+        Expr::CompoundAssign {
+            target, op, value, ..
+        } => eval_compound_assignment(target, *op, value, env),
+
         Expr::MethodCall {
             target,
             method,
             args,
             ..
         } => eval_method_call(target, method, args, env),
+
+        Expr::Match {
+            scrutinee, arms, ..
+        } => eval_match_expression(scrutinee, arms, env),
     }
 }
 
@@ -116,10 +117,10 @@ pub fn eval_stmt_with_modules(
         Stmt::Return { value, .. } => {
             let return_value = match value {
                 Some(expr) => eval_expr(expr, env)?,
-                None => Value::Null,
+                None => Value::Nil,
             };
             Err(RuntimeError::ControlFlow {
-                flow: ControlFlow::Return(return_value),
+                flow: ControlFlow::Return(Box::new(return_value)),
             })
         }
 
@@ -161,7 +162,7 @@ pub fn eval_stmt_with_modules(
 
         Stmt::Import { spec, .. } => {
             eval_import(spec, env, module_registry)?;
-            Ok(Some(Value::Null))
+            Ok(Some(Value::Nil))
         }
 
         Stmt::Export { spec, .. } => {
@@ -172,7 +173,6 @@ pub fn eval_stmt_with_modules(
 }
 
 /// Wrapper functions to handle module registry
-
 /// Block evaluation with module registry
 fn eval_block_with_modules(
     statements: &[Stmt],
@@ -209,17 +209,17 @@ fn eval_infinite_loop_with_modules(
         match eval_stmt_with_modules(body, env.clone(), loop_stack, module_registry) {
             Ok(_) => continue,
             Err(RuntimeError::ControlFlow { flow }) => match flow {
-                ControlFlow::Break(None) => break Ok(Some(Value::Null)),
+                ControlFlow::Break(None) => break Ok(Some(Value::Nil)),
                 ControlFlow::Break(Some(ref target)) => {
-                    if label.map_or(false, |l| l == target) {
-                        break Ok(Some(Value::Null));
+                    if label.is_some_and(|l| l == target) {
+                        break Ok(Some(Value::Nil));
                     } else {
                         break Err(RuntimeError::ControlFlow { flow });
                     }
                 }
                 ControlFlow::Continue(None) => continue,
                 ControlFlow::Continue(Some(ref target)) => {
-                    if label.map_or(false, |l| l == target) {
+                    if label.is_some_and(|l| l == target) {
                         continue;
                     } else {
                         break Err(RuntimeError::ControlFlow { flow });
@@ -264,17 +264,17 @@ fn eval_loop_through_with_modules(
                 match eval_stmt_with_modules(body, env.clone(), loop_stack, module_registry) {
                     Ok(_) => continue,
                     Err(RuntimeError::ControlFlow { flow }) => match flow {
-                        ControlFlow::Break(None) => return Ok(Some(Value::Null)),
+                        ControlFlow::Break(None) => return Ok(Some(Value::Nil)),
                         ControlFlow::Break(Some(ref target)) => {
-                            if label.map_or(false, |l| l == target) {
-                                return Ok(Some(Value::Null));
+                            if label.is_some_and(|l| l == target) {
+                                return Ok(Some(Value::Nil));
                             } else {
                                 return Err(RuntimeError::ControlFlow { flow });
                             }
                         }
                         ControlFlow::Continue(None) => continue,
                         ControlFlow::Continue(Some(ref target)) => {
-                            if label.map_or(false, |l| l == target) {
+                            if label.is_some_and(|l| l == target) {
                                 continue;
                             } else {
                                 return Err(RuntimeError::ControlFlow { flow });
@@ -285,7 +285,7 @@ fn eval_loop_through_with_modules(
                     Err(e) => return Err(e),
                 }
             }
-            Ok(Some(Value::Null))
+            Ok(Some(Value::Nil))
         }
         (Value::List(items), crate::ast::LoopBindings::One(var)) => {
             let mut iter = items.into_iter();
@@ -301,17 +301,17 @@ fn eval_loop_through_with_modules(
                 match eval_stmt_with_modules(body, loop_env, loop_stack, module_registry) {
                     Ok(_) => continue,
                     Err(RuntimeError::ControlFlow { flow }) => match flow {
-                        ControlFlow::Break(None) => return Ok(Some(Value::Null)),
+                        ControlFlow::Break(None) => return Ok(Some(Value::Nil)),
                         ControlFlow::Break(Some(ref target)) => {
-                            if label.map_or(false, |l| l == target) {
-                                return Ok(Some(Value::Null));
+                            if label.is_some_and(|l| l == target) {
+                                return Ok(Some(Value::Nil));
                             } else {
                                 return Err(RuntimeError::ControlFlow { flow });
                             }
                         }
                         ControlFlow::Continue(None) => continue,
                         ControlFlow::Continue(Some(ref target)) => {
-                            if label.map_or(false, |l| l == target) {
+                            if label.is_some_and(|l| l == target) {
                                 continue;
                             } else {
                                 return Err(RuntimeError::ControlFlow { flow });
@@ -322,11 +322,11 @@ fn eval_loop_through_with_modules(
                     Err(e) => return Err(e),
                 }
             }
-            Ok(Some(Value::Null))
+            Ok(Some(Value::Nil))
         }
         _ => {
             // For now, simplified implementation
-            Ok(Some(Value::Null))
+            Ok(Some(Value::Nil))
         }
     };
 
@@ -353,7 +353,7 @@ fn eval_match_with_modules(
         }
     }
 
-    Ok(Some(Value::Null))
+    Ok(Some(Value::Nil))
 }
 
 /// Evaluate a program (list of statements) with module support
@@ -378,4 +378,50 @@ pub fn eval_program_with_modules(
 /// Evaluate a program (list of statements) using default module registry
 pub fn eval_program(statements: &[Stmt], env: Rc<Env>) -> EvalResult<Option<Value>> {
     eval_program_with_modules(statements, env, &ModuleRegistry::new())
+}
+
+/// Evaluate a match expression
+pub fn eval_match_expression(
+    scrutinee: &Expr,
+    arms: &[crate::ast::MatchArm],
+    env: Rc<Env>,
+) -> EvalResult<Value> {
+    let scrutinee_value = eval_expr(scrutinee, env.clone())?;
+
+    for arm in arms {
+        if pattern_matches(&arm.pattern, &scrutinee_value)? {
+            // Evaluate the arm body and handle implicit returns
+            let mut loop_stack = Vec::new();
+            match eval_stmt(&arm.body, env.clone(), &mut loop_stack) {
+                Ok(result) => {
+                    // Handle implicit returns
+                    match result {
+                        Some(value) => return Ok(value), // Statement returned a value
+                        None => {
+                            // No explicit return, check if arm body was a single expression
+                            match &arm.body {
+                                Stmt::Expr(expr) => {
+                                    // Single expression arm body - return its value
+                                    return eval_expr(expr, env);
+                                }
+                                Stmt::Block { statements, .. } => {
+                                    // Block arm body - check if last statement was an expression
+                                    if let Some(Stmt::Expr(expr)) = statements.last() {
+                                        return eval_expr(expr, env);
+                                    } else {
+                                        return Ok(Value::Nil); // Last statement was not an expression or empty block
+                                    }
+                                }
+                                _ => return Ok(Value::Nil), // Other statement types
+                            }
+                        }
+                    }
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
+
+    // No pattern matched - this is valid, just return nil
+    Ok(Value::Nil)
 }

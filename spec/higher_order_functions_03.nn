@@ -1,0 +1,8 @@
+import std:println
+
+# Chaining function calls
+add1 = |x| { return x + 1 }
+mul2 = |x| { return x * 2 }
+result = mul2(add1(5))
+
+println(result)  # 12

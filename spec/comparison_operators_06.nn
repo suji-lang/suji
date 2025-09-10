@@ -1,0 +1,6 @@
+import std:println
+
+# Inequality
+result = 3 != 4
+
+println(result)  # true

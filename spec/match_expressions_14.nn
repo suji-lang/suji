@@ -1,0 +1,11 @@
+import std:println
+
+# Test match expression with string patterns
+name = "Alice"
+result = match name {
+    "Alice": "Hello Alice!"
+    "Bob": "Hello Bob!"
+    _: "Hello stranger!"
+}
+
+println(result)  # Hello Alice!

@@ -1,0 +1,8 @@
+import std:println
+
+# Test implicit return with single expression
+square = |x| x * x
+
+result2 = square(5)     # 25
+
+println(result2)  # 25

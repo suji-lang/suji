@@ -1,0 +1,6 @@
+import std:println
+
+# Test semicolons with function calls and assignments
+name = "world"; greeting = "Hello, " + name
+
+println(greeting)  # Hello, world

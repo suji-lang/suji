@@ -1,0 +1,6 @@
+import std:println
+
+# Test all statements on one line
+a = 1; b = 2; c = a + b
+
+println(c)  # 3

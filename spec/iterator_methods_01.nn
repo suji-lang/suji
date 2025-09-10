@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::filter() method
+numbers = [1, 2, 3, 4, 5]
+evens = numbers::filter(|x| { return x % 2 == 0 })
+
+println(evens)  # [2, 4]

@@ -1,0 +1,6 @@
+import std:println
+
+# Empty slice
+result = [10, 20, 30, 40][2:2]
+
+println(result)  # []

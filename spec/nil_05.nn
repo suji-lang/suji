@@ -1,0 +1,8 @@
+import std:println
+
+# Test nil assignment to map values - count
+data = { user: nil, count: 5 }
+data:user = { name: "Alice" }
+data:user = nil
+
+println(data:count) # 5

@@ -1,0 +1,11 @@
+import std:println
+
+# Test implicit return with string operations
+greet = |name| {
+    prefix = "Hello, "
+    prefix + name    # this is returned
+}
+
+result1 = greet("world")
+
+println(result1)  # Hello, world

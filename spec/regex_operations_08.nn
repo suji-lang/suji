@@ -1,0 +1,6 @@
+import std:println
+
+# Quantifiers
+result = "hello" ~ /l+/
+
+println(result)  # true

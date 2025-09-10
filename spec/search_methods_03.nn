@@ -1,0 +1,7 @@
+import std:println
+
+# Test index_of with numbers in list
+numbers = [10, 20, 30, 40, 50]
+index_20 = numbers::index_of(20)
+
+println(index_20)  # 1

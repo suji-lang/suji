@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::index_of() with missing substring
+text = "hello world"
+missing_index = text::index_of("xyz")
+
+println(missing_index) # -1

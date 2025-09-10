@@ -3,7 +3,7 @@ use nnlang::token::Token;
 
 #[test]
 fn test_basic_tokens() {
-    let input = "( ) [ ] { } , : :: |";
+    let input = "( ) [ ] { } , : :: | ;";
     let tokens = Lexer::lex(input).unwrap();
 
     let expected = vec![
@@ -17,6 +17,7 @@ fn test_basic_tokens() {
         Token::Colon,
         Token::DoubleColon,
         Token::Pipe,
+        Token::Semicolon,
         Token::Eof,
     ];
 
@@ -26,7 +27,7 @@ fn test_basic_tokens() {
 
 #[test]
 fn test_keywords() {
-    let input = "return loop as through with continue break match import export true false";
+    let input = "return loop as through with continue break match import export true false nil";
     let tokens = Lexer::lex(input).unwrap();
 
     let expected = vec![
@@ -42,6 +43,7 @@ fn test_keywords() {
         Token::Export,
         Token::True,
         Token::False,
+        Token::Nil,
         Token::Eof,
     ];
 
@@ -548,4 +550,140 @@ fn test_error_unterminated_regex() {
     if let Err(error) = result {
         assert!(error.to_string().contains("Unterminated regex"));
     }
+}
+
+#[test]
+fn test_compound_assignment_operators() {
+    let input = "x += 5; y -= 3; z *= 2; w /= 4; v %= 7";
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::Identifier("x".to_string()),
+        Token::PlusAssign,
+        Token::Number(5.0),
+        Token::Semicolon,
+        Token::Identifier("y".to_string()),
+        Token::MinusAssign,
+        Token::Number(3.0),
+        Token::Semicolon,
+        Token::Identifier("z".to_string()),
+        Token::MultiplyAssign,
+        Token::Number(2.0),
+        Token::Semicolon,
+        Token::Identifier("w".to_string()),
+        Token::DivideAssign,
+        Token::Number(4.0),
+        Token::Semicolon,
+        Token::Identifier("v".to_string()),
+        Token::ModuloAssign,
+        Token::Number(7.0),
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_nil_keyword() {
+    let input = "x = nil; y = nil";
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::Identifier("x".to_string()),
+        Token::Assign,
+        Token::Nil,
+        Token::Semicolon,
+        Token::Identifier("y".to_string()),
+        Token::Assign,
+        Token::Nil,
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_semicolon_token() {
+    let input = "x = 1; y = 2; z = 3";
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::Identifier("x".to_string()),
+        Token::Assign,
+        Token::Number(1.0),
+        Token::Semicolon,
+        Token::Identifier("y".to_string()),
+        Token::Assign,
+        Token::Number(2.0),
+        Token::Semicolon,
+        Token::Identifier("z".to_string()),
+        Token::Assign,
+        Token::Number(3.0),
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_compound_assignment_vs_regular_operators() {
+    let input = "x += 1; y = y + 1; z *= 2; w = w * 2";
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::Identifier("x".to_string()),
+        Token::PlusAssign,
+        Token::Number(1.0),
+        Token::Semicolon,
+        Token::Identifier("y".to_string()),
+        Token::Assign,
+        Token::Identifier("y".to_string()),
+        Token::Plus,
+        Token::Number(1.0),
+        Token::Semicolon,
+        Token::Identifier("z".to_string()),
+        Token::MultiplyAssign,
+        Token::Number(2.0),
+        Token::Semicolon,
+        Token::Identifier("w".to_string()),
+        Token::Assign,
+        Token::Identifier("w".to_string()),
+        Token::Multiply,
+        Token::Number(2.0),
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_nil_in_match_pattern() {
+    let input = "match x { nil: \"empty\"; _: \"something\" }";
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::Match,
+        Token::Identifier("x".to_string()),
+        Token::LeftBrace,
+        Token::Nil,
+        Token::Colon,
+        Token::StringStart,
+        Token::StringText("empty".to_string()),
+        Token::StringEnd,
+        Token::Semicolon,
+        Token::Underscore,
+        Token::Colon,
+        Token::StringStart,
+        Token::StringText("something".to_string()),
+        Token::StringEnd,
+        Token::RightBrace,
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
 }

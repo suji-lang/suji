@@ -1,0 +1,17 @@
+import std:println
+
+# Test match expression with multiple expressions - last one is returned
+x = 3
+result = match x {
+    1: { 
+        println("one")
+        100    # this is returned
+    }
+    3: {
+        println("three")
+        200    # this is returned
+    }
+    _: { 0 }
+}
+
+println(result)  # 200

@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::to_number() with decimal
+s = "456.789"
+n = s::to_number()
+
+println(n)  # 456.789

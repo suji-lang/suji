@@ -1,0 +1,10 @@
+import std:println
+
+# Function composition through higher-order function
+compose = |f, g| { return |x| { return f(g(x)) } }
+add3 = |x| { return x + 3 }
+mul2 = |x| { return x * 2 }
+composed = compose(mul2, add3)
+result = composed(4)
+
+println(result)  # 14

@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::map() with doubling
+numbers = [1, 2, 3, 4, 5]
+doubled = numbers::map(|x| { return x * 2 })
+
+println(doubled)  # [2, 4, 6, 8, 10]

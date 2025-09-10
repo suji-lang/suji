@@ -1,0 +1,10 @@
+import std:println
+
+# Test explicit return still works
+add = |x, y| {
+    return x + y
+}
+
+result1 = add(3, 4)     # 7
+
+println(result1)  # 7

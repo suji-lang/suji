@@ -1,0 +1,7 @@
+import std:println
+
+# Postfix decrement
+x = 5
+x--
+
+println(x)  # 4

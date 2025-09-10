@@ -1,0 +1,8 @@
+import std:println
+
+# Test function with single expression - square
+square = |x| x * x
+
+result2 = square(5)          # 25
+
+println(result2)  # 25

@@ -1,0 +1,11 @@
+import std:println
+
+# Test basic regex patterns in match
+text = "user_123"
+
+result = match text {
+    /^user_[0-9]+$/: "valid user id"
+    _: "invalid user id"
+}
+
+println(result)  # valid user id

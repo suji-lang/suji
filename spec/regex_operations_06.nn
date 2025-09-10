@@ -1,0 +1,6 @@
+import std:println
+
+# End anchor
+result = "hello world" ~ /world$/
+
+println(result)  # true

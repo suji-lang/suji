@@ -1,0 +1,8 @@
+import std:println
+
+# Test complex shell interpolation
+x = 5
+y = 10
+result = `echo "The sum of ${x} and ${y} is ${x + y}"`
+
+println(result)  # The sum of 5 and 10 is 15

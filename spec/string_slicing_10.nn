@@ -1,0 +1,7 @@
+import std:println
+
+# Test string slicing with empty slice
+text = "abc"
+empty_slice = text[2:2]  # ""
+
+println(empty_slice)  # 

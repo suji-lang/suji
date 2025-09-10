@@ -1,0 +1,6 @@
+import std:println
+
+# Test escaped quotes and backslashes
+text = "He said \"Hello\" and used \\ backslash"
+
+println(text)  # He said "Hello" and used \ backslash

@@ -1,0 +1,6 @@
+import std:println
+
+# Greater than or equal
+result = 4 >= 4
+
+println(result)  # true

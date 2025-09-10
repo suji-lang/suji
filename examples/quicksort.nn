@@ -1,0 +1,57 @@
+# Quicksort implementation in NN language
+# Demonstrates recursive functions, list manipulation, and functional programming
+
+import std:println
+
+# Quicksort function - sorts a list of numbers in ascending order
+quicksort = |list| {
+    # Base case: empty list or single element is already sorted
+    match list::length() {
+        0: []
+        1: list
+        _: {
+            # Choose pivot (first element)
+            pivot = list[0]
+            
+            # Partition the list into elements less than, equal to, and greater than pivot
+            less = []
+            equal = []
+            greater = []
+            
+            # Iterate through the list and partition
+            loop through list with element {
+                match element < pivot {
+                    true: less::push(element)
+                    false: {
+                        match element > pivot {
+                            true: greater::push(element)
+                            false: equal::push(element)
+                        }
+                    }
+                }
+            }
+            
+            # Recursively sort the partitions and combine
+            sorted_less = quicksort(less)
+            sorted_greater = quicksort(greater)
+            
+            # Combine: less + equal + greater
+            result = sorted_less
+            loop through equal with elem {
+                result::push(elem)
+            }
+            loop through sorted_greater with elem {
+                result::push(elem)
+            }
+            
+            result
+        }
+    }
+}
+
+
+list = [85, 12, 59, 45, 72, 51, 80, 75, 89, 9, 71, 81, 33, 1, 84, 28, 97, 94, 57, 8]
+sorted_list = quicksort(list)
+
+println("Original: " + list::join(", "))
+println("Sorted:   " + sorted_list::join(", "))

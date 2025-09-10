@@ -1,0 +1,6 @@
+import std:println
+
+# Negative indexing
+result = [10, 20, 30, 40][-1]
+
+println(result)  # 40
