@@ -1,0 +1,11 @@
+import std:println
+
+# Map to_list method - different key types
+mixed_map = { 
+    "string": "value1", 
+    42: "value2", 
+    true: "value3" 
+}
+pairs = mixed_map::to_list()
+
+println(pairs)  # [(string, value1), (42, value2), (true, value3)]

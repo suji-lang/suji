@@ -1,7 +1,9 @@
 use super::EvalResult;
 use crate::ast::Pattern;
+use crate::runtime::env::Env;
 use crate::runtime::value::{RuntimeError, Value};
 use regex::Regex;
+use std::rc::Rc;
 
 /// Check if a pattern matches a value
 pub fn pattern_matches(pattern: &Pattern, value: &Value) -> EvalResult<bool> {
@@ -38,6 +40,23 @@ pub fn pattern_matches(pattern: &Pattern, value: &Value) -> EvalResult<bool> {
             }
             _ => Ok(false),
         },
+        Pattern::Expression(_) => {
+            // Expression patterns are handled separately in conditional match evaluation
+            // This should not be called for conditional match
+            Ok(false)
+        }
+    }
+}
+
+/// Check if an expression pattern matches (for conditional match)
+pub fn expression_pattern_matches(pattern: &Pattern, env: Rc<Env>) -> EvalResult<bool> {
+    match pattern {
+        Pattern::Expression(expr) => {
+            use super::eval_expr;
+            let result = eval_expr(expr, env)?;
+            Ok(result.is_truthy())
+        }
+        _ => Ok(false), // Non-expression patterns should not be used in conditional match
     }
 }
 

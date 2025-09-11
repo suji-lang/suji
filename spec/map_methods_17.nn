@@ -1,0 +1,9 @@
+import std:println
+
+# Map methods combined - keys and values same length
+config = { name: "Alice", age: 30, city: "NYC" }
+keys_count = config::keys()::length()
+values_count = config::values()::length()
+same_length = keys_count == values_count
+
+println(same_length)  # true

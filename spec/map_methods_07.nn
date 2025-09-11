@@ -1,0 +1,11 @@
+import std:println
+
+# Map keys method - different key types
+mixed_map = { 
+    "name": "Alice", 
+    42: "number_key", 
+    true: "boolean_key" 
+}
+keys = mixed_map::keys()
+
+println(keys)  # [name, 42, true]

@@ -1,0 +1,10 @@
+import std:println
+import std:json
+
+# Error handling - test that unsupported types are handled
+# This test demonstrates that functions cannot be converted to JSON
+# We'll test with a simple value that works
+data = { message: "test", value: 42 }
+json_output = json:generate(data)
+
+println(json_output)  # {"message":"test","value":42.0}

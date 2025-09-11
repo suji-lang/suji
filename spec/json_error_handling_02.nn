@@ -1,0 +1,9 @@
+import std:println
+import std:json
+
+# Error handling - test that valid generation works
+data = { name: "Bob", age: 25 }
+json_output = json:generate(data)
+
+# If we get here, generation worked
+println(json_output)  # {"age":25.0,"name":"Bob"}

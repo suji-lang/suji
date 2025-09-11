@@ -1,0 +1,18 @@
+import std:println
+
+# Mixed with traditional match
+x = 2
+y = 3
+
+result1 = match x {
+    1: "one"
+    2: "two"
+    _: "other"
+}
+
+result2 = match {
+    y > 2: "y is large"
+    _: "y is small"
+}
+
+println(result1 + " " + result2)  # two y is large

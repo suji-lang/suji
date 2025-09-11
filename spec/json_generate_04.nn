@@ -1,0 +1,7 @@
+import std:println
+import std:json
+
+# JSON generate - simple values
+result = json:generate(true)
+
+println(result)  # true

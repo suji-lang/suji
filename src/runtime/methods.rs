@@ -364,7 +364,7 @@ fn call_list_method(
     }
 }
 
-/// Map methods: delete(key)
+/// Map methods: delete(key), contains(key), keys(), values(), to_list(), length()
 fn call_map_method(
     mut receiver: ValueRef,
     method: &str,
@@ -397,6 +397,60 @@ fn call_map_method(
             let key = args[0].clone().try_into_map_key()?;
             if let Value::Map(map_data) = receiver.get() {
                 Ok(Value::Boolean(map_data.contains_key(&key)))
+            } else {
+                unreachable!()
+            }
+        }
+        "keys" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "keys() takes no arguments".to_string(),
+                });
+            }
+            if let Value::Map(map_data) = receiver.get() {
+                let keys: Vec<Value> = map_data.keys().map(|key| key.to_value()).collect();
+                Ok(Value::List(keys))
+            } else {
+                unreachable!()
+            }
+        }
+        "values" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "values() takes no arguments".to_string(),
+                });
+            }
+            if let Value::Map(map_data) = receiver.get() {
+                let values: Vec<Value> = map_data.values().cloned().collect();
+                Ok(Value::List(values))
+            } else {
+                unreachable!()
+            }
+        }
+        "to_list" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "to_list() takes no arguments".to_string(),
+                });
+            }
+            if let Value::Map(map_data) = receiver.get() {
+                let pairs: Vec<Value> = map_data
+                    .iter()
+                    .map(|(key, value)| Value::Tuple(vec![key.to_value(), value.clone()]))
+                    .collect();
+                Ok(Value::List(pairs))
+            } else {
+                unreachable!()
+            }
+        }
+        "length" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "length() takes no arguments".to_string(),
+                });
+            }
+            if let Value::Map(map_data) = receiver.get() {
+                Ok(Value::Number(map_data.len() as f64))
             } else {
                 unreachable!()
             }
@@ -863,5 +917,258 @@ mod tests {
         // Test with invalid key type (list)
         let result = call_method(receiver, "contains", vec![Value::List(vec![])]);
         assert!(matches!(result, Err(RuntimeError::InvalidKeyType { .. })));
+    }
+
+    // New map methods tests
+    #[test]
+    fn test_map_keys_method() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("city".to_string()),
+            Value::String("New York".to_string()),
+        );
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "keys", vec![]).unwrap();
+
+        if let Value::List(keys) = result {
+            assert_eq!(keys.len(), 3);
+            // Order is preserved by IndexMap
+            assert_eq!(keys[0], Value::String("name".to_string()));
+            assert_eq!(keys[1], Value::String("age".to_string()));
+            assert_eq!(keys[2], Value::String("city".to_string()));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_map_values_method() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(MapKey::String("active".to_string()), Value::Boolean(true));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "values", vec![]).unwrap();
+
+        if let Value::List(values) = result {
+            assert_eq!(values.len(), 3);
+            // Order is preserved by IndexMap
+            assert_eq!(values[0], Value::String("Alice".to_string()));
+            assert_eq!(values[1], Value::Number(30.0));
+            assert_eq!(values[2], Value::Boolean(true));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_map_to_list_method() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "to_list", vec![]).unwrap();
+
+        if let Value::List(pairs) = result {
+            assert_eq!(pairs.len(), 2);
+            // Check first pair
+            if let Value::Tuple(first_pair) = &pairs[0] {
+                assert_eq!(first_pair[0], Value::String("name".to_string()));
+                assert_eq!(first_pair[1], Value::String("Alice".to_string()));
+            } else {
+                panic!("Expected tuple");
+            }
+            // Check second pair
+            if let Value::Tuple(second_pair) = &pairs[1] {
+                assert_eq!(second_pair[0], Value::String("age".to_string()));
+                assert_eq!(second_pair[1], Value::Number(30.0));
+            } else {
+                panic!("Expected tuple");
+            }
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_map_length_method() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(MapKey::String("a".to_string()), Value::Number(1.0));
+        map_data.insert(MapKey::String("b".to_string()), Value::Number(2.0));
+        map_data.insert(MapKey::String("c".to_string()), Value::Number(3.0));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "length", vec![]).unwrap();
+        assert_eq!(result, Value::Number(3.0));
+    }
+
+    #[test]
+    fn test_map_keys_empty_map() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "keys", vec![]).unwrap();
+
+        if let Value::List(keys) = result {
+            assert_eq!(keys.len(), 0);
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_map_values_empty_map() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "values", vec![]).unwrap();
+
+        if let Value::List(values) = result {
+            assert_eq!(values.len(), 0);
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_map_to_list_empty_map() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "to_list", vec![]).unwrap();
+
+        if let Value::List(pairs) = result {
+            assert_eq!(pairs.len(), 0);
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_map_length_empty_map() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "length", vec![]).unwrap();
+        assert_eq!(result, Value::Number(0.0));
+    }
+
+    #[test]
+    fn test_map_keys_arity_mismatch() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        let result = call_method(receiver, "keys", vec![Value::String("arg".to_string())]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_map_values_arity_mismatch() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        let result = call_method(receiver, "values", vec![Value::String("arg".to_string())]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_map_to_list_arity_mismatch() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        let result = call_method(receiver, "to_list", vec![Value::String("arg".to_string())]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_map_length_arity_mismatch() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        let result = call_method(receiver, "length", vec![Value::String("arg".to_string())]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_map_keys_with_different_key_types() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        map_data.insert(
+            MapKey::Number(OrderedFloat(1.0)),
+            Value::String("first".to_string()),
+        );
+        map_data.insert(MapKey::Boolean(true), Value::String("yes".to_string()));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "keys", vec![]).unwrap();
+
+        if let Value::List(keys) = result {
+            assert_eq!(keys.len(), 3);
+            assert_eq!(keys[0], Value::String("name".to_string()));
+            assert_eq!(keys[1], Value::Number(1.0));
+            assert_eq!(keys[2], Value::Boolean(true));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_map_to_list_with_different_key_types() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        map_data.insert(MapKey::Number(OrderedFloat(42.0)), Value::Number(100.0));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+        let result = call_method(receiver, "to_list", vec![]).unwrap();
+
+        if let Value::List(pairs) = result {
+            assert_eq!(pairs.len(), 2);
+            // Check first pair
+            if let Value::Tuple(first_pair) = &pairs[0] {
+                assert_eq!(first_pair[0], Value::String("name".to_string()));
+                assert_eq!(first_pair[1], Value::String("Alice".to_string()));
+            } else {
+                panic!("Expected tuple");
+            }
+            // Check second pair
+            if let Value::Tuple(second_pair) = &pairs[1] {
+                assert_eq!(second_pair[0], Value::Number(42.0));
+                assert_eq!(second_pair[1], Value::Number(100.0));
+            } else {
+                panic!("Expected tuple");
+            }
+        } else {
+            panic!("Expected list");
+        }
     }
 }

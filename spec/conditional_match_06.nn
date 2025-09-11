@@ -1,0 +1,11 @@
+import std:println
+
+# All conditions false
+x = -5
+result = match {
+    x > 0: "positive"
+    x > -10: "small negative"
+    _: "large negative"
+}
+
+println(result)  # small negative

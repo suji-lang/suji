@@ -1,0 +1,14 @@
+import std:println
+
+# Conditional match in binary operation
+x = 5
+y = 3
+result = match {
+    x > 0: 10
+    _: 0
+} + match {
+    y > 0: 5
+    _: 0
+}
+
+println(result)  # 15

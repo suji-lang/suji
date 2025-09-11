@@ -1,0 +1,9 @@
+import std:println
+import std:json
+
+# JSON roundtrip - generate then parse
+original = { name: "Bob", hobbies: ["reading", "coding"] }
+generated = json:generate(original)
+parsed = json:parse(generated)
+
+println(parsed:name)  # Bob

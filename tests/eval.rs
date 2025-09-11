@@ -66,9 +66,10 @@ fn test_basic_arithmetic_expressions() {
         println!("Debug: 2 ^ 3 = {:?}", result);
         // Only assert if it's actually working as expected
         if let Value::Number(n) = result
-            && n == 8.0 {
-                assert_eq!(n, 8.0);
-            }
+            && n == 8.0
+        {
+            assert_eq!(n, 8.0);
+        }
     }
 }
 
@@ -89,9 +90,10 @@ fn test_operator_precedence() {
         println!("Debug: 2 ^ 3 ^ 2 = {:?}", result);
         // Only assert if it matches expected value
         if let Value::Number(n) = result
-            && n == 512.0 {
-                assert_eq!(n, 512.0);
-            }
+            && n == 512.0
+        {
+            assert_eq!(n, 512.0);
+        }
     }
 }
 
@@ -282,55 +284,62 @@ fn test_complex_literals_evaluation() {
 
     // String literals (simple ones without interpolation)
     if can_eval(r#""hello""#)
-        && let Value::String(s) = eval_string_expr(r#""hello""#).unwrap() {
-            assert_eq!(s, "hello");
-        }
+        && let Value::String(s) = eval_string_expr(r#""hello""#).unwrap()
+    {
+        assert_eq!(s, "hello");
+    }
 
     // List literals
     if can_eval("[1, 2, 3]")
-        && let Value::List(items) = eval_string_expr("[1, 2, 3]").unwrap() {
-            assert_eq!(items.len(), 3);
-            assert_eq!(items[0], Value::Number(1.0));
-            assert_eq!(items[1], Value::Number(2.0));
-            assert_eq!(items[2], Value::Number(3.0));
-        }
+        && let Value::List(items) = eval_string_expr("[1, 2, 3]").unwrap()
+    {
+        assert_eq!(items.len(), 3);
+        assert_eq!(items[0], Value::Number(1.0));
+        assert_eq!(items[1], Value::Number(2.0));
+        assert_eq!(items[2], Value::Number(3.0));
+    }
 
     // Tuple literals
     if can_eval("(1, 2)")
-        && let Value::Tuple(items) = eval_string_expr("(1, 2)").unwrap() {
-            assert_eq!(items.len(), 2);
-            assert_eq!(items[0], Value::Number(1.0));
-            assert_eq!(items[1], Value::Number(2.0));
-        }
+        && let Value::Tuple(items) = eval_string_expr("(1, 2)").unwrap()
+    {
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0], Value::Number(1.0));
+        assert_eq!(items[1], Value::Number(2.0));
+    }
 
     // Single-element tuple
     if can_eval("(42,)")
-        && let Value::Tuple(items) = eval_string_expr("(42,)").unwrap() {
-            assert_eq!(items.len(), 1);
-            assert_eq!(items[0], Value::Number(42.0));
-        }
+        && let Value::Tuple(items) = eval_string_expr("(42,)").unwrap()
+    {
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], Value::Number(42.0));
+    }
 
     // Map literals
     if can_eval(r#"{ "a": 1 }"#)
-        && let Value::Map(_map) = eval_string_expr(r#"{ "a": 1 }"#).unwrap() {
-            // Map content verification would require more complex testing
-            // This at least verifies it parses and evaluates to a map
-        }
+        && let Value::Map(_map) = eval_string_expr(r#"{ "a": 1 }"#).unwrap()
+    {
+        // Map content verification would require more complex testing
+        // This at least verifies it parses and evaluates to a map
+    }
 
     // Regex literals
     if can_eval(r"/hello/")
-        && let Value::Regex(_regex) = eval_string_expr(r"/hello/").unwrap() {
-            // Regex verification - at least it parses and evaluates to a regex
-        }
+        && let Value::Regex(_regex) = eval_string_expr(r"/hello/").unwrap()
+    {
+        // Regex verification - at least it parses and evaluates to a regex
+    }
 
     // Range expressions
     if can_eval("1..4")
-        && let Value::List(items) = eval_string_expr("1..4").unwrap() {
-            assert_eq!(items.len(), 3);
-            assert_eq!(items[0], Value::Number(1.0));
-            assert_eq!(items[1], Value::Number(2.0));
-            assert_eq!(items[2], Value::Number(3.0));
-        }
+        && let Value::List(items) = eval_string_expr("1..4").unwrap()
+    {
+        assert_eq!(items.len(), 3);
+        assert_eq!(items[0], Value::Number(1.0));
+        assert_eq!(items[1], Value::Number(2.0));
+        assert_eq!(items[2], Value::Number(3.0));
+    }
 }
 
 #[test]
@@ -1076,7 +1085,7 @@ fn test_map_iteration_mixed_key_types() {
 fn test_map_iteration_nested_maps() {
     let result = eval_program(
         r#"
-        nested = { 
+        nested = {
             user: { name: "Alice" },
             settings: { theme: "dark" }
         }
@@ -1204,4 +1213,409 @@ fn test_complex_nil_handling() {
     );
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::String("User not found".to_string()));
+}
+
+#[test]
+fn test_conditional_match_basic() {
+    let result = eval_program(
+        r#"
+        x = 5
+        result = match {
+            x > 0: "positive"
+            _: "non-positive"
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("positive".to_string()));
+}
+
+#[test]
+fn test_conditional_match_multiple_conditions() {
+    let result = eval_program(
+        r#"
+        x = 7
+        result = match {
+            x > 10: "very large"
+            x > 5: "large"
+            x > 0: "positive"
+            _: "non-positive"
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("large".to_string()));
+}
+
+#[test]
+fn test_conditional_match_complex_boolean() {
+    let result = eval_program(
+        r#"
+        x = 3
+        y = 4
+        result = match {
+            x > 0 && y > 0: "both positive"
+            x > 0: "only x positive"
+            y > 0: "only y positive"
+            _: "neither positive"
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("both positive".to_string()));
+}
+
+#[test]
+fn test_conditional_match_in_function() {
+    let result = eval_program(
+        r#"
+        f = |x| {
+            return match {
+                x > 10: "very large"
+                x > 5: "large"
+                x > 0: "positive"
+                _: "non-positive"
+            }
+        }
+        f(15)
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("very large".to_string()));
+}
+
+#[test]
+fn test_conditional_match_mixed_with_traditional() {
+    let result = eval_program(
+        r#"
+        x = 2
+        y = 3
+
+        result1 = match x {
+            1: "one"
+            2: "two"
+            _: "other"
+        }
+
+        result2 = match {
+            y > 2: "y is large"
+            _: "y is small"
+        }
+
+        result1 + " " + result2
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("two y is large".to_string()));
+}
+
+#[test]
+fn test_conditional_match_all_conditions_false() {
+    let result = eval_program(
+        r#"
+        x = -5
+        result = match {
+            x > 0: "positive"
+            x > -10: "small negative"
+            _: "large negative"
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("small negative".to_string()));
+}
+
+#[test]
+fn test_conditional_match_with_wildcard() {
+    let result = eval_program(
+        r#"
+        x = 0
+        result = match {
+            x > 0: "positive"
+            x < 0: "negative"
+            _: "zero"
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("zero".to_string()));
+}
+
+#[test]
+fn test_conditional_match_nested() {
+    let result = eval_program(
+        r#"
+        x = 3
+        y = 4
+        result = match {
+            x > 0: match {
+                y > 0: "both positive"
+                _: "x positive, y non-positive"
+            }
+            _: "x non-positive"
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("both positive".to_string()));
+}
+
+#[test]
+fn test_conditional_match_in_binary_operation() {
+    let result = eval_program(
+        r#"
+        x = 5
+        y = 3
+        result = match {
+            x > 0: 10
+            _: 0
+        } + match {
+            y > 0: 5
+            _: 0
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(15.0));
+}
+
+#[test]
+fn test_conditional_match_with_string_comparison() {
+    let result = eval_program(
+        r#"
+        name = "alice"
+        result = match {
+            name == "alice": "Hello Alice"
+            name == "bob": "Hello Bob"
+            _: "Hello stranger"
+        }
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("Hello Alice".to_string()));
+}
+
+#[test]
+fn test_map_keys_method_integration() {
+    let result = eval_program(
+        r#"
+        config = { 
+            name: "Alice", 
+            age: 30, 
+            city: "New York",
+            active: true
+        }
+        keys = config::keys()
+        keys::length()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(4.0));
+}
+
+#[test]
+fn test_map_values_method_integration() {
+    let result = eval_program(
+        r#"
+        scores = { 1: 100, 2: 85, 3: 92 }
+        values = scores::values()
+        values::length()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(3.0));
+}
+
+#[test]
+fn test_map_to_list_method_integration() {
+    let result = eval_program(
+        r#"
+        user = { name: "Bob", age: 25 }
+        pairs = user::to_list()
+        pairs::length()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(2.0));
+}
+
+#[test]
+fn test_map_length_method_integration() {
+    let result = eval_program(
+        r#"
+        data = { a: 1, b: 2, c: 3, d: 4, e: 5 }
+        data::length()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(5.0));
+}
+
+#[test]
+fn test_map_methods_combined_usage() {
+    let result = eval_program(
+        r#"
+        config = { 
+            name: "Alice", 
+            age: 30, 
+            city: "New York",
+            active: true
+        }
+        
+        # Test all methods together
+        key_count = config::keys()::length()
+        value_count = config::values()::length()
+        pair_count = config::to_list()::length()
+        direct_count = config::length()
+        
+        # All should be equal
+        key_count == value_count && value_count == pair_count && pair_count == direct_count
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Boolean(true));
+}
+
+#[test]
+fn test_map_methods_with_iteration() {
+    let result = eval_program(
+        r#"
+        scores = { math: 95, science: 87, english: 92 }
+        
+        # Iterate over keys
+        key_count = 0
+        loop through scores::keys() with key {
+            key_count = key_count + 1
+        }
+        
+        # Iterate over values
+        value_count = 0
+        loop through scores::values() with value {
+            value_count = value_count + 1
+        }
+        
+        # Iterate over pairs
+        pair_count = 0
+        loop through scores::to_list() with pair {
+            pair_count = pair_count + 1
+        }
+        
+        # All counts should equal the map length
+        key_count == scores::length() && value_count == scores::length() && pair_count == scores::length()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Boolean(true));
+}
+
+#[test]
+fn test_json_module_integration() {
+    let result = eval_program(
+        r#"
+        import std:json
+        data = json:parse("{\"name\": \"Alice\", \"age\": 30}")
+        json:generate(data)
+    "#,
+    );
+    assert!(result.is_ok());
+    let output = result.unwrap();
+    if let Value::String(json_str) = output {
+        assert!(json_str.contains("\"name\":\"Alice\""));
+        assert!(json_str.contains("\"age\":30.0"));
+    } else {
+        panic!("Expected string output");
+    }
+}
+
+#[test]
+fn test_json_direct_imports() {
+    let result = eval_program(
+        r#"
+        import std:json:parse
+        import std:json:generate
+        data = parse("{\"value\": 42}")
+        generate(data)
+    "#,
+    );
+    assert!(result.is_ok());
+    let output = result.unwrap();
+    if let Value::String(json_str) = output {
+        assert!(json_str.contains("\"value\":42.0"));
+    } else {
+        panic!("Expected string output");
+    }
+}
+
+#[test]
+fn test_json_roundtrip_integration() {
+    let result = eval_program(
+        r#"
+        import std:json
+        original = { name: "Bob", hobbies: ["reading", "coding"] }
+        json_str = json:generate(original)
+        parsed = json:parse(json_str)
+        parsed:name
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("Bob".to_string()));
+}
+
+#[test]
+fn test_json_nested_structures() {
+    let result = eval_program(
+        r#"
+        import std:json
+        complex = {
+            users: [
+                { name: "Alice", age: 30 },
+                { name: "Bob", age: 25 }
+            ],
+            metadata: { version: "1.0", count: 2 }
+        }
+        json_str = json:generate(complex)
+        parsed = json:parse(json_str)
+        parsed:metadata:version
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("1.0".to_string()));
+}
+
+#[test]
+fn test_json_with_boolean_values() {
+    let result = eval_program(
+        r#"
+        import std:json
+        data = { active: true, disabled: false, count: 0 }
+        json_str = json:generate(data)
+        parsed = json:parse(json_str)
+        parsed:active
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Boolean(true));
+}
+
+#[test]
+fn test_json_with_nil_values() {
+    let result = eval_program(
+        r#"
+        import std:json
+        data = { value: nil, name: "test" }
+        json_str = json:generate(data)
+        parsed = json:parse(json_str)
+        parsed:value
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Nil);
 }

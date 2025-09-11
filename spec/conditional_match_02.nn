@@ -1,0 +1,12 @@
+import std:println
+
+# Multiple conditions
+x = 7
+result = match {
+    x > 10: "very large"
+    x > 5: "large"
+    x > 0: "positive"
+    _: "non-positive"
+}
+
+println(result)  # large

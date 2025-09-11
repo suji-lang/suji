@@ -1,0 +1,11 @@
+import std:println
+
+# Conditional match with wildcard
+x = 0
+result = match {
+    x > 0: "positive"
+    x < 0: "negative"
+    _: "zero"
+}
+
+println(result)  # zero

@@ -93,9 +93,9 @@ pub enum Expr {
         span: Span,
     },
 
-    /// Match expression: match expr { pattern: expr, ... }
+    /// Match expression: match expr? { pattern: expr, ... } or match { condition: expr, ... }
     Match {
-        scrutinee: Box<Expr>,
+        scrutinee: Option<Box<Expr>>, // None for conditional match, Some(expr) for traditional match
         arms: Vec<MatchArm>,
         span: Span,
     },

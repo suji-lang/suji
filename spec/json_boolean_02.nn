@@ -1,0 +1,8 @@
+import std:println
+import std:json
+
+# JSON generate boolean values
+data = { active: true, disabled: false }
+json_output = json:generate(data)
+
+println(json_output)  # {"active":true,"disabled":false}

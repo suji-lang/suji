@@ -1,0 +1,8 @@
+import std:println
+import std:json
+
+# JSON generate - array
+numbers = [1, 2, 3]
+json_output = json:generate(numbers)
+
+println(json_output)  # [1.0,2.0,3.0]

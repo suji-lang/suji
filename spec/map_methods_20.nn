@@ -1,0 +1,10 @@
+import std:println
+
+# Map methods with iteration - values
+scores = { math: 95, science: 87, english: 92 }
+total = 0
+loop through scores::values() with value {
+    total = total + value
+}
+
+println(total)  # 274

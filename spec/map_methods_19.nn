@@ -1,0 +1,10 @@
+import std:println
+
+# Map methods with iteration - keys
+config = { a: 1, b: 2, c: 3 }
+count = 0
+loop through config::keys() with key {
+    count = count + 1
+}
+
+println(count)  # 3

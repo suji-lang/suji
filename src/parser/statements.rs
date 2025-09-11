@@ -2,13 +2,6 @@ use super::{ParseError, ParseResult, Parser};
 use crate::ast::Stmt;
 use crate::token::{Span, Token};
 
-/// Type of content inside braces in match arms
-#[derive(Debug, Clone, PartialEq)]
-enum BracedContentType {
-    MapLiteral,
-    Block,
-}
-
 impl Parser {
     /// Parse a statement
     pub(super) fn statement(&mut self) -> ParseResult<Stmt> {
@@ -30,11 +23,6 @@ impl Parser {
         // Loop statements
         if self.match_token(Token::Loop) {
             return self.parse_loop_statement();
-        }
-
-        // Match statement
-        if self.match_token(Token::Match) {
-            return self.parse_match_statement();
         }
 
         // Import statement
@@ -193,190 +181,6 @@ impl Parser {
         })
     }
 
-    /// Parse match arm body - either { statements } or single expression/statement
-    pub(super) fn parse_match_arm_body(&mut self, span: Span) -> ParseResult<Stmt> {
-        match self.peek().token {
-            Token::LeftBrace => self.parse_braced_arm_body(span),
-            _ => self.parse_unbraced_arm_body(),
-        }
-    }
-
-    /// Parse braced arm body - either { statements } or { map_literal }
-    fn parse_braced_arm_body(&mut self, span: Span) -> ParseResult<Stmt> {
-        self.advance(); // consume LeftBrace
-
-        match self.detect_braced_content_type() {
-            BracedContentType::MapLiteral => {
-                let expr = self.parse_map()?;
-                Ok(Stmt::Expr(expr))
-            }
-            BracedContentType::Block => {
-                let statements = self.parse_block()?;
-                Ok(Stmt::Block { statements, span })
-            }
-        }
-    }
-
-    /// Parse unbraced arm body - single expression or statement
-    fn parse_unbraced_arm_body(&mut self) -> ParseResult<Stmt> {
-        match self.peek().token {
-            Token::Return => self.parse_match_arm_return(),
-            Token::Break => self.parse_match_arm_break(),
-            Token::Continue => self.parse_match_arm_continue(),
-            _ => {
-                // Fall back to expression
-                let expr = self.expression()?;
-                Ok(Stmt::Expr(expr))
-            }
-        }
-    }
-
-    /// Parse return statement in match arm
-    fn parse_match_arm_return(&mut self) -> ParseResult<Stmt> {
-        let return_span = self.advance().span.clone(); // consume Return
-
-        let value = if self.has_expression_after() {
-            Some(self.expression()?)
-        } else {
-            None
-        };
-
-        Ok(Stmt::Return {
-            value,
-            span: return_span,
-        })
-    }
-
-    /// Parse break statement in match arm
-    fn parse_match_arm_break(&mut self) -> ParseResult<Stmt> {
-        let break_span = self.advance().span.clone(); // consume Break
-
-        let label = if self.has_expression_after() {
-            self.parse_optional_label()
-        } else {
-            None
-        };
-
-        Ok(Stmt::Break {
-            label,
-            span: break_span,
-        })
-    }
-
-    /// Parse continue statement in match arm
-    fn parse_match_arm_continue(&mut self) -> ParseResult<Stmt> {
-        let continue_span = self.advance().span.clone(); // consume Continue
-
-        let label = if self.has_expression_after() {
-            self.parse_optional_label()
-        } else {
-            None
-        };
-
-        Ok(Stmt::Continue {
-            label,
-            span: continue_span,
-        })
-    }
-
-    /// Check if there's an expression after the current token (not end of arm)
-    fn has_expression_after(&self) -> bool {
-        !self.check(Token::RightBrace) && !self.check(Token::Comma) && !self.is_at_end()
-    }
-
-    /// Parse optional label for break/continue statements
-    fn parse_optional_label(&mut self) -> Option<String> {
-        if let Token::Identifier(name) = &self.peek().token {
-            let name = name.clone();
-            self.advance();
-            Some(name)
-        } else {
-            None
-        }
-    }
-
-    /// Detect whether braced content is a map literal or block
-    fn detect_braced_content_type(&self) -> BracedContentType {
-        match &self.peek().token {
-            Token::StringStart => {
-                // Look ahead to see if there's a colon after the string
-                if self.has_colon_after_string() {
-                    BracedContentType::MapLiteral
-                } else {
-                    BracedContentType::Block
-                }
-            }
-            Token::Number(_) => {
-                // Check if there's a colon after the number
-                if self.has_colon_after_number() {
-                    BracedContentType::MapLiteral
-                } else {
-                    BracedContentType::Block
-                }
-            }
-            _ => BracedContentType::Block,
-        }
-    }
-
-    /// Check if there's a colon after a string literal
-    fn has_colon_after_string(&self) -> bool {
-        let start_pos = self.current;
-        let mut pos = start_pos;
-
-        // Skip the string content
-        while pos < self.tokens.len() && !matches!(self.tokens[pos].token, Token::StringEnd) {
-            pos += 1;
-        }
-
-        // Check if there's a colon after the string
-        pos < self.tokens.len()
-            && matches!(self.tokens[pos].token, Token::StringEnd)
-            && pos + 1 < self.tokens.len()
-            && matches!(self.tokens[pos + 1].token, Token::Colon)
-    }
-
-    /// Check if there's a colon after a number literal
-    fn has_colon_after_number(&self) -> bool {
-        self.current + 1 < self.tokens.len()
-            && matches!(self.tokens[self.current + 1].token, Token::Colon)
-    }
-
-    /// Parse match statement: match expr { pattern: stmt, ... }
-    fn parse_match_statement(&mut self) -> ParseResult<Stmt> {
-        let span = self.previous().span.clone();
-        let scrutinee = self.expression()?;
-
-        self.consume(Token::LeftBrace, "Expected '{' after match expression")?;
-
-        let mut arms = Vec::new();
-        while !self.check(Token::RightBrace) && !self.is_at_end() {
-            // Parse pattern
-            let pattern = self.parse_pattern()?;
-            self.consume(Token::Colon, "Expected ':' after match pattern")?;
-
-            // Parse body (either block or single expression)
-            let body = self.parse_match_arm_body(span.clone())?;
-
-            arms.push(crate::ast::MatchArm {
-                pattern,
-                body,
-                span: span.clone(),
-            });
-
-            // Optional comma
-            self.match_token(Token::Comma);
-            self.skip_newlines();
-        }
-
-        self.consume(Token::RightBrace, "Expected '}' after match arms")?;
-
-        Ok(Stmt::Match {
-            scrutinee,
-            arms,
-            span,
-        })
-    }
-
     /// Parse block statement: { stmt1; stmt2; ... }
     fn parse_block_statement(&mut self) -> ParseResult<Stmt> {
         let span = self.previous().span.clone();
@@ -392,45 +196,63 @@ impl Parser {
             let module_name = module_name.clone();
             self.advance();
 
-            // Check for colon (import module:item)
+            // Check for colon (import module:item or module:submodule:item)
             if self.match_token(Token::Colon) {
-                // import module:item [as alias]
-                if let Token::Identifier(item_name) = &self.peek().token {
-                    let item_name = item_name.clone();
+                // Parse the module path (can be nested like "json:parse" or just "parse")
+                let mut module_path = module_name.clone();
+
+                // Keep parsing identifiers separated by colons
+                while let Token::Identifier(part) = &self.peek().token {
+                    let part = part.clone();
                     self.advance();
+                    module_path.push(':');
+                    module_path.push_str(&part);
 
-                    // Check for 'as' alias
-                    if self.match_token(Token::As) {
-                        if let Token::Identifier(alias) = &self.peek().token {
-                            let alias = alias.clone();
-                            self.advance();
+                    if !self.match_token(Token::Colon) {
+                        break;
+                    }
+                }
 
-                            Ok(Stmt::Import {
-                                spec: crate::ast::ImportSpec::ItemAs {
-                                    module: module_name,
-                                    name: item_name,
-                                    alias,
-                                },
-                                span,
-                            })
-                        } else {
-                            Err(ParseError::Generic {
-                                message: "Expected alias name after 'as'".to_string(),
-                            })
-                        }
-                    } else {
-                        // import module:item
+                // Check if we have at least one item after the colon
+                if module_path == module_name {
+                    return Err(ParseError::Generic {
+                        message: "Expected item name after ':'".to_string(),
+                    });
+                }
+
+                // The last part is the item name
+                let item_name = module_path.split(':').next_back().unwrap().to_string();
+                let module_path = module_path
+                    .trim_end_matches(&format!(":{}", item_name))
+                    .to_string();
+
+                // Check for 'as' alias
+                if self.match_token(Token::As) {
+                    if let Token::Identifier(alias) = &self.peek().token {
+                        let alias = alias.clone();
+                        self.advance();
+
                         Ok(Stmt::Import {
-                            spec: crate::ast::ImportSpec::Item {
-                                module: module_name,
+                            spec: crate::ast::ImportSpec::ItemAs {
+                                module: module_path,
                                 name: item_name,
+                                alias,
                             },
                             span,
                         })
+                    } else {
+                        Err(ParseError::Generic {
+                            message: "Expected alias name after 'as'".to_string(),
+                        })
                     }
                 } else {
-                    Err(ParseError::Generic {
-                        message: "Expected item name after ':'".to_string(),
+                    // import module:item
+                    Ok(Stmt::Import {
+                        spec: crate::ast::ImportSpec::Item {
+                            module: module_path,
+                            name: item_name,
+                        },
+                        span,
                     })
                 }
             } else {

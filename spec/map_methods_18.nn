@@ -1,0 +1,9 @@
+import std:println
+
+# Map methods combined - to_list and length consistency
+scores = { math: 95, science: 87, english: 92 }
+pairs_count = scores::to_list()::length()
+direct_count = scores::length()
+consistent = pairs_count == direct_count
+
+println(consistent)  # true

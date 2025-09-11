@@ -1,0 +1,13 @@
+import std:println
+
+# Conditional match in function
+f = |x| {
+    return match {
+        x > 10: "very large"
+        x > 5: "large"
+        x > 0: "positive"
+        _: "non-positive"
+    }
+}
+
+println(f(15))  # very large

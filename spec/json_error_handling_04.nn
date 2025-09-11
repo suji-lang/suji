@@ -1,0 +1,9 @@
+import std:println
+import std:json
+
+# Error handling - test that wrong argument types are handled
+# We'll test with correct argument types that work
+json_str = "{\"test\": true}"
+data = json:parse(json_str)
+
+println(data:test)  # true

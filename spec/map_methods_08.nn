@@ -1,0 +1,7 @@
+import std:println
+
+# Map values method - basic usage
+scores = { math: 95, science: 87, english: 92 }
+values = scores::values()
+
+println(values)  # [95, 87, 92]

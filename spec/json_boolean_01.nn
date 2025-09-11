@@ -1,0 +1,8 @@
+import std:println
+import std:json
+
+# JSON parse boolean values
+json_str = "{\"active\": true, \"disabled\": false}"
+data = json:parse(json_str)
+
+println(data:active)  # true

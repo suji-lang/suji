@@ -1,0 +1,7 @@
+import std:println
+
+# Map keys method - empty map
+empty_map = {}
+keys = empty_map::keys()
+
+println(keys)  # []

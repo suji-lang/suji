@@ -75,6 +75,79 @@ impl ModuleRegistry {
         }
     }
 
+    /// Resolve a nested module item (e.g., "std:json:parse")
+    pub fn resolve_nested_module_item(
+        &self,
+        module_path: &str,
+        item_name: &str,
+    ) -> Result<Value, RuntimeError> {
+        let parts: Vec<&str> = module_path.split(':').collect();
+        if parts.is_empty() {
+            return Err(RuntimeError::InvalidOperation {
+                message: "Empty module path".to_string(),
+            });
+        }
+
+        // Start with the root module
+        let mut current_module = self.resolve_module(parts[0])?;
+
+        // Navigate through nested modules
+        for part in &parts[1..] {
+            match current_module {
+                Value::Map(map) => {
+                    let key = super::value::MapKey::String(part.to_string());
+                    match map.get(&key) {
+                        Some(Value::Map(nested_map)) => {
+                            current_module = Value::Map(nested_map.clone());
+                        }
+                        Some(_) => {
+                            return Err(RuntimeError::InvalidOperation {
+                                message: format!(
+                                    "'{}' is not a module in '{}'",
+                                    part,
+                                    parts[..parts.len() - 1].join(":")
+                                ),
+                            });
+                        }
+                        None => {
+                            return Err(RuntimeError::InvalidOperation {
+                                message: format!(
+                                    "Module '{}' not found in '{}'",
+                                    part,
+                                    parts[..parts.len() - 1].join(":")
+                                ),
+                            });
+                        }
+                    }
+                }
+                _ => {
+                    return Err(RuntimeError::InvalidOperation {
+                        message: format!("'{}' is not a valid module (not a map)", parts[0]),
+                    });
+                }
+            }
+        }
+
+        // Now resolve the final item
+        match current_module {
+            Value::Map(map) => {
+                let key = super::value::MapKey::String(item_name.to_string());
+                match map.get(&key) {
+                    Some(value) => Ok(value.clone()),
+                    None => Err(RuntimeError::InvalidOperation {
+                        message: format!(
+                            "Item '{}' not found in module '{}'",
+                            item_name, module_path
+                        ),
+                    }),
+                }
+            }
+            _ => Err(RuntimeError::InvalidOperation {
+                message: format!("Module '{}' is not a valid module (not a map)", module_path),
+            }),
+        }
+    }
+
     /// Check if a module exists
     pub fn has_module(&self, name: &str) -> bool {
         self.builtins.contains_key(name) || self.file_modules.contains_key(name)
@@ -164,5 +237,53 @@ mod tests {
         let registry = ModuleRegistry::new();
         let modules = registry.available_modules();
         assert!(modules.contains(&"std".to_string()));
+    }
+
+    #[test]
+    fn test_nested_module_resolution() {
+        let registry = ModuleRegistry::new();
+
+        // Test resolving json:parse from std:json
+        let parse_func = registry
+            .resolve_nested_module_item("std:json", "parse")
+            .unwrap();
+        assert!(matches!(parse_func, Value::Function(_)));
+
+        // Test resolving json:generate from std:json
+        let generate_func = registry
+            .resolve_nested_module_item("std:json", "generate")
+            .unwrap();
+        assert!(matches!(generate_func, Value::Function(_)));
+    }
+
+    #[test]
+    fn test_nested_module_resolution_errors() {
+        let registry = ModuleRegistry::new();
+
+        // Test nonexistent nested module
+        let result = registry.resolve_nested_module_item("std:nonexistent", "parse");
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Module 'nonexistent' not found")
+        );
+
+        // Test nonexistent item in nested module
+        let result = registry.resolve_nested_module_item("std:json", "nonexistent");
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Item 'nonexistent' not found")
+        );
+
+        // Test invalid module path
+        let result = registry.resolve_nested_module_item("", "parse");
+        assert!(result.is_err());
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("Module '' not found"));
     }
 }

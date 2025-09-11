@@ -1,0 +1,14 @@
+import std:println
+import std:json
+
+# JSON generate - nested structure
+complex = {
+    users: [
+        { name: "Alice", age: 30 },
+        { name: "Bob", age: 25 }
+    ],
+    metadata: { version: "1.0" }
+}
+json_output = json:generate(complex)
+
+println(json_output)  # {"metadata":{"version":"1.0"},"users":[{"age":30.0,"name":"Alice"},{"age":25.0,"name":"Bob"}]}

@@ -35,13 +35,6 @@ pub enum Stmt {
         span: Span,
     },
 
-    /// Match statement: match expr { pattern: stmt, ... }
-    Match {
-        scrutinee: Expr,
-        arms: Vec<MatchArm>,
-        span: Span,
-    },
-
     /// Import statement: import spec
     Import { spec: ImportSpec, span: Span },
 
@@ -68,7 +61,6 @@ impl Stmt {
             Stmt::Continue { span, .. } => span,
             Stmt::Loop { span, .. } => span,
             Stmt::LoopThrough { span, .. } => span,
-            Stmt::Match { span, .. } => span,
             Stmt::Import { span, .. } => span,
             Stmt::Export { span, .. } => span,
         }
@@ -85,7 +77,6 @@ impl Stmt {
             Stmt::Return { .. } | Stmt::Break { .. } | Stmt::Continue { .. } => true,
             Stmt::Block { statements, .. } => statements.iter().any(|stmt| stmt.has_control_flow()),
             Stmt::Loop { body, .. } | Stmt::LoopThrough { body, .. } => body.has_control_flow(),
-            Stmt::Match { arms, .. } => arms.iter().any(|arm| arm.body.has_control_flow()),
             _ => false,
         }
     }

@@ -1,8 +1,13 @@
 import std:println
 
-# Map methods
-m = { a: 1, b: 2 }
-m::delete("a")
-m::delete("b")
+# Map keys method - basic usage
+config = { 
+    name: "Alice", 
+    age: 30, 
+    city: "New York",
+    active: true
+}
 
-println(m)  # {}
+keys = config::keys()
+
+println(keys)  # [name, age, city, active]

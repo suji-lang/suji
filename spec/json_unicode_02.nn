@@ -1,0 +1,8 @@
+import std:println
+import std:json
+
+# JSON generate with unicode
+data = { message: "Hello World", emoji: "rocket" }
+json_output = json:generate(data)
+
+println(json_output)  # {"emoji":"rocket","message":"Hello World"}

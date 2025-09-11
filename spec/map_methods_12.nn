@@ -1,0 +1,7 @@
+import std:println
+
+# Map to_list method - empty map
+empty_map = {}
+pairs = empty_map::to_list()
+
+println(pairs)  # []

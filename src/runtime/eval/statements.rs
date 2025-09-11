@@ -345,17 +345,25 @@ pub fn eval_loop_through(
 
 /// Evaluate a match statement
 pub fn eval_match(
-    scrutinee: &Expr,
+    scrutinee: Option<&Expr>,
     arms: &[MatchArm],
     env: Rc<Env>,
     loop_stack: &mut Vec<String>,
 ) -> EvalResult<Option<Value>> {
     use super::pattern_matches;
-
-    let scrutinee_value = eval_expr(scrutinee, env.clone())?;
+    use super::patterns::expression_pattern_matches;
 
     for arm in arms {
-        if pattern_matches(&arm.pattern, &scrutinee_value)? {
+        let matches = if let Some(scrutinee_expr) = scrutinee {
+            // Traditional match: evaluate scrutinee and use pattern matching
+            let scrutinee_value = eval_expr(scrutinee_expr, env.clone())?;
+            pattern_matches(&arm.pattern, &scrutinee_value)?
+        } else {
+            // Conditional match: evaluate expression pattern directly
+            expression_pattern_matches(&arm.pattern, env.clone())?
+        };
+
+        if matches {
             // Evaluate the arm body and handle implicit returns
             match eval_stmt(&arm.body, env.clone(), loop_stack) {
                 Ok(result) => {
@@ -486,7 +494,7 @@ mod tests {
         ];
 
         let mut loop_stack = Vec::new();
-        let result = eval_match(&scrutinee, &arms, env.clone(), &mut loop_stack).unwrap();
+        let result = eval_match(Some(&scrutinee), &arms, env.clone(), &mut loop_stack).unwrap();
         assert_eq!(result, Some(Value::Number(10.0))); // 5 + 5 = 10
 
         // Test match with block arms (last statement as expression)
@@ -511,7 +519,7 @@ mod tests {
             span: Span::default(),
         }];
 
-        let result2 = eval_match(&scrutinee2, &arms2, env, &mut loop_stack).unwrap();
+        let result2 = eval_match(Some(&scrutinee2), &arms2, env, &mut loop_stack).unwrap();
         assert_eq!(result2, Some(Value::Number(6.0))); // 2 * 3 = 6
     }
 }

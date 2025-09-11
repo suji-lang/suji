@@ -1,0 +1,7 @@
+import std:println
+
+# Map to_list method - basic usage
+user = { name: "Bob", age: 25, city: "Boston" }
+pairs = user::to_list()
+
+println(pairs)  # [(name, Bob), (age, 25), (city, Boston)]

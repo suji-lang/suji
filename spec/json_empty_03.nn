@@ -1,0 +1,8 @@
+import std:println
+import std:json
+
+# JSON generate empty structures
+data = { empty_map: {}, empty_list: [] }
+json_output = json:generate(data)
+
+println(json_output)  # {"empty_list":[],"empty_map":{}}

@@ -23,7 +23,12 @@ pub fn eval_import(
 
         ImportSpec::Item { module, name } => {
             // import module:item - bind the specific item to its name
-            let item = module_registry.resolve_module_item(module, name)?;
+            // Check if module path contains colons (nested module)
+            let item = if module.contains(':') {
+                module_registry.resolve_nested_module_item(module, name)?
+            } else {
+                module_registry.resolve_module_item(module, name)?
+            };
             env.define_or_set(name, item);
             Ok(())
         }
@@ -34,7 +39,12 @@ pub fn eval_import(
             alias,
         } => {
             // import module:item as alias - bind the specific item to the alias
-            let item = module_registry.resolve_module_item(module, name)?;
+            // Check if module path contains colons (nested module)
+            let item = if module.contains(':') {
+                module_registry.resolve_nested_module_item(module, name)?
+            } else {
+                module_registry.resolve_module_item(module, name)?
+            };
             env.define_or_set(alias, item);
             Ok(())
         }
@@ -147,6 +157,66 @@ mod tests {
                 .unwrap_err()
                 .to_string()
                 .contains("Item 'nonexistent' not found")
+        );
+    }
+
+    #[test]
+    fn test_import_nested_module_item() {
+        let env = create_test_env();
+        let registry = create_test_registry();
+
+        let import_spec = ImportSpec::Item {
+            module: "std:json".to_string(),
+            name: "parse".to_string(),
+        };
+
+        let result = eval_import(&import_spec, env.clone(), &registry);
+        assert!(result.is_ok());
+
+        // Check that parse function is bound to environment
+        let parse_func = env.get("parse").unwrap();
+        assert!(matches!(parse_func, Value::Function(_)));
+    }
+
+    #[test]
+    fn test_import_nested_module_item_with_alias() {
+        let env = create_test_env();
+        let registry = create_test_registry();
+
+        let import_spec = ImportSpec::ItemAs {
+            module: "std:json".to_string(),
+            name: "generate".to_string(),
+            alias: "to_json".to_string(),
+        };
+
+        let result = eval_import(&import_spec, env.clone(), &registry);
+        assert!(result.is_ok());
+
+        // Check that generate function is bound to "to_json" in environment
+        let to_json_func = env.get("to_json").unwrap();
+        assert!(matches!(to_json_func, Value::Function(_)));
+
+        // Check that "generate" is not bound (only the alias should be)
+        assert!(env.get("generate").is_err());
+    }
+
+    #[test]
+    fn test_import_nonexistent_nested_module() {
+        let env = create_test_env();
+        let registry = create_test_registry();
+
+        let import_spec = ImportSpec::Item {
+            module: "std:nonexistent".to_string(),
+            name: "parse".to_string(),
+        };
+
+        let result = eval_import(&import_spec, env.clone(), &registry);
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Module 'nonexistent' not found")
         );
     }
 }

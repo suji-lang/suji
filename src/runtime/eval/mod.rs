@@ -84,7 +84,7 @@ pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
 
         Expr::Match {
             scrutinee, arms, ..
-        } => eval_match_expression(scrutinee, arms, env),
+        } => eval_match_expression(scrutinee.as_deref(), arms, env),
     }
 }
 
@@ -155,10 +155,6 @@ pub fn eval_stmt_with_modules(
             loop_stack,
             module_registry,
         ),
-
-        Stmt::Match {
-            scrutinee, arms, ..
-        } => eval_match_with_modules(scrutinee, arms, env, loop_stack, module_registry),
 
         Stmt::Import { spec, .. } => {
             eval_import(spec, env, module_registry)?;
@@ -434,25 +430,6 @@ fn eval_loop_through_with_modules(
     result
 }
 
-/// Match evaluation with module registry
-fn eval_match_with_modules(
-    scrutinee: &Expr,
-    arms: &[crate::ast::MatchArm],
-    env: Rc<Env>,
-    loop_stack: &mut Vec<String>,
-    module_registry: &ModuleRegistry,
-) -> EvalResult<Option<Value>> {
-    let scrutinee_value = eval_expr(scrutinee, env.clone())?;
-
-    for arm in arms {
-        if pattern_matches(&arm.pattern, &scrutinee_value)? {
-            return eval_stmt_with_modules(&arm.body, env, loop_stack, module_registry);
-        }
-    }
-
-    Ok(Some(Value::Nil))
-}
-
 /// Evaluate a program (list of statements) with module support
 pub fn eval_program_with_modules(
     statements: &[Stmt],
@@ -479,14 +456,21 @@ pub fn eval_program(statements: &[Stmt], env: Rc<Env>) -> EvalResult<Option<Valu
 
 /// Evaluate a match expression
 pub fn eval_match_expression(
-    scrutinee: &Expr,
+    scrutinee: Option<&Expr>,
     arms: &[crate::ast::MatchArm],
     env: Rc<Env>,
 ) -> EvalResult<Value> {
-    let scrutinee_value = eval_expr(scrutinee, env.clone())?;
-
     for arm in arms {
-        if pattern_matches(&arm.pattern, &scrutinee_value)? {
+        let matches = if let Some(scrutinee_expr) = scrutinee {
+            // Traditional match: evaluate scrutinee and use pattern matching
+            let scrutinee_value = eval_expr(scrutinee_expr, env.clone())?;
+            pattern_matches(&arm.pattern, &scrutinee_value)?
+        } else {
+            // Conditional match: evaluate expression pattern directly
+            patterns::expression_pattern_matches(&arm.pattern, env.clone())?
+        };
+
+        if matches {
             // Evaluate the arm body and handle implicit returns
             let mut loop_stack = Vec::new();
             match eval_stmt(&arm.body, env.clone(), &mut loop_stack) {

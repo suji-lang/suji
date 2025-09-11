@@ -1,0 +1,8 @@
+import std:println
+import std:json
+
+# JSON with large numbers
+json_str = "{\"big\": 1234567890, \"small\": 0.001}"
+data = json:parse(json_str)
+
+println(data:big)  # 1234567890

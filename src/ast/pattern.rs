@@ -1,4 +1,4 @@
-use super::ValueLike;
+use super::{Expr, ValueLike};
 use crate::token::Span;
 
 /// Pattern nodes for match expressions
@@ -15,6 +15,9 @@ pub enum Pattern {
 
     /// Wildcard pattern: _
     Wildcard { span: Span },
+
+    /// Expression pattern for conditional match: condition: body
+    Expression(Expr),
 }
 
 impl Pattern {
@@ -25,6 +28,7 @@ impl Pattern {
             Pattern::Tuple { span, .. } => span,
             Pattern::Regex { span, .. } => span,
             Pattern::Wildcard { span, .. } => span,
+            Pattern::Expression(expr) => expr.span(),
         }
     }
 
@@ -33,6 +37,7 @@ impl Pattern {
         match self {
             Pattern::Wildcard { .. } => true,
             Pattern::Tuple { patterns, .. } => patterns.iter().all(|p| p.is_exhaustive()),
+            Pattern::Expression(_) => false, // Expression patterns are never exhaustive
             _ => false,
         }
     }
@@ -55,6 +60,7 @@ impl Pattern {
                         .all(|(p, v)| p.can_match_value(v))
             }
             (Pattern::Regex { .. }, ValueLike::String(_)) => true,
+            (Pattern::Expression(_), _) => true, // Expression patterns can match any value (they evaluate to boolean)
             _ => false,
         }
     }

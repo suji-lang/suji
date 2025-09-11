@@ -1,0 +1,9 @@
+import std:println
+
+# Direct imports - both functions
+import std:json:parse
+import std:json:generate
+data = parse("{\"test\": true}")
+result = generate(data)
+
+println(result)  # {"test":true}

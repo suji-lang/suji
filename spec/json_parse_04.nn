@@ -1,0 +1,8 @@
+import std:println
+import std:json
+
+# JSON parse - simple values
+json_str = "true"
+result = json:parse(json_str)
+
+println(result)  # true

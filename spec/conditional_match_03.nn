@@ -1,0 +1,13 @@
+import std:println
+
+# Complex boolean expressions
+x = 3
+y = 4
+result = match {
+    x > 0 && y > 0: "both positive"
+    x > 0: "only x positive"
+    y > 0: "only y positive"
+    _: "neither positive"
+}
+
+println(result)  # both positive

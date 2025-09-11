@@ -1,0 +1,7 @@
+import std:println
+
+# Direct imports - parse function
+import std:json:parse
+data = parse("{\"value\": 42}")
+
+println(data:value)  # 42

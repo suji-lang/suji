@@ -1,0 +1,7 @@
+import std:println
+
+# Map length method - empty map
+empty_map = {}
+size = empty_map::length()
+
+println(size)  # 0

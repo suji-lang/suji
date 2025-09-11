@@ -681,15 +681,19 @@ fn test_parse_match_single_expression() {
     let result = parse_statement("match x { 1: \"one\" 2: \"two\" _: \"other\" }");
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Match {
+    if let Ok(Stmt::Expr(Expr::Match {
         scrutinee, arms, ..
-    }) = result
+    })) = result
     {
         // Check scrutinee
-        if let Expr::Literal(Literal::Identifier(name, _)) = scrutinee {
-            assert_eq!(name, "x");
+        if let Some(scrutinee_expr) = scrutinee {
+            if let Expr::Literal(Literal::Identifier(name, _)) = scrutinee_expr.as_ref() {
+                assert_eq!(name, "x");
+            } else {
+                panic!("Expected x as scrutinee");
+            }
         } else {
-            panic!("Expected x as scrutinee");
+            panic!("Expected scrutinee to be present");
         }
 
         // Check arms
@@ -761,15 +765,19 @@ fn test_parse_match_block() {
     let result = parse_statement("match x { 1: { return \"one\" } 2: { return \"two\" } }");
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Match {
+    if let Ok(Stmt::Expr(Expr::Match {
         scrutinee, arms, ..
-    }) = result
+    })) = result
     {
         // Check scrutinee
-        if let Expr::Literal(Literal::Identifier(name, _)) = scrutinee {
-            assert_eq!(name, "x");
+        if let Some(scrutinee_expr) = scrutinee {
+            if let Expr::Literal(Literal::Identifier(name, _)) = scrutinee_expr.as_ref() {
+                assert_eq!(name, "x");
+            } else {
+                panic!("Expected x as scrutinee");
+            }
         } else {
-            panic!("Expected x as scrutinee");
+            panic!("Expected scrutinee to be present");
         }
 
         // Check arms
@@ -816,7 +824,7 @@ fn test_parse_mixed_syntax() {
     let result = parse_statement("match x { 1: \"one\" 2: { return \"two\" } _: \"other\" }");
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Match { arms, .. }) = result {
+    if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
         assert_eq!(arms.len(), 3);
 
         // First arm: single expression
@@ -854,14 +862,18 @@ fn test_parse_nested_expressions_without_braces() {
     }
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Match {
+    if let Ok(Stmt::Expr(Expr::Match {
         scrutinee, arms, ..
-    }) = result
+    })) = result
     {
-        if let Expr::Literal(Literal::Identifier(name, _)) = scrutinee {
-            assert_eq!(name, "x");
+        if let Some(scrutinee_expr) = scrutinee {
+            if let Expr::Literal(Literal::Identifier(name, _)) = scrutinee_expr.as_ref() {
+                assert_eq!(name, "x");
+            } else {
+                panic!("Expected x as scrutinee");
+            }
         } else {
-            panic!("Expected x as scrutinee");
+            panic!("Expected scrutinee to be present");
         }
 
         assert_eq!(arms.len(), 3);
@@ -1132,7 +1144,7 @@ fn test_parse_nil_pattern() {
     let result = parse_statement("match x { nil: \"empty\" _: \"something\" }");
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Match { arms, .. }) = result {
+    if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
         assert_eq!(arms.len(), 2);
 
         // First arm should be nil pattern
@@ -1188,7 +1200,7 @@ fn test_parse_return_statements_in_non_braced_match_arms() {
     }
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Match { arms, .. }) = result {
+    if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
         assert_eq!(arms.len(), 3);
 
         // All arms should be single expression statements with return
@@ -1213,7 +1225,7 @@ fn test_parse_map_literals_in_match_arms() {
     }
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Match { arms, .. }) = result {
+    if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
         assert_eq!(arms.len(), 2);
 
         // All arms should be single expression statements with map literals

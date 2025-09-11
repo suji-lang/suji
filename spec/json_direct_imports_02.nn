@@ -1,0 +1,7 @@
+import std:println
+
+# Direct imports - generate function
+import std:json:generate
+result = generate([1, 2, 3])
+
+println(result)  # [1.0,2.0,3.0]

@@ -1,0 +1,7 @@
+import std:println
+import std:json
+
+# JSON generate - nil value
+result = json:generate(nil)
+
+println(result)  # null

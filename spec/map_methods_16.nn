@@ -1,0 +1,7 @@
+import std:println
+
+# Map length method - single element
+single = { key: "value" }
+size = single::length()
+
+println(size)  # 1

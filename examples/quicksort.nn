@@ -5,38 +5,25 @@ import std:println
 
 # Quicksort function - sorts a list of numbers in ascending order
 quicksort = |list| {
-    # Base case: empty list or single element is already sorted
     match list::length() {
         0: []
         1: list
         _: {
-            # Choose pivot (first element)
             pivot = list[0]
 
-            # Partition the list into elements less than, equal to, and greater than pivot
             less = []
             equal = []
             greater = []
 
-            # Iterate through the list and partition
             loop through list with element {
-                match element < pivot {
-                    true: less::push(element)
-                    false: {
-                        match element > pivot {
-                            true: greater::push(element)
-                            false: equal::push(element)
-                        }
-                    }
+                match {
+                    element < pivot: less::push(element)
+                    element > pivot: greater::push(element)
+                    _: equal::push(element)
                 }
             }
 
-            # Recursively sort the partitions and combine
-            sorted_less = quicksort(less)
-            sorted_greater = quicksort(greater)
-
-            # Combine: less + equal + greater
-            sorted_less + equal + sorted_greater
+            quicksort(less) + equal + quicksort(greater)
         }
     }
 }

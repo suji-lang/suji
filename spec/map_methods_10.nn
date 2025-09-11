@@ -1,0 +1,12 @@
+import std:println
+
+# Map values method - mixed value types
+data = { 
+    name: "Bob", 
+    age: 25, 
+    active: true, 
+    scores: [85, 92, 78] 
+}
+values = data::values()
+
+println(values)  # [Bob, 25, true, [85, 92, 78]]

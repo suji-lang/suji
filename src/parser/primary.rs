@@ -2,6 +2,13 @@ use super::{ParseError, ParseResult, Parser};
 use crate::ast::{Expr, Literal};
 use crate::token::{Span, Token};
 
+/// Type of content inside braces in match arms
+#[derive(Debug, Clone, PartialEq)]
+enum BracedContentType {
+    MapLiteral,
+    Block,
+}
+
 impl Parser {
     /// Parse a primary expression
     pub(super) fn primary(&mut self) -> ParseResult<Expr> {
@@ -164,27 +171,60 @@ impl Parser {
         })
     }
 
-    /// Parse match expression: match expr { pattern: expr, ... }
+    /// Parse match expression: match expr? { pattern: expr, ... } or match { condition: expr, ... }
     pub(super) fn parse_match_expression(&mut self) -> ParseResult<Expr> {
         let span = self.previous().span.clone();
-        let scrutinee = self.expression()?;
+
+        // Check if next token is LeftBrace for conditional match
+        let scrutinee = if self.check(Token::LeftBrace) {
+            // Conditional match: match { condition: expr, ... }
+            None
+        } else {
+            // Traditional match: match expr { pattern: expr, ... }
+            Some(Box::new(self.expression()?))
+        };
 
         self.consume(Token::LeftBrace, "Expected '{' after match expression")?;
 
         let mut arms = Vec::new();
         while !self.check(Token::RightBrace) && !self.is_at_end() {
-            // Parse pattern
-            let pattern = self.parse_pattern()?;
-            self.consume(Token::Colon, "Expected ':' after match pattern")?;
+            if scrutinee.is_none() {
+                // Conditional match: parse boolean expression as pattern (without postfix to avoid colon conflicts)
+                let condition_expr = if self.check(Token::Underscore) {
+                    // Special case: wildcard in conditional match - treat as "true"
+                    self.advance(); // consume the underscore
+                    Expr::Literal(crate::ast::Literal::Boolean(
+                        true,
+                        self.previous().span.clone(),
+                    ))
+                } else {
+                    self.map_key_expression()?
+                };
+                self.consume(Token::Colon, "Expected ':' after condition")?;
 
-            // Parse body (either block or single expression)
-            let body = self.parse_match_arm_body(span.clone())?;
+                // Parse body (either block or single expression)
+                let body = self.parse_match_arm_body(span.clone())?;
 
-            arms.push(crate::ast::MatchArm {
-                pattern,
-                body,
-                span: span.clone(),
-            });
+                // For conditional match, we treat the condition as a "pattern"
+                arms.push(crate::ast::MatchArm {
+                    pattern: crate::ast::Pattern::Expression(condition_expr),
+                    body,
+                    span: span.clone(),
+                });
+            } else {
+                // Traditional match: parse pattern
+                let pattern = self.parse_pattern()?;
+                self.consume(Token::Colon, "Expected ':' after match pattern")?;
+
+                // Parse body (either block or single expression)
+                let body = self.parse_match_arm_body(span.clone())?;
+
+                arms.push(crate::ast::MatchArm {
+                    pattern,
+                    body,
+                    span: span.clone(),
+                });
+            }
 
             // Optional comma
             self.match_token(Token::Comma);
@@ -194,10 +234,158 @@ impl Parser {
         self.consume(Token::RightBrace, "Expected '}' after match arms")?;
 
         Ok(Expr::Match {
-            scrutinee: Box::new(scrutinee),
+            scrutinee,
             arms,
             span,
         })
+    }
+
+    /// Parse match arm body - either { statements } or single expression/statement
+    pub(super) fn parse_match_arm_body(&mut self, span: Span) -> ParseResult<crate::ast::Stmt> {
+        match self.peek().token {
+            Token::LeftBrace => self.parse_braced_arm_body(span),
+            _ => self.parse_unbraced_arm_body(),
+        }
+    }
+
+    /// Parse braced arm body - either { statements } or { map_literal }
+    fn parse_braced_arm_body(&mut self, span: Span) -> ParseResult<crate::ast::Stmt> {
+        self.advance(); // consume LeftBrace
+
+        match self.detect_braced_content_type() {
+            BracedContentType::MapLiteral => {
+                let expr = self.parse_map()?;
+                Ok(crate::ast::Stmt::Expr(expr))
+            }
+            BracedContentType::Block => {
+                let statements = self.parse_block()?;
+                Ok(crate::ast::Stmt::Block { statements, span })
+            }
+        }
+    }
+
+    /// Parse unbraced arm body - single expression or statement
+    fn parse_unbraced_arm_body(&mut self) -> ParseResult<crate::ast::Stmt> {
+        match self.peek().token {
+            Token::Return => self.parse_match_arm_return(),
+            Token::Break => self.parse_match_arm_break(),
+            Token::Continue => self.parse_match_arm_continue(),
+            _ => {
+                // Fall back to expression
+                let expr = self.expression()?;
+                Ok(crate::ast::Stmt::Expr(expr))
+            }
+        }
+    }
+
+    /// Parse return statement in match arm
+    fn parse_match_arm_return(&mut self) -> ParseResult<crate::ast::Stmt> {
+        let return_span = self.advance().span.clone(); // consume Return
+
+        let value = if self.has_expression_after() {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+
+        Ok(crate::ast::Stmt::Return {
+            value,
+            span: return_span,
+        })
+    }
+
+    /// Parse break statement in match arm
+    fn parse_match_arm_break(&mut self) -> ParseResult<crate::ast::Stmt> {
+        let break_span = self.advance().span.clone(); // consume Break
+
+        let label = if self.has_expression_after() {
+            self.parse_optional_label()
+        } else {
+            None
+        };
+
+        Ok(crate::ast::Stmt::Break {
+            label,
+            span: break_span,
+        })
+    }
+
+    /// Parse continue statement in match arm
+    fn parse_match_arm_continue(&mut self) -> ParseResult<crate::ast::Stmt> {
+        let continue_span = self.advance().span.clone(); // consume Continue
+
+        let label = if self.has_expression_after() {
+            self.parse_optional_label()
+        } else {
+            None
+        };
+
+        Ok(crate::ast::Stmt::Continue {
+            label,
+            span: continue_span,
+        })
+    }
+
+    /// Check if there's an expression after the current token (not end of arm)
+    fn has_expression_after(&self) -> bool {
+        !self.check(Token::RightBrace) && !self.check(Token::Comma) && !self.is_at_end()
+    }
+
+    /// Parse optional label for break/continue statements
+    fn parse_optional_label(&mut self) -> Option<String> {
+        if let Token::Identifier(name) = &self.peek().token {
+            let name = name.clone();
+            self.advance();
+            Some(name)
+        } else {
+            None
+        }
+    }
+
+    /// Detect whether braced content is a map literal or block
+    fn detect_braced_content_type(&self) -> BracedContentType {
+        match &self.peek().token {
+            Token::StringStart => {
+                // Look ahead to see if there's a colon after the string
+                if self.has_colon_after_string() {
+                    BracedContentType::MapLiteral
+                } else {
+                    BracedContentType::Block
+                }
+            }
+            Token::Number(_) => {
+                // Check if there's a colon after the number
+                if self.has_colon_after_number() {
+                    BracedContentType::MapLiteral
+                } else {
+                    BracedContentType::Block
+                }
+            }
+            _ => BracedContentType::Block,
+        }
+    }
+
+    /// Check if there's a colon after a string literal
+    fn has_colon_after_string(&self) -> bool {
+        let start_pos = self.current;
+        let mut pos = start_pos;
+
+        // Skip the string content
+        while pos < self.tokens.len() && !matches!(self.tokens[pos].token, Token::StringEnd) {
+            pos += 1;
+        }
+
+        // Check if there's a colon after the string
+        pos < self.tokens.len()
+            && matches!(self.tokens[pos].token, Token::StringEnd)
+            && pos + 1 < self.tokens.len()
+            && matches!(self.tokens[pos + 1].token, Token::Colon)
+    }
+
+    /// Check if there's a colon after a number literal
+    fn has_colon_after_number(&self) -> bool {
+        self.current + 1 < self.tokens.len()
+            && matches!(self.tokens[self.current + 1].token, Token::Colon)
     }
 }
 
