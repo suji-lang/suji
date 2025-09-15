@@ -1,0 +1,14 @@
+import std:println
+
+# Test escape sequences in single quotes
+escaped = 'He said, "Hello there!"'
+newline = 'Line 1\nLine 2'
+tabbed = 'Column 1\tColumn 2'
+backslash = 'Path: C:\\Users\\Alice'
+single_quote_escape = 'It\'s a beautiful day'
+
+println(escaped)             # He said, "Hello there!"
+println(newline)             # Line 1\nLine 2
+println(tabbed)              # Column 1\tColumn 2
+println(backslash)           # Path: C:\Users\Alice
+println(single_quote_escape) # It's a beautiful day

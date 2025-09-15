@@ -1,0 +1,7 @@
+import std:println
+import std:yaml
+
+# YAML generate - simple values
+yaml_output = yaml:generate(42)
+
+println(yaml_output)  # 42

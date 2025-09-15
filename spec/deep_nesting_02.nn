@@ -1,0 +1,25 @@
+# Test deep map nesting - 5 levels deep
+# config:user:profile:settings:display:theme = "dark"
+
+import std:println
+
+config = {
+    user: {
+        profile: {
+            settings: {
+                display: {
+                    theme: "light",
+                    layout: "grid"
+                },
+                notifications: true
+            },
+            avatar: "user.png"
+        },
+        name: "Alice"
+    },
+    version: "1.0"
+}
+
+config:user:profile:settings:display:theme = "dark"
+
+println(config:user:profile:settings:display:theme)  # dark

@@ -1,0 +1,8 @@
+import std:println
+import std:toml
+
+# TOML parse - nested tables
+nested_toml = "[user]\nname = \"Alice\"\nage = 30\n\n[user.settings]\ntheme = \"dark\"\nnotifications = true"
+data = toml:parse(nested_toml)
+
+println(data:user:settings:theme)  # dark

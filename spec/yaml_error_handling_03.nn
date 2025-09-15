@@ -1,0 +1,9 @@
+import std:println
+import std:yaml
+
+# YAML error handling - test that valid parsing works
+yaml_str = "name: Irene\nage: 65"
+data = yaml:parse(yaml_str)
+
+# If we get here, parsing worked
+println(data:name)  # Irene

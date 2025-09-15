@@ -1,0 +1,18 @@
+import std:println
+
+# Test empty single quote strings
+empty = ''
+empty_str = ""
+empty_with_interpolation = '${empty_str}'
+empty_mixed = '' + ""
+
+println(empty)                    # (empty string)
+println(empty_with_interpolation) # (empty string)
+println(empty_mixed)              # (empty string)
+
+# Test single quote strings in data structures
+list_with_single = ['first', 'second', 'third']
+map_with_single = { key1: 'value1', key2: 'value2' }
+
+println(list_with_single) # ["first", "second", "third"]
+println(map_with_single)  # {key1: value1, key2: value2}

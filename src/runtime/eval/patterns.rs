@@ -56,7 +56,10 @@ pub fn expression_pattern_matches(pattern: &Pattern, env: Rc<Env>) -> EvalResult
             let result = eval_expr(expr, env)?;
             Ok(result.is_truthy())
         }
-        _ => Ok(false), // Non-expression patterns should not be used in conditional match
+        _ => Err(RuntimeError::ConditionalMatchError {
+            message: "Only boolean expressions are allowed in conditional match conditions"
+                .to_string(),
+        }),
     }
 }
 

@@ -1,0 +1,17 @@
+# Test multiple deep imports
+import std:println
+
+# Test multiple deep imports from different modules
+import std:json:parse as json_parse
+import std:yaml:parse as yaml_parse
+import std:toml:parse as toml_parse
+
+# Test that all deep imports work
+json_result = json_parse("{\"type\": \"json\"}")
+yaml_result = yaml_parse("type: yaml")
+toml_result = toml_parse("type = \"toml\"")
+
+# Combine results to show all work
+combined = json_result:type + "_" + yaml_result:type + "_" + toml_result:type
+
+println(combined)  # json_yaml_toml

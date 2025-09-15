@@ -1,0 +1,22 @@
+import std:println
+
+# Test single quote strings with string methods
+text = 'hello world'
+length = text::length()
+split_result = text::split()
+upper = 'HELLO WORLD'
+lower = 'hello world'
+
+println(length)       # 11
+println(split_result) # ["hello", "world"]
+println(upper)        # HELLO WORLD
+println(lower)        # hello world
+
+# Test string indexing with single quotes
+first_char = text[0]
+last_char = text[-1]
+slice = text[0:5]
+
+println(first_char)   # h
+println(last_char)    # d
+println(slice)        # hello

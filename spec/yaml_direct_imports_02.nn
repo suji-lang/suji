@@ -1,0 +1,8 @@
+import std:println
+import std:yaml:generate
+
+# YAML direct import - generate function
+user = { name: "David", age: 40 }
+yaml_output = generate(user)
+
+println(yaml_output)  # age: 40

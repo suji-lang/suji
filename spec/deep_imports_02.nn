@@ -1,0 +1,10 @@
+# Test deep imports with aliases
+import std:println
+
+# Test deep import with alias from std:yaml:parse
+import std:yaml:parse as deep_yaml_parse
+
+# Test that the deep import with alias works
+result = deep_yaml_parse("deep: yaml\ntest: 123")
+
+println(result:deep)  # yaml

@@ -1,0 +1,8 @@
+import std:print
+import std:toml
+
+# TOML generate - array
+fruits = ["apple", "banana", "cherry"]
+output = toml:generate(fruits)
+
+print(output)  # value = ["apple", "banana", "cherry"]

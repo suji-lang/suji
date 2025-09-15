@@ -1,0 +1,8 @@
+import std:println
+import std:toml
+
+# TOML parse - basic object
+toml_str = "name = \"Alice\"\nage = 30\nactive = true"
+data = toml:parse(toml_str)
+
+println(data:name)  # Alice

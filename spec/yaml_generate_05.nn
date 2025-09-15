@@ -1,0 +1,11 @@
+import std:println
+import std:yaml
+
+# YAML generate - nested structure
+config = { 
+    user: { name: "Bob", age: 25 },
+    settings: { theme: "dark" }
+}
+yaml_output = yaml:generate(config)
+
+println(yaml_output)  #   theme: dark

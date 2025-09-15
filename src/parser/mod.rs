@@ -1,12 +1,9 @@
 pub mod binary;
-pub mod expr;
-pub mod literals;
+pub mod expressions;
 pub mod pattern;
 pub mod postfix;
 pub mod precedence;
-pub mod primary;
 pub mod statements;
-pub mod stmt;
 pub mod utils;
 
 use crate::ast::{Expr, Stmt};

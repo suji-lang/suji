@@ -1,0 +1,8 @@
+import std:println
+import std:yaml
+
+# YAML parse - null value
+yaml_str = "null"
+data = yaml:parse(yaml_str)
+
+println(data)  # nil

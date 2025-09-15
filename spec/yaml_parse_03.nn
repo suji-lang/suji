@@ -1,0 +1,8 @@
+import std:println
+import std:yaml
+
+# YAML parse - nested structure
+yaml_str = "user:\n  name: Bob\n  age: 25\nactive: true"
+data = yaml:parse(yaml_str)
+
+println(data:user:name)  # Bob

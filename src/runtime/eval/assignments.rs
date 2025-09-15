@@ -20,278 +20,14 @@ pub fn eval_complex_assignment(target: &Expr, value: Value, env: Rc<Env>) -> Eva
         }
         Expr::Index { target, index, .. } => {
             // List/map element assignment: target[index] = value
-            eval_index_assignment(target, index, value, env)
+            eval_deep_index_assignment(target, index, value, env)
         }
         Expr::MapAccessByName { target, key, .. } => {
             // Map key assignment: target:key = value
-            eval_map_key_assignment(target, key, value, env)
+            eval_deep_map_assignment(target, key, value, env)
         }
         _ => Err(RuntimeError::InvalidOperation {
             message: "Invalid assignment target".to_string(),
-        }),
-    }
-}
-
-/// Evaluate element assignment for lists and maps
-pub fn eval_index_assignment(
-    target: &Expr,
-    index: &Expr,
-    value: Value,
-    env: Rc<Env>,
-) -> EvalResult<Value> {
-    let index_value = eval_expr(index, env.clone())?;
-
-    match target {
-        Expr::Literal(Literal::Identifier(name, _)) => {
-            let target_value = env.get(name)?;
-            let updated_value = update_index_value(&target_value, &index_value, &value)?;
-            env.set_existing(name, updated_value)?;
-            Ok(value)
-        }
-        Expr::Index {
-            target: nested_target,
-            index: nested_index,
-            ..
-        } => {
-            // Nested indexing: target[index1][index2] = value
-            let nested_target_value = eval_expr(nested_target, env.clone())?;
-            let nested_index_value = eval_expr(nested_index, env.clone())?;
-
-            // Get the nested item
-            let nested_item = get_index_value(&nested_target_value, &nested_index_value)?;
-
-            // Update the nested item
-            let updated_nested_item = update_index_value(&nested_item, &index_value, &value)?;
-
-            // Update the parent structure
-            let updated_parent = update_index_value(
-                &nested_target_value,
-                &nested_index_value,
-                &updated_nested_item,
-            )?;
-
-            // Update the variable
-            if let Expr::Literal(Literal::Identifier(name, _)) = &**nested_target {
-                env.set_existing(name, updated_parent)?;
-            } else {
-                return Err(RuntimeError::InvalidOperation {
-                    message: "Complex nested assignment targets not yet supported".to_string(),
-                });
-            }
-
-            Ok(value)
-        }
-        Expr::MapAccessByName {
-            target: nested_target,
-            key: nested_key,
-            ..
-        } => {
-            // Handle different types of nested targets
-            match &**nested_target {
-                Expr::Literal(Literal::Identifier(name, _)) => {
-                    // Mixed nested access: target:key[index] = value
-                    let nested_target_value = eval_expr(nested_target, env.clone())?;
-
-                    // Get the nested item
-                    let nested_item = get_map_access_value(&nested_target_value, nested_key)?;
-
-                    // Update the nested item
-                    let updated_nested_item =
-                        update_index_value(&nested_item, &index_value, &value)?;
-
-                    // Update the parent structure
-                    let updated_parent = update_map_access_value(
-                        &nested_target_value,
-                        nested_key,
-                        &updated_nested_item,
-                    )?;
-
-                    // Update the variable
-                    env.set_existing(name, updated_parent)?;
-                    Ok(value)
-                }
-                Expr::MapAccessByName {
-                    target: grandparent_target,
-                    key: grandparent_key,
-                    ..
-                } => {
-                    // Deeply nested access: target:key1:key2[index] = value
-                    let grandparent_value = eval_expr(grandparent_target, env.clone())?;
-
-                    // Get the intermediate map
-                    let intermediate_map =
-                        get_map_access_value(&grandparent_value, grandparent_key)?;
-
-                    // Get the final nested item
-                    let nested_item = get_map_access_value(&intermediate_map, nested_key)?;
-
-                    // Update the nested item
-                    let updated_nested_item =
-                        update_index_value(&nested_item, &index_value, &value)?;
-
-                    // Update the intermediate map
-                    let updated_intermediate_map = update_map_access_value(
-                        &intermediate_map,
-                        nested_key,
-                        &updated_nested_item,
-                    )?;
-
-                    // Update the grandparent structure
-                    let updated_grandparent = update_map_access_value(
-                        &grandparent_value,
-                        grandparent_key,
-                        &updated_intermediate_map,
-                    )?;
-
-                    // Update the variable
-                    if let Expr::Literal(Literal::Identifier(name, _)) = &**grandparent_target {
-                        env.set_existing(name, updated_grandparent)?;
-                    } else {
-                        return Err(RuntimeError::InvalidOperation {
-                            message: "Complex nested assignment targets not yet supported"
-                                .to_string(),
-                        });
-                    }
-
-                    Ok(value)
-                }
-                _ => Err(RuntimeError::InvalidOperation {
-                    message: "Complex nested assignment targets not yet supported".to_string(),
-                }),
-            }
-        }
-        _ => Err(RuntimeError::InvalidOperation {
-            message: "Complex assignment targets not yet supported".to_string(),
-        }),
-    }
-}
-
-/// Evaluate map key assignment (map:key = value)
-pub fn eval_map_key_assignment(
-    target: &Expr,
-    key: &str,
-    value: Value,
-    env: Rc<Env>,
-) -> EvalResult<Value> {
-    match target {
-        Expr::Literal(Literal::Identifier(name, _)) => {
-            let target_value = env.get(name)?;
-            let updated_value = update_map_access_value(&target_value, key, &value)?;
-            env.set_existing(name, updated_value)?;
-            Ok(value)
-        }
-        Expr::Index {
-            target: nested_target,
-            index: nested_index,
-            ..
-        } => {
-            // Mixed nested access: target[index]:key = value
-            let nested_target_value = eval_expr(nested_target, env.clone())?;
-            let nested_index_value = eval_expr(nested_index, env.clone())?;
-
-            // Get the nested item
-            let nested_item = get_index_value(&nested_target_value, &nested_index_value)?;
-
-            // Update the nested item
-            let updated_nested_item = update_map_access_value(&nested_item, key, &value)?;
-
-            // Update the parent structure
-            let updated_parent = update_index_value(
-                &nested_target_value,
-                &nested_index_value,
-                &updated_nested_item,
-            )?;
-
-            // Update the variable
-            if let Expr::Literal(Literal::Identifier(name, _)) = &**nested_target {
-                env.set_existing(name, updated_parent)?;
-            } else {
-                return Err(RuntimeError::InvalidOperation {
-                    message: "Complex nested assignment targets not yet supported".to_string(),
-                });
-            }
-
-            Ok(value)
-        }
-        Expr::MapAccessByName {
-            target: nested_target,
-            key: nested_key,
-            ..
-        } => {
-            // Handle different types of nested targets
-            match &**nested_target {
-                Expr::Literal(Literal::Identifier(name, _)) => {
-                    // Nested map access: target:key1:key2 = value
-                    let nested_target_value = eval_expr(nested_target, env.clone())?;
-
-                    // Get the nested item
-                    let nested_item = get_map_access_value(&nested_target_value, nested_key)?;
-
-                    // Update the nested item
-                    let updated_nested_item = update_map_access_value(&nested_item, key, &value)?;
-
-                    // Update the parent structure
-                    let updated_parent = update_map_access_value(
-                        &nested_target_value,
-                        nested_key,
-                        &updated_nested_item,
-                    )?;
-
-                    // Update the variable
-                    env.set_existing(name, updated_parent)?;
-                    Ok(value)
-                }
-                Expr::MapAccessByName {
-                    target: grandparent_target,
-                    key: grandparent_key,
-                    ..
-                } => {
-                    // Deeply nested access: target:key1:key2:key3 = value
-                    let grandparent_value = eval_expr(grandparent_target, env.clone())?;
-
-                    // Get the intermediate map
-                    let intermediate_map =
-                        get_map_access_value(&grandparent_value, grandparent_key)?;
-
-                    // Get the final nested item
-                    let nested_item = get_map_access_value(&intermediate_map, nested_key)?;
-
-                    // Update the nested item
-                    let updated_nested_item = update_map_access_value(&nested_item, key, &value)?;
-
-                    // Update the intermediate map
-                    let updated_intermediate_map = update_map_access_value(
-                        &intermediate_map,
-                        nested_key,
-                        &updated_nested_item,
-                    )?;
-
-                    // Update the grandparent structure
-                    let updated_grandparent = update_map_access_value(
-                        &grandparent_value,
-                        grandparent_key,
-                        &updated_intermediate_map,
-                    )?;
-
-                    // Update the variable
-                    if let Expr::Literal(Literal::Identifier(name, _)) = &**grandparent_target {
-                        env.set_existing(name, updated_grandparent)?;
-                    } else {
-                        return Err(RuntimeError::InvalidOperation {
-                            message: "Complex nested assignment targets not yet supported"
-                                .to_string(),
-                        });
-                    }
-
-                    Ok(value)
-                }
-                _ => Err(RuntimeError::InvalidOperation {
-                    message: "Complex nested assignment targets not yet supported".to_string(),
-                }),
-            }
-        }
-        _ => Err(RuntimeError::InvalidOperation {
-            message: "Complex assignment targets not yet supported".to_string(),
         }),
     }
 }
@@ -412,6 +148,194 @@ fn update_map_access_value(target: &Value, key: &str, value: &Value) -> EvalResu
         }
         _ => Err(RuntimeError::TypeError {
             message: format!("Cannot assign key '{}' on {}", key, target.type_name()),
+        }),
+    }
+}
+
+/// Evaluate deep index assignment with unlimited nesting support
+/// Handles cases like: target[index1][index2][index3]...[indexN] = value
+pub fn eval_deep_index_assignment(
+    target: &Expr,
+    index: &Expr,
+    value: Value,
+    env: Rc<Env>,
+) -> EvalResult<Value> {
+    let index_value = eval_expr(index, env.clone())?;
+
+    match target {
+        Expr::Literal(Literal::Identifier(name, _)) => {
+            // Base case: simple variable assignment
+            let target_value = env.get(name)?;
+            let updated_value = update_index_value(&target_value, &index_value, &value)?;
+            env.set_existing(name, updated_value)?;
+            Ok(value)
+        }
+        Expr::Index {
+            target: nested_target,
+            index: nested_index,
+            ..
+        } => {
+            // Recursive case: nested indexing
+            let nested_target_value = eval_expr(nested_target, env.clone())?;
+            let nested_index_value = eval_expr(nested_index, env.clone())?;
+
+            // Get the nested item
+            let nested_item = get_index_value(&nested_target_value, &nested_index_value)?;
+
+            // Update the nested item
+            let updated_nested_item = update_index_value(&nested_item, &index_value, &value)?;
+
+            // Update the parent structure recursively
+            let updated_parent = update_index_value(
+                &nested_target_value,
+                &nested_index_value,
+                &updated_nested_item,
+            )?;
+
+            // Update the variable in the environment
+            update_nested_structure_in_env(nested_target, updated_parent, env)?;
+            Ok(value)
+        }
+        Expr::MapAccessByName {
+            target: nested_target,
+            key: nested_key,
+            ..
+        } => {
+            // Mixed case: target:key[index] = value
+            let nested_target_value = eval_expr(nested_target, env.clone())?;
+
+            // Get the nested item
+            let nested_item = get_map_access_value(&nested_target_value, nested_key)?;
+
+            // Update the nested item
+            let updated_nested_item = update_index_value(&nested_item, &index_value, &value)?;
+
+            // Update the parent structure
+            let updated_parent =
+                update_map_access_value(&nested_target_value, nested_key, &updated_nested_item)?;
+
+            // Update the variable in the environment
+            update_nested_structure_in_env(nested_target, updated_parent, env)?;
+            Ok(value)
+        }
+        _ => Err(RuntimeError::InvalidOperation {
+            message: "Invalid nested assignment target".to_string(),
+        }),
+    }
+}
+
+/// Evaluate deep map assignment with unlimited nesting support
+/// Handles cases like: target:key1:key2:key3:...:keyN = value
+pub fn eval_deep_map_assignment(
+    target: &Expr,
+    key: &str,
+    value: Value,
+    env: Rc<Env>,
+) -> EvalResult<Value> {
+    match target {
+        Expr::Literal(Literal::Identifier(name, _)) => {
+            // Base case: simple variable assignment
+            let target_value = env.get(name)?;
+            let updated_value = update_map_access_value(&target_value, key, &value)?;
+            env.set_existing(name, updated_value)?;
+            Ok(value)
+        }
+        Expr::Index {
+            target: nested_target,
+            index: nested_index,
+            ..
+        } => {
+            // Mixed case: target[index]:key = value
+            let nested_target_value = eval_expr(nested_target, env.clone())?;
+            let nested_index_value = eval_expr(nested_index, env.clone())?;
+
+            // Get the nested item
+            let nested_item = get_index_value(&nested_target_value, &nested_index_value)?;
+
+            // Update the nested item
+            let updated_nested_item = update_map_access_value(&nested_item, key, &value)?;
+
+            // Update the parent structure
+            let updated_parent = update_index_value(
+                &nested_target_value,
+                &nested_index_value,
+                &updated_nested_item,
+            )?;
+
+            // Update the variable in the environment
+            update_nested_structure_in_env(nested_target, updated_parent, env)?;
+            Ok(value)
+        }
+        Expr::MapAccessByName {
+            target: nested_target,
+            key: nested_key,
+            ..
+        } => {
+            // Recursive case: nested map access
+            let nested_target_value = eval_expr(nested_target, env.clone())?;
+
+            // Get the nested item
+            let nested_item = get_map_access_value(&nested_target_value, nested_key)?;
+
+            // Update the nested item
+            let updated_nested_item = update_map_access_value(&nested_item, key, &value)?;
+
+            // Update the parent structure
+            let updated_parent =
+                update_map_access_value(&nested_target_value, nested_key, &updated_nested_item)?;
+
+            // Update the variable in the environment
+            update_nested_structure_in_env(nested_target, updated_parent, env)?;
+            Ok(value)
+        }
+        _ => Err(RuntimeError::InvalidOperation {
+            message: "Invalid nested assignment target".to_string(),
+        }),
+    }
+}
+
+/// Update a nested structure in the environment
+/// This function handles the recursive updating of nested structures
+fn update_nested_structure_in_env(target: &Expr, new_value: Value, env: Rc<Env>) -> EvalResult<()> {
+    match target {
+        Expr::Literal(Literal::Identifier(name, _)) => {
+            // Base case: update the variable directly
+            env.set_existing(name, new_value)?;
+            Ok(())
+        }
+        Expr::Index {
+            target: nested_target,
+            index: nested_index,
+            ..
+        } => {
+            // Recursive case: update nested indexing
+            let nested_target_value = eval_expr(nested_target, env.clone())?;
+            let nested_index_value = eval_expr(nested_index, env.clone())?;
+
+            // Update the nested structure
+            let updated_nested =
+                update_index_value(&nested_target_value, &nested_index_value, &new_value)?;
+
+            // Continue updating up the chain
+            update_nested_structure_in_env(nested_target, updated_nested, env)
+        }
+        Expr::MapAccessByName {
+            target: nested_target,
+            key: nested_key,
+            ..
+        } => {
+            // Recursive case: update nested map access
+            let nested_target_value = eval_expr(nested_target, env.clone())?;
+
+            // Update the nested structure
+            let updated_nested =
+                update_map_access_value(&nested_target_value, nested_key, &new_value)?;
+
+            // Continue updating up the chain
+            update_nested_structure_in_env(nested_target, updated_nested, env)
+        }
+        _ => Err(RuntimeError::InvalidOperation {
+            message: "Cannot update nested structure".to_string(),
         }),
     }
 }
@@ -675,6 +599,435 @@ mod tests {
             }
         } else {
             panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_deep_list_nesting() {
+        let env = create_test_env();
+
+        // Create a 4-level deep nested list: matrix[0][1][2][3] = 99
+        let deep_list = Value::List(vec![Value::List(vec![
+            Value::List(vec![
+                Value::List(vec![
+                    Value::Number(1.0),
+                    Value::Number(2.0),
+                    Value::Number(3.0),
+                    Value::Number(4.0),
+                ]),
+                Value::List(vec![
+                    Value::Number(5.0),
+                    Value::Number(6.0),
+                    Value::Number(7.0),
+                    Value::Number(8.0),
+                ]),
+            ]),
+            Value::List(vec![
+                Value::List(vec![
+                    Value::Number(9.0),
+                    Value::Number(10.0),
+                    Value::Number(11.0),
+                    Value::Number(12.0),
+                ]),
+                Value::List(vec![
+                    Value::Number(13.0),
+                    Value::Number(14.0),
+                    Value::Number(15.0),
+                    Value::Number(16.0),
+                ]),
+            ]),
+        ])]);
+        env.define_or_set("matrix", deep_list);
+
+        // Test deep assignment: matrix[0][1][1][3] = 99
+        let target = Expr::Index {
+            target: Box::new(Expr::Index {
+                target: Box::new(Expr::Index {
+                    target: Box::new(Expr::Index {
+                        target: Box::new(Expr::Literal(Literal::Identifier(
+                            "matrix".to_string(),
+                            Span::default(),
+                        ))),
+                        index: Box::new(Expr::Literal(Literal::Number(0.0, Span::default()))),
+                        span: Span::default(),
+                    }),
+                    index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+                    span: Span::default(),
+                }),
+                index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+                span: Span::default(),
+            }),
+            index: Box::new(Expr::Literal(Literal::Number(3.0, Span::default()))),
+            span: Span::default(),
+        };
+        let value = Expr::Literal(Literal::Number(99.0, Span::default()));
+
+        let result = eval_assignment(&target, &value, env.clone()).unwrap();
+        assert_eq!(result, Value::Number(99.0));
+
+        // Verify the deep structure was updated correctly
+        let updated_matrix = env.get("matrix").unwrap();
+        if let Value::List(level1) = updated_matrix {
+            if let Value::List(level2) = &level1[0] {
+                if let Value::List(level3) = &level2[1] {
+                    if let Value::List(level4) = &level3[1] {
+                        assert_eq!(level4[3], Value::Number(99.0));
+                    } else {
+                        panic!("Expected list at level 4");
+                    }
+                } else {
+                    panic!("Expected list at level 3");
+                }
+            } else {
+                panic!("Expected list at level 2");
+            }
+        } else {
+            panic!("Expected list at level 1");
+        }
+    }
+
+    #[test]
+    fn test_deep_map_nesting() {
+        let env = create_test_env();
+
+        // Create a 5-level deep nested map: config:user:profile:settings:display:theme = "dark"
+        let mut display_map = indexmap::IndexMap::new();
+        display_map.insert(
+            MapKey::String("theme".to_string()),
+            Value::String("light".to_string()),
+        );
+        display_map.insert(
+            MapKey::String("layout".to_string()),
+            Value::String("grid".to_string()),
+        );
+
+        let mut settings_map = indexmap::IndexMap::new();
+        settings_map.insert(
+            MapKey::String("display".to_string()),
+            Value::Map(display_map),
+        );
+        settings_map.insert(
+            MapKey::String("notifications".to_string()),
+            Value::Boolean(true),
+        );
+
+        let mut profile_map = indexmap::IndexMap::new();
+        profile_map.insert(
+            MapKey::String("settings".to_string()),
+            Value::Map(settings_map),
+        );
+        profile_map.insert(
+            MapKey::String("avatar".to_string()),
+            Value::String("user.png".to_string()),
+        );
+
+        let mut user_map = indexmap::IndexMap::new();
+        user_map.insert(
+            MapKey::String("profile".to_string()),
+            Value::Map(profile_map),
+        );
+        user_map.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+
+        let mut config_map = indexmap::IndexMap::new();
+        config_map.insert(MapKey::String("user".to_string()), Value::Map(user_map));
+        config_map.insert(
+            MapKey::String("version".to_string()),
+            Value::String("1.0".to_string()),
+        );
+
+        env.define_or_set("config", Value::Map(config_map));
+
+        // Test deep assignment: config:user:profile:settings:display:theme = "dark"
+        let target = Expr::MapAccessByName {
+            target: Box::new(Expr::MapAccessByName {
+                target: Box::new(Expr::MapAccessByName {
+                    target: Box::new(Expr::MapAccessByName {
+                        target: Box::new(Expr::MapAccessByName {
+                            target: Box::new(Expr::Literal(Literal::Identifier(
+                                "config".to_string(),
+                                Span::default(),
+                            ))),
+                            key: "user".to_string(),
+                            span: Span::default(),
+                        }),
+                        key: "profile".to_string(),
+                        span: Span::default(),
+                    }),
+                    key: "settings".to_string(),
+                    span: Span::default(),
+                }),
+                key: "display".to_string(),
+                span: Span::default(),
+            }),
+            key: "theme".to_string(),
+            span: Span::default(),
+        };
+        let value = Expr::Literal(Literal::StringTemplate(
+            vec![crate::ast::StringPart::Text("dark".to_string())],
+            Span::default(),
+        ));
+
+        let result = eval_assignment(&target, &value, env.clone()).unwrap();
+        assert_eq!(result, Value::String("dark".to_string()));
+
+        // Verify the deep structure was updated correctly
+        let updated_config = env.get("config").unwrap();
+        if let Value::Map(config) = updated_config {
+            if let Some(Value::Map(user)) = config.get(&MapKey::String("user".to_string())) {
+                if let Some(Value::Map(profile)) = user.get(&MapKey::String("profile".to_string()))
+                {
+                    if let Some(Value::Map(settings)) =
+                        profile.get(&MapKey::String("settings".to_string()))
+                    {
+                        if let Some(Value::Map(display)) =
+                            settings.get(&MapKey::String("display".to_string()))
+                        {
+                            if let Some(Value::String(theme)) =
+                                display.get(&MapKey::String("theme".to_string()))
+                            {
+                                assert_eq!(theme, "dark");
+                            } else {
+                                panic!("Expected theme in display map");
+                            }
+                        } else {
+                            panic!("Expected display map in settings");
+                        }
+                    } else {
+                        panic!("Expected settings map in profile");
+                    }
+                } else {
+                    panic!("Expected profile map in user");
+                }
+            } else {
+                panic!("Expected user map in config");
+            }
+        } else {
+            panic!("Expected map");
+        }
+    }
+
+    #[test]
+    fn test_mixed_deep_nesting() {
+        let env = create_test_env();
+
+        // Create a complex mixed structure: data[0]:users[1]:config:preferences:notifications:email = true
+        let mut notifications_map = indexmap::IndexMap::new();
+        notifications_map.insert(MapKey::String("email".to_string()), Value::Boolean(false));
+        notifications_map.insert(MapKey::String("push".to_string()), Value::Boolean(false));
+
+        let mut preferences_map = indexmap::IndexMap::new();
+        preferences_map.insert(
+            MapKey::String("notifications".to_string()),
+            Value::Map(notifications_map),
+        );
+        preferences_map.insert(
+            MapKey::String("language".to_string()),
+            Value::String("en".to_string()),
+        );
+
+        let mut config_map = indexmap::IndexMap::new();
+        config_map.insert(
+            MapKey::String("preferences".to_string()),
+            Value::Map(preferences_map),
+        );
+        config_map.insert(
+            MapKey::String("theme".to_string()),
+            Value::String("dark".to_string()),
+        );
+
+        let mut user1_map = indexmap::IndexMap::new();
+        user1_map.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        user1_map.insert(
+            MapKey::String("config".to_string()),
+            Value::Map(config_map.clone()),
+        );
+
+        let mut user2_map = indexmap::IndexMap::new();
+        user2_map.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Bob".to_string()),
+        );
+        user2_map.insert(MapKey::String("config".to_string()), Value::Map(config_map));
+
+        let mut users_map = indexmap::IndexMap::new();
+        users_map.insert(
+            MapKey::String("users".to_string()),
+            Value::List(vec![Value::Map(user1_map), Value::Map(user2_map)]),
+        );
+        users_map.insert(MapKey::String("count".to_string()), Value::Number(2.0));
+
+        let data = Value::List(vec![Value::Map(users_map)]);
+        env.define_or_set("data", data);
+
+        // Test mixed deep assignment: data[0]:users[1]:config:preferences:notifications:email = true
+        let target = Expr::MapAccessByName {
+            target: Box::new(Expr::MapAccessByName {
+                target: Box::new(Expr::MapAccessByName {
+                    target: Box::new(Expr::MapAccessByName {
+                        target: Box::new(Expr::Index {
+                            target: Box::new(Expr::MapAccessByName {
+                                target: Box::new(Expr::Index {
+                                    target: Box::new(Expr::Literal(Literal::Identifier(
+                                        "data".to_string(),
+                                        Span::default(),
+                                    ))),
+                                    index: Box::new(Expr::Literal(Literal::Number(
+                                        0.0,
+                                        Span::default(),
+                                    ))),
+                                    span: Span::default(),
+                                }),
+                                key: "users".to_string(),
+                                span: Span::default(),
+                            }),
+                            index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+                            span: Span::default(),
+                        }),
+                        key: "config".to_string(),
+                        span: Span::default(),
+                    }),
+                    key: "preferences".to_string(),
+                    span: Span::default(),
+                }),
+                key: "notifications".to_string(),
+                span: Span::default(),
+            }),
+            key: "email".to_string(),
+            span: Span::default(),
+        };
+        let value = Expr::Literal(Literal::Boolean(true, Span::default()));
+
+        let result = eval_assignment(&target, &value, env.clone()).unwrap();
+        assert_eq!(result, Value::Boolean(true));
+
+        // Verify the mixed deep structure was updated correctly
+        let updated_data = env.get("data").unwrap();
+        if let Value::List(items) = updated_data {
+            if let Value::Map(item) = &items[0] {
+                if let Some(Value::List(users)) = item.get(&MapKey::String("users".to_string())) {
+                    if let Value::Map(user) = &users[1] {
+                        if let Some(Value::Map(config)) =
+                            user.get(&MapKey::String("config".to_string()))
+                        {
+                            if let Some(Value::Map(preferences)) =
+                                config.get(&MapKey::String("preferences".to_string()))
+                            {
+                                if let Some(Value::Map(notifications)) =
+                                    preferences.get(&MapKey::String("notifications".to_string()))
+                                {
+                                    if let Some(Value::Boolean(email)) =
+                                        notifications.get(&MapKey::String("email".to_string()))
+                                    {
+                                        assert!(*email);
+                                    } else {
+                                        panic!("Expected email in notifications map");
+                                    }
+                                } else {
+                                    panic!("Expected notifications map in preferences");
+                                }
+                            } else {
+                                panic!("Expected preferences map in config");
+                            }
+                        } else {
+                            panic!("Expected config map in user");
+                        }
+                    } else {
+                        panic!("Expected user map in users list");
+                    }
+                } else {
+                    panic!("Expected users list in item");
+                }
+            } else {
+                panic!("Expected map in first item");
+            }
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_very_deep_nesting() {
+        let env = create_test_env();
+
+        // Create a very deep structure (6 levels): deep[0][1][2][3][4][5] = 42
+        let level6 = vec![Value::Number(0.0); 6];
+        let level5 = vec![Value::List(level6); 5];
+        let level4 = vec![Value::List(level5); 4];
+        let level3 = vec![Value::List(level4); 3];
+        let level2 = vec![Value::List(level3); 2];
+        let level1 = vec![Value::List(level2); 1];
+
+        env.define_or_set("deep", Value::List(level1));
+
+        // Test very deep assignment: deep[0][1][2][3][4][5] = 42
+        let target = Expr::Index {
+            target: Box::new(Expr::Index {
+                target: Box::new(Expr::Index {
+                    target: Box::new(Expr::Index {
+                        target: Box::new(Expr::Index {
+                            target: Box::new(Expr::Index {
+                                target: Box::new(Expr::Literal(Literal::Identifier(
+                                    "deep".to_string(),
+                                    Span::default(),
+                                ))),
+                                index: Box::new(Expr::Literal(Literal::Number(
+                                    0.0,
+                                    Span::default(),
+                                ))),
+                                span: Span::default(),
+                            }),
+                            index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+                            span: Span::default(),
+                        }),
+                        index: Box::new(Expr::Literal(Literal::Number(2.0, Span::default()))),
+                        span: Span::default(),
+                    }),
+                    index: Box::new(Expr::Literal(Literal::Number(3.0, Span::default()))),
+                    span: Span::default(),
+                }),
+                index: Box::new(Expr::Literal(Literal::Number(4.0, Span::default()))),
+                span: Span::default(),
+            }),
+            index: Box::new(Expr::Literal(Literal::Number(5.0, Span::default()))),
+            span: Span::default(),
+        };
+        let value = Expr::Literal(Literal::Number(42.0, Span::default()));
+
+        let result = eval_assignment(&target, &value, env.clone()).unwrap();
+        assert_eq!(result, Value::Number(42.0));
+
+        // Verify the very deep structure was updated correctly
+        let updated_deep = env.get("deep").unwrap();
+        if let Value::List(l1) = updated_deep {
+            if let Value::List(l2) = &l1[0] {
+                if let Value::List(l3) = &l2[1] {
+                    if let Value::List(l4) = &l3[2] {
+                        if let Value::List(l5) = &l4[3] {
+                            if let Value::List(l6) = &l5[4] {
+                                assert_eq!(l6[5], Value::Number(42.0));
+                            } else {
+                                panic!("Expected list at level 6");
+                            }
+                        } else {
+                            panic!("Expected list at level 5");
+                        }
+                    } else {
+                        panic!("Expected list at level 4");
+                    }
+                } else {
+                    panic!("Expected list at level 3");
+                }
+            } else {
+                panic!("Expected list at level 2");
+            }
+        } else {
+            panic!("Expected list at level 1");
         }
     }
 }

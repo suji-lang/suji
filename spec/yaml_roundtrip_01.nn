@@ -1,0 +1,9 @@
+import std:println
+import std:yaml
+
+# YAML roundtrip - parse and generate
+original = { name: "Frank", age: 50, active: true }
+yaml_str = yaml:generate(original)
+parsed = yaml:parse(yaml_str)
+
+println(parsed:name)  # Frank

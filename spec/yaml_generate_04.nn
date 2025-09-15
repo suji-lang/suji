@@ -1,0 +1,7 @@
+import std:println
+import std:yaml
+
+# YAML generate - nil value
+yaml_output = yaml:generate(nil)
+
+println(yaml_output)  # null

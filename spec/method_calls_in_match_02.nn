@@ -1,0 +1,40 @@
+import std:println
+
+# Test list method calls in conditional match conditions
+numbers = [1, 2, 3, 4, 5]
+result = match {
+    numbers::length() > 10: "large list"
+    numbers::length() > 3: "medium list"
+    _: "small list"
+}
+
+println(result)  # medium list
+
+# Test list sum method
+scores = [85, 92, 78, 96]
+result2 = match {
+    scores::sum() >= 350: "excellent performance"
+    scores::sum() >= 300: "good performance"
+    _: "needs improvement"
+}
+
+println(result2)  # excellent performance
+
+# Test list product method
+factors = [2, 3, 4]
+result3 = match {
+    factors::product() > 20: "large product"
+    factors::product() > 10: "medium product"
+    _: "small product"
+}
+
+println(result3)  # large product
+
+# Test list index_of method
+fruits = ["apple", "banana", "cherry"]
+result4 = match {
+    fruits::index_of("banana") >= 0: "has banana"
+    _: "no banana"
+}
+
+println(result4)  # has banana

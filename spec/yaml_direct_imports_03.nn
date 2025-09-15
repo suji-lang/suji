@@ -1,0 +1,10 @@
+import std:println
+import std:yaml:parse as yaml_parse
+import std:yaml:generate as yaml_generate
+
+# YAML direct import - with aliases
+yaml_str = "name: Eve\nage: 45"
+data = yaml_parse(yaml_str)
+yaml_output = yaml_generate(data)
+
+println(yaml_output)  # age: 45

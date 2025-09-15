@@ -1,0 +1,9 @@
+import std:println
+import std:yaml
+
+# YAML error handling - test that valid generation works
+data = { name: "Henry", age: 60 }
+yaml_output = yaml:generate(data)
+
+# If we get here, generation worked
+println(yaml_output)  # age: 60

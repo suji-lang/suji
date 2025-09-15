@@ -1,0 +1,40 @@
+# Test mixed deep nesting - complex structure
+# data[0]:users[1]:config:preferences:notifications:email = true
+
+import std:println
+
+data = [{
+    users: [
+        {
+            name: "Alice",
+            config: {
+                preferences: {
+                    notifications: {
+                        email: false,
+                        push: false
+                    },
+                    language: "en"
+                },
+                theme: "dark"
+            }
+        },
+        {
+            name: "Bob",
+            config: {
+                preferences: {
+                    notifications: {
+                        email: false,
+                        push: false
+                    },
+                    language: "en"
+                },
+                theme: "dark"
+            }
+        }
+    ],
+    count: 2
+}]
+
+data[0]:users[1]:config:preferences:notifications:email = true
+
+println(data[0]:users[1]:config:preferences:notifications:email)  # true

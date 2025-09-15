@@ -1,0 +1,10 @@
+import std:println
+
+# Test basic single quote string literals
+name = 'Alice'
+message = 'Hello, world!'
+path = '/home/user/documents'
+
+println(name)     # Alice
+println(message)  # Hello, world!
+println(path)     # /home/user/documents

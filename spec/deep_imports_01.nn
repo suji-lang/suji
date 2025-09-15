@@ -1,0 +1,10 @@
+# Test basic deep import functionality
+import std:println
+
+# Test deep import from std:json:parse
+import std:json:parse as deep_json_parse
+
+# Test that the deep import works
+result = deep_json_parse("{\"deep\": \"import\", \"test\": 42}")
+
+println(result:deep)  # import

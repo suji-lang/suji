@@ -1,0 +1,12 @@
+import std:println
+
+# Test string interpolation in single quotes
+name = 'Alice'
+age = 30
+greeting = 'Hello, ${name}! You are ${age} years old.'
+calculation = 'The result is ${10 + 5}'
+complex = 'Name: ${name}, Age: ${age}, Sum: ${age + 10}'
+
+println(greeting)    # Hello, Alice! You are 30 years old.
+println(calculation) # The result is 15
+println(complex)     # Name: Alice, Age: 30, Sum: 40

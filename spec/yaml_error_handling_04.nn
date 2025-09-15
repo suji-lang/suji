@@ -1,0 +1,10 @@
+import std:println
+import std:yaml
+
+# YAML error handling - test that valid roundtrip works
+original = { name: "Jack", age: 70 }
+yaml_str = yaml:generate(original)
+parsed = yaml:parse(yaml_str)
+
+# If we get here, roundtrip worked
+println(parsed:name)  # Jack

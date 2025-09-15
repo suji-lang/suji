@@ -1,0 +1,8 @@
+import std:print
+import std:toml
+
+# TOML generate - simple value (wrapped in table)
+value = 42
+output = toml:generate(value)
+
+print(output)  # value = 42

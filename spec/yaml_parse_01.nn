@@ -1,0 +1,8 @@
+import std:println
+import std:yaml
+
+# YAML parse - basic object
+yaml_str = "name: Alice\nage: 30"
+data = yaml:parse(yaml_str)
+
+println(data:name)  # Alice

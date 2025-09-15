@@ -1,0 +1,11 @@
+# Test very deep nesting - 5 levels deep (simplified)
+# deep[0][1][1][1][2] = 42
+
+import std:println
+
+# Create a 5-level deep structure (simplified)
+deep = [[[[[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]]], [[[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]]]]]
+
+deep[0][1][1][1][2] = 42
+
+println(deep[0][1][1][1][2])  # 42

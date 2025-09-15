@@ -1,0 +1,8 @@
+import std:println
+import std:yaml
+
+# YAML parse - array
+yaml_str = "- 1\n- 2\n- 3"
+data = yaml:parse(yaml_str)
+
+println(data[0])  # 1

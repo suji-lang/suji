@@ -1,0 +1,26 @@
+# Test deep nesting with map reading operations
+# Verify that deep map access works for reading as well as writing
+
+import std:println
+
+config = {
+    user: {
+        profile: {
+            settings: {
+                display: {
+                    theme: "light",
+                    layout: "grid"
+                },
+                notifications: true
+            },
+            avatar: "user.png"
+        },
+        name: "Alice"
+    },
+    version: "1.0"
+}
+
+# Test reading from deep structure
+theme = config:user:profile:settings:display:theme
+
+println(theme)  # light

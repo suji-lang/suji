@@ -1,0 +1,33 @@
+# Test deep assignment to nested structures
+import std:println
+
+# Create a deep nested structure
+deep_structure = {
+    level1: {
+        level2: {
+            level3: {
+                level4: {
+                    level5: {
+                        level6: {
+                            level7: {
+                                level8: {
+                                    level9: {
+                                        level10: "original_value"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+# Test deep assignment (10 levels deep)
+deep_structure:level1:level2:level3:level4:level5:level6:level7:level8:level9:level10 = "modified_value"
+
+# Verify the assignment worked
+value = deep_structure:level1:level2:level3:level4:level5:level6:level7:level8:level9:level10
+
+println(value)  # modified_value

@@ -1,0 +1,41 @@
+import std:println
+
+# Test map method calls in conditional match conditions
+config = { name: "Alice", age: 30, active: true }
+result = match {
+    config::contains("active") && config["active"]: "user is active"
+    config::contains("age") && config["age"] > 18: "adult user"
+    _: "default status"
+}
+
+println(result)  # user is active
+
+# Test map length method
+data = { a: 1, b: 2, c: 3 }
+result2 = match {
+    data::length() > 5: "large dataset"
+    data::length() > 2: "medium dataset"
+    _: "small dataset"
+}
+
+println(result2)  # medium dataset
+
+# Test map keys method
+user_info = { name: "Bob", email: "bob@example.com", age: 25 }
+result3 = match {
+    user_info::keys()::length() > 2: "detailed profile"
+    user_info::keys()::length() > 1: "basic profile"
+    _: "minimal profile"
+}
+
+println(result3)  # detailed profile
+
+# Test map values method
+scores = { math: 95, science: 87, english: 92 }
+result4 = match {
+    scores::values()::sum() >= 270: "excellent student"
+    scores::values()::sum() >= 240: "good student"
+    _: "needs improvement"
+}
+
+println(result4)  # excellent student

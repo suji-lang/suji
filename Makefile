@@ -38,7 +38,7 @@ clean:
 # Run clippy linter
 lint:
 	@echo "Running clippy linter..."
-	cargo clippy
+	cargo clippy --all-targets
 
 # Show help
 help:

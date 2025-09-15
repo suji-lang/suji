@@ -1,0 +1,30 @@
+# Test deep access to nested structures
+import std:println
+
+# Create a deep nested structure
+deep_structure = {
+    level1: {
+        level2: {
+            level3: {
+                level4: {
+                    level5: {
+                        level6: {
+                            level7: {
+                                level8: {
+                                    level9: {
+                                        level10: "deep_value"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+# Test deep access (10 levels deep)
+value = deep_structure:level1:level2:level3:level4:level5:level6:level7:level8:level9:level10
+
+println(value)  # deep_value

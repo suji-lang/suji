@@ -1,0 +1,8 @@
+import std:println
+import std:yaml
+
+# YAML parse - simple values
+yaml_str = "42"
+data = yaml:parse(yaml_str)
+
+println(data)  # 42

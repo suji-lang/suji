@@ -1,0 +1,12 @@
+import std:println
+
+# Test mixed quote usage and nested quotes
+nested_single = 'He said, "Hello there!"'
+nested_double = "She replied, 'Hi back!'"
+double_str = "double"
+single_str = "single"
+mixed_usage = 'Single: ${double_str} and Double: ${single_str}'
+
+println(nested_single)  # He said, "Hello there!"
+println(nested_double)  # She replied, 'Hi back!'
+println(mixed_usage)    # Single: double and Double: single
