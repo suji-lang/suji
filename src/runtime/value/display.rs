@@ -46,6 +46,8 @@ impl fmt::Display for Value {
             }
             Value::Regex(regex) => write!(f, "/{}/", regex.as_str()),
             Value::Function(_) => write!(f, "<function>"),
+            Value::Stream(stream) => write!(f, "<stream:{}>", stream.name),
+            Value::EnvMap(_) => write!(f, "<env>"),
             Value::Nil => write!(f, "nil"),
         }
     }

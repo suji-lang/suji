@@ -1,0 +1,6 @@
+# Test list::average() on empty list
+import std:println
+
+empty = []
+result = empty::average()
+println(result)  # nil

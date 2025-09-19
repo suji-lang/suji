@@ -1,0 +1,14 @@
+# std:print function - writes text to a stream and returns bytes written
+export {
+    print: |text, out = nil| {
+        import std:FD
+        stream = match out {
+            nil: FD:stdout
+            _: out
+        }
+        text_str = text::to_string()
+        return stream::write(text_str)
+    }
+}
+
+

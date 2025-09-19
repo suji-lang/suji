@@ -1,5 +1,8 @@
 // Core types
-pub use types::{ControlFlow, FunctionValue, MapKey, OrderedFloat, ParamSpec, Value};
+pub use types::{
+    ControlFlow, EnvProxy, FunctionValue, MapKey, OrderedFloat, ParamSpec, StreamBackend,
+    StreamHandle, Value,
+};
 
 // Error types
 pub use errors::RuntimeError;

@@ -1,0 +1,10 @@
+# Test ENV values method
+import std:ENV
+import std:println
+
+# Set a test variable with unique value
+ENV:TEST_VALUES = "unique_test_value_12345"
+
+# Get all values and check if our test value is in there
+values = ENV::values()
+println(values::contains("unique_test_value_12345"))  # true

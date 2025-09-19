@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::to_string() method with mixed types
+lst = [1, "hello", true]
+result = lst::to_string()
+
+println(result)  # [1, hello, true]

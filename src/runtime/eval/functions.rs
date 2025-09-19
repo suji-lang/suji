@@ -200,7 +200,7 @@ mod tests {
             );
         }
 
-        // Test calling the imported builtin
+        // Test calling the imported builtin; it returns byte count
         let callee = Expr::Literal(Literal::Identifier("println".to_string(), Span::default()));
         let args = vec![Expr::Literal(Literal::StringTemplate(
             vec![crate::ast::StringPart::Text("hello".to_string())],
@@ -208,9 +208,8 @@ mod tests {
         ))];
 
         let result = eval_function_call(&callee, &args, env);
-        // println returns null
         match &result {
-            Ok(value) => assert_eq!(*value, Value::Nil),
+            Ok(value) => assert_eq!(*value, Value::Number(6.0)), // "hello\n" -> 6 bytes
             Err(error) => panic!("Test failed with error: {:?}", error),
         }
     }

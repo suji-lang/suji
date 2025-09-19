@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::to_string() method with integer
+n = 42
+result = n::to_string()
+
+println(result)  # 42

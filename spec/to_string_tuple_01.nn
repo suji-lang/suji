@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::to_string() method
+t = (1, 2, 3)
+result = t::to_string()
+
+println(result)  # (1, 2, 3)

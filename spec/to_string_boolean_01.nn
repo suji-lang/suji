@@ -1,0 +1,7 @@
+import std:println
+
+# Test boolean::to_string() method with true
+b = true
+result = b::to_string()
+
+println(result)  # true

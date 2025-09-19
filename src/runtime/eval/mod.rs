@@ -21,7 +21,7 @@ mod data_structures;
 mod expressions;
 
 // Re-export the main evaluation functions
-pub use exports::*;
+pub use exports::eval_export;
 pub use functions::*;
 pub use helpers::*;
 pub use imports::*;
@@ -159,4 +159,3 @@ pub fn eval_program_with_modules(
 
     Ok(last_value)
 }
-

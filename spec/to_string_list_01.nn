@@ -1,0 +1,7 @@
+import std:println
+
+# Test list::to_string() method
+lst = [1, 2, 3]
+result = lst::to_string()
+
+println(result)  # [1, 2, 3]

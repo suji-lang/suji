@@ -1,0 +1,7 @@
+import std:println
+
+# Test nil::to_string() method
+n = nil
+result = n::to_string()
+
+println(result)  # nil

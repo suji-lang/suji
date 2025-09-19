@@ -1,0 +1,7 @@
+import std:println
+
+# Test string::to_string() method
+s = "hello world"
+result = s::to_string()
+
+println(result)  # hello world

@@ -93,5 +93,13 @@ pub fn nn_to_toml_value(nn_value: &Value) -> Result<TomlValue, RuntimeError> {
             message: "Function values cannot be converted to TOML".to_string(),
         }
         .into()),
+        Value::Stream(_) => Err(TomlError::ConversionError {
+            message: "Stream values cannot be converted to TOML".to_string(),
+        }
+        .into()),
+        Value::EnvMap(_) => Err(TomlError::ConversionError {
+            message: "Environment map values cannot be converted to TOML".to_string(),
+        }
+        .into()),
     }
 }

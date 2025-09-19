@@ -1,0 +1,10 @@
+# Test ENV delete method
+import std:ENV
+import std:println
+
+# Set a test variable
+ENV:TEST_DELETE = "to_be_deleted"
+
+# Delete it and check return value
+deleted = ENV::delete("TEST_DELETE")
+println(deleted)  # true

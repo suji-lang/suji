@@ -576,10 +576,12 @@ fn test_indexing_slicing_comprehensive() {
 fn test_function_calls_comprehensive() {
     // Test builtin function calls through import system
     let result = eval_program("import std:println\nprintln(1)").unwrap();
-    assert_eq!(result, Value::Nil);
+    // \"1\\n\" => 2 bytes
+    assert_eq!(result, Value::Number(2.0));
 
-    let result = eval_program("import std:println\nprintln(1, 2, 3)").unwrap();
-    assert_eq!(result, Value::Nil);
+    // With explicit output stream
+    let result = eval_program("import std:println\nimport std:FD\nprintln(1, FD:stdout)").unwrap();
+    assert_eq!(result, Value::Number(2.0));
 
     // Test user-defined function calls
     let result = eval_program("add = |x, y| { x + y }\nadd(2, 3)").unwrap();

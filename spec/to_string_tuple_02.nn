@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::to_string() method with single element
+t = (42,)
+result = t::to_string()
+
+println(result)  # (42,)

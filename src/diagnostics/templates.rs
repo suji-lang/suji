@@ -386,8 +386,9 @@ pub mod predefined {
             "sort" => "list::sort() - returns a new sorted list",
             "min" => "list::min() - returns minimum number in list",
             "max" => "list::max() - returns maximum number in list",
-            "first" => "list::first() - returns first element or nil",
-            "last" => "list::last() - returns last element or nil",
+            "first" => "list::first(default=nil) - returns first element or default",
+            "last" => "list::last(default=nil) - returns last element or default",
+            "average" => "list::average() - returns arithmetic mean of numbers",
             _ => "Check the method name and arguments",
         };
 
@@ -447,5 +448,77 @@ pub mod predefined {
             "Expected multiline string content or interpolation",
         )
         .with_suggestion("Provide text content or an interpolation: ${ expression }")
+    }
+
+    pub fn stream_error(message: &str) -> ErrorTemplate {
+        ErrorTemplate::new(38, "Stream error", "Stream I/O error")
+            .with_suggestion(message)
+            .with_suggestion("Stream operations may block while waiting for I/O")
+    }
+
+    pub fn stream_closed_error() -> ErrorTemplate {
+        ErrorTemplate::new(39, "Stream closed", "Operation on closed stream")
+            .with_suggestion("Cannot perform operations on a closed stream")
+            .with_suggestion("Check if the stream was closed with stream::close()")
+    }
+
+    pub fn stream_read_write_error(stream_name: &str, operation: &str) -> ErrorTemplate {
+        let suggestion = match operation {
+            "read" => format!(
+                "Stream '{}' is write-only. Use stdout/stderr streams for writing",
+                stream_name
+            ),
+            "write" => format!(
+                "Stream '{}' is read-only. Use stdin stream for reading",
+                stream_name
+            ),
+            _ => format!(
+                "Stream '{}' does not support '{}' operation",
+                stream_name, operation
+            ),
+        };
+
+        ErrorTemplate::new(40, "Invalid stream operation", "Invalid stream operation")
+            .with_suggestion(&suggestion)
+            .with_suggestion(
+                "Check stream capabilities: stdin (read-only), stdout/stderr (write-only)",
+            )
+    }
+
+    pub fn stream_utf8_error() -> ErrorTemplate {
+        ErrorTemplate::new(41, "Invalid UTF-8", "Stream read produced invalid UTF-8")
+            .with_suggestion("The stream contains invalid UTF-8 byte sequences")
+            .with_suggestion("Ensure the input source produces valid UTF-8 text")
+    }
+
+    pub fn stream_method_error(method: &str, message: &str) -> ErrorTemplate {
+        let method_help = match method {
+            "read" => "stream::read(chunk_kb=8) - read next chunk (may block)",
+            "write" => "stream::write(text) - write text and return bytes written",
+            "read_all" => "stream::read_all() - read until EOF (may block)",
+            "read_lines" => "stream::read_lines() - read all lines as list (may block)",
+            "close" => "stream::close() - close the stream",
+            "to_string" => "stream::to_string() - get stream description",
+            _ => "Check the method name and arguments",
+        };
+
+        ErrorTemplate::new(42, "Stream method error", "Stream method error")
+            .with_suggestion(message)
+            .with_suggestion(&format!("Stream method '{}' usage:", method))
+            .with_suggestion(method_help)
+    }
+
+    pub fn serialization_error(message: &str) -> ErrorTemplate {
+        ErrorTemplate::new(43, "Serialization error", "Value cannot be serialized")
+            .with_suggestion(message)
+            .with_suggestion("Some values like streams, functions, and regex cannot be serialized to JSON/YAML/TOML")
+    }
+
+    pub fn list_average_error(message: &str) -> ErrorTemplate {
+        ErrorTemplate::new(44, "List average error", "List average error")
+            .with_suggestion(message)
+            .with_suggestion("list::average() requires all elements to be numbers")
+            .with_suggestion("Empty lists return nil")
+            .with_suggestion("Example: [1, 2, 3, 4, 5]::average() returns 3.0")
     }
 }

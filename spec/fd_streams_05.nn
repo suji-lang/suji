@@ -1,0 +1,3 @@
+import std:println
+# This should error because FD is not imported
+println(FD:stdout::to_string())  # ───╯

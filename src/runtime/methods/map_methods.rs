@@ -142,9 +142,180 @@ pub fn call_map_method(
                 unreachable!()
             }
         }
+        "to_string" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "to_string() takes no arguments".to_string(),
+                });
+            }
+            if let Value::Map(map_data) = receiver.get() {
+                Ok(Value::String(format!("{}", Value::Map(map_data.clone()))))
+            } else {
+                unreachable!()
+            }
+        }
         _ => Err(RuntimeError::MethodError {
             message: format!("Map has no method '{}'", method),
         }),
+    }
+}
+
+/// ENV map methods: contains(key), get(key, default=nil), keys(), values(), to_list(), length(), delete(key), merge(other_map)
+pub fn call_env_map_method(
+    receiver: ValueRef,
+    method: &str,
+    args: Vec<Value>,
+) -> Result<Value, RuntimeError> {
+    if let Value::EnvMap(env_proxy) = receiver.get() {
+        match method {
+            "contains" => {
+                if args.len() != 1 {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "contains() takes exactly one argument".to_string(),
+                    });
+                }
+
+                let key = match &args[0] {
+                    Value::String(s) => s,
+                    _ => {
+                        return Err(RuntimeError::TypeError {
+                            message: "ENV keys must be strings".to_string(),
+                        });
+                    }
+                };
+
+                Ok(Value::Boolean(env_proxy.contains(key)))
+            }
+            "get" => {
+                if args.is_empty() || args.len() > 2 {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "get() takes one or two arguments".to_string(),
+                    });
+                }
+
+                let key = match &args[0] {
+                    Value::String(s) => s,
+                    _ => {
+                        return Err(RuntimeError::TypeError {
+                            message: "ENV keys must be strings".to_string(),
+                        });
+                    }
+                };
+
+                let default = if args.len() == 2 {
+                    args[1].clone()
+                } else {
+                    Value::Nil
+                };
+
+                match env_proxy.get(key) {
+                    Some(value) => Ok(Value::String(value)),
+                    None => Ok(default),
+                }
+            }
+            "keys" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "keys() takes no arguments".to_string(),
+                    });
+                }
+                let keys: Vec<Value> = env_proxy.keys().into_iter().map(Value::String).collect();
+                Ok(Value::List(keys))
+            }
+            "values" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "values() takes no arguments".to_string(),
+                    });
+                }
+                let values: Vec<Value> =
+                    env_proxy.values().into_iter().map(Value::String).collect();
+                Ok(Value::List(values))
+            }
+            "to_list" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "to_list() takes no arguments".to_string(),
+                    });
+                }
+                let pairs: Vec<Value> = env_proxy
+                    .to_list()
+                    .into_iter()
+                    .map(|(k, v)| Value::Tuple(vec![Value::String(k), Value::String(v)]))
+                    .collect();
+                Ok(Value::List(pairs))
+            }
+            "length" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "length() takes no arguments".to_string(),
+                    });
+                }
+                Ok(Value::Number(env_proxy.length() as f64))
+            }
+            "delete" => {
+                if args.len() != 1 {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "delete() takes exactly one argument".to_string(),
+                    });
+                }
+
+                let key = match &args[0] {
+                    Value::String(s) => s,
+                    _ => {
+                        return Err(RuntimeError::TypeError {
+                            message: "ENV keys must be strings".to_string(),
+                        });
+                    }
+                };
+
+                Ok(Value::Boolean(env_proxy.delete(key)))
+            }
+            "merge" => {
+                if args.len() != 1 {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "merge() takes exactly one argument".to_string(),
+                    });
+                }
+
+                let other_map = match &args[0] {
+                    Value::Map(map) => map,
+                    _ => {
+                        return Err(RuntimeError::TypeError {
+                            message: "merge() argument must be a map".to_string(),
+                        });
+                    }
+                };
+
+                for (key, value) in other_map {
+                    let key_str = match key {
+                        super::super::value::MapKey::String(s) => s,
+                        _ => {
+                            return Err(RuntimeError::TypeError {
+                                message: "ENV keys must be strings".to_string(),
+                            });
+                        }
+                    };
+                    let value_str = value.to_string();
+                    env_proxy.set(key_str, &value_str)?;
+                }
+                // Return the same EnvMap after merging
+                Ok(Value::EnvMap(env_proxy.clone()))
+            }
+            "to_string" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "to_string() takes no arguments".to_string(),
+                    });
+                }
+                Ok(Value::String("<env>".to_string()))
+            }
+            _ => Err(RuntimeError::MethodError {
+                message: format!("ENV has no method '{}'", method),
+            }),
+        }
+    } else {
+        unreachable!()
     }
 }
 
@@ -944,5 +1115,44 @@ mod tests {
         // Test merge on immutable map
         let result = call_map_method(receiver, "merge", vec![other_map]);
         assert!(matches!(result, Err(RuntimeError::MethodError { .. })));
+    }
+
+    #[test]
+    fn test_map_to_string() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        let result = call_map_method(receiver, "to_string", vec![]).unwrap();
+        if let Value::String(s) = result {
+            assert!(s.contains("name: Alice"));
+            assert!(s.contains("age: 30"));
+            assert!(s.starts_with("{"));
+            assert!(s.ends_with("}"));
+        } else {
+            panic!("Expected string");
+        }
+
+        // Test empty map
+        let empty_map = Value::Map(IndexMap::new());
+        let receiver2 = ValueRef::Immutable(&empty_map);
+        let result2 = call_map_method(receiver2, "to_string", vec![]).unwrap();
+        assert_eq!(result2, Value::String("{}".to_string()));
+    }
+
+    #[test]
+    fn test_map_to_string_arity_mismatch() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        let result = call_map_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 }

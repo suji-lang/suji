@@ -1,0 +1,9 @@
+# Test basic ENV functionality
+import std:ENV
+import std:println
+
+# Set a test environment variable
+ENV:TEST_VAR = "hello_world"
+
+# Read it back and print the length
+println(ENV:TEST_VAR::length())  # 11

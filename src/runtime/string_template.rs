@@ -26,7 +26,6 @@ where
     Ok(result)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,7 +139,6 @@ mod tests {
             Err(RuntimeError::UndefinedVariable { .. })
         ));
     }
-
 
     #[test]
     fn test_empty_template() {

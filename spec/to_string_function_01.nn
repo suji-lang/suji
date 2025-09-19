@@ -1,0 +1,7 @@
+import std:println
+
+# Test function::to_string() method
+f = |x| x * 2
+result = f::to_string()
+
+println(result)  # <function>

@@ -1,0 +1,6 @@
+# Test list::average() on single element
+import std:println
+
+single = [10]
+result = single::average()
+println(result)  # 10

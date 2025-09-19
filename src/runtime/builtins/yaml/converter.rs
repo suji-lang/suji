@@ -82,9 +82,24 @@ pub fn nn_to_yaml_value(nn_value: &Value) -> Result<Yaml, RuntimeError> {
             }
             Ok(Yaml::Array(yaml_seq))
         }
-        _ => Err(YamlError::GenerateError {
-            message: format!("Cannot convert {} to YAML", nn_value.type_name()),
-            value_type: nn_value.type_name().to_string(),
+        Value::Regex(_) => Err(YamlError::GenerateError {
+            message: "Regex values cannot be converted to YAML".to_string(),
+            value_type: "regex".to_string(),
+        }
+        .into()),
+        Value::Function(_) => Err(YamlError::GenerateError {
+            message: "Function values cannot be converted to YAML".to_string(),
+            value_type: "function".to_string(),
+        }
+        .into()),
+        Value::Stream(_) => Err(YamlError::GenerateError {
+            message: "Stream values cannot be converted to YAML".to_string(),
+            value_type: "stream".to_string(),
+        }
+        .into()),
+        Value::EnvMap(_) => Err(YamlError::GenerateError {
+            message: "Environment map values cannot be converted to YAML".to_string(),
+            value_type: "env".to_string(),
         }
         .into()),
     }

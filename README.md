@@ -7,15 +7,45 @@ A dynamically and strongly typed language with familiar syntax, higher-order fun
 - [Quick Start](#quick-start)
 - [Language Overview](#language-overview)
 - [Data Types](#data-types)
+  - [Numbers](#numbers)
+  - [Booleans](#booleans)
+  - [Strings](#strings)
+  - [Lists](#lists)
+  - [Maps](#maps)
+  - [Tuples](#tuples)
+  - [Regular Expressions](#regular-expressions)
+  - [Streams](#streams)
+  - [Nil](#nil)
 - [Operators](#operators)
+  - [Assignment](#assignment)
+  - [Arithmetic](#arithmetic)
+  - [Relational](#relational)
+  - [Logical](#logical)
+  - [Matching](#matching)
 - [Control Flow](#control-flow)
+  - [Loops](#loops)
+  - [Match Expressions](#match-expressions)
 - [Functions](#functions)
 - [Modules](#modules)
 - [Shell Integration](#shell-integration)
 - [Advanced Features](#advanced-features)
+  - [String Interpolation](#string-interpolation)
+  - [Deep Nesting](#deep-nesting)
+  - [Optional Braces](#optional-braces)
 - [Standard Library](#standard-library)
+  - [ENV](#env)
+  - [FD (Process Streams)](#fd-process-streams)
+  - [JSON Module](#json-module)
+  - [YAML Module](#yaml-module)
+  - [TOML Module](#toml-module)
+  - [print and println](#print-and-println)
 - [Examples](#examples)
+  - [Fibonacci Sequence](#fibonacci-sequence)
+  - [Quicksort](#quicksort)
+  - [File Processing](#file-processing)
+  - [Configuration Management](#configuration-management)
 - [Installation](#installation)
+- [Language Versions](#language-versions)
 
 ## Quick Start
 
@@ -159,6 +189,11 @@ evens = numbers::filter(|x| x % 2 == 0)  # [2, 4]
 squares = numbers::map(|x| x * x)        # [1, 4, 9, 16, 25]
 total = numbers::sum()                   # 15
 sorted = [3, 1, 4]::sort()              # [1, 3, 4]
+
+# Additional helpers (v0.1.6)
+avg = numbers::average()                # 3
+first_or_default = empty::first("n/a") # "n/a"
+last_or_zero = empty::last(0)           # 0
 ```
 
 ### Maps
@@ -217,6 +252,25 @@ number_pattern = /\d+/
 email = "user@example.com"
 is_valid = email ~ email_pattern  # true
 has_numbers = "abc123" ~ number_pattern  # true
+```
+
+### Streams
+
+Blocking I/O type for file descriptors and process streams. Methods may block; `read()` returns nil on EOF.
+
+```nn
+import std:FD
+
+# Read a single chunk (may block)
+chunk = FD:stdin::read()
+
+# Read everything or lines until EOF
+all   = FD:stdin::read_all()
+lines = FD:stdin::read_lines()
+
+# Write to stdout/stderr
+FD:stdout::write("Hello, world!\n")
+FD:stderr::write("Warning: something happened\n")
 ```
 
 ### Nil
@@ -412,7 +466,7 @@ sum = numbers::fold(0, |acc, x| acc + x)  # 15
 
 ## Modules
 
-Modules provide namespacing and code reuse:
+Modules provide namespacing and code reuse. The standard library is available under the `std` module (e.g., `import std:println`, `import std:ENV`, `import std:FD`):
 
 ```nn
 # math.nn
@@ -547,8 +601,54 @@ toml_str = 'name = "Alice"\nage = 30'
 data = toml:parse(toml_str)
 
 # Generate TOML
-config = { name: "Bob", active = true }
+config = { name: "Bob", active: true }
 toml_output = toml:generate(config)
+```
+
+### ENV
+
+Environment variables exposed as a map under the standard library. Changing `ENV` affects the process environment (and child processes).
+
+```nn
+import std:ENV
+import std:println
+
+path = ENV:PATH
+home = ENV["HOME"]
+println("PATH: ${path}")
+println("HOME: ${home}")
+
+# Defaults and existence
+editor = ENV::get("EDITOR", "vi")
+println("Editor: ${editor}")
+```
+
+### FD (Process Streams)
+
+Access standard streams as `stream` values. Operations may block.
+
+```nn
+import std:FD
+import std:println
+
+input = FD:stdin::read()
+println("Read: ${input}")
+FD:stdout::write("ok\n")
+FD:stderr::write("err\n")
+```
+
+### print and println
+
+Convenience output functions that write to streams. Default target is `std:FD:stdout`.
+
+```nn
+import std:print
+import std:println
+import std:FD
+
+print("Hello, world!\n")
+println("line without manual newline")
+println("to stderr", FD:stderr)
 ```
 
 ## Examples
@@ -648,3 +748,4 @@ cargo run
 - **v0.1.3**: Conditional matching, new map methods, JSON module
 - **v0.1.4**: YAML and TOML modules, deep nesting fixes
 - **v0.1.5**: Comprehensive method library, multiline strings
+- **v0.1.6**: ENV map, stream type, FD streams, print/println rewrite, list average, first/last defaults

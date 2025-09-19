@@ -98,5 +98,15 @@ pub fn nn_to_json_value(nn_value: &Value) -> Result<JsonValue, RuntimeError> {
             value_type: "function".to_string(),
         }
         .into()),
+        Value::Stream(_) => Err(JsonError::GenerateError {
+            message: "Stream values cannot be converted to JSON".to_string(),
+            value_type: "stream".to_string(),
+        }
+        .into()),
+        Value::EnvMap(_) => Err(JsonError::GenerateError {
+            message: "Environment map values cannot be converted to JSON".to_string(),
+            value_type: "env".to_string(),
+        }
+        .into()),
     }
 }

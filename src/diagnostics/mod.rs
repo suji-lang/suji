@@ -270,6 +270,7 @@ fn print_runtime_error(error: RuntimeError, context: &DiagnosticContext) {
                     "List" => template_functions::list_method_error(&method_name, &message),
                     "Number" => template_functions::number_method_error(&method_name, &message),
                     "Tuple" => template_functions::tuple_method_error(&method_name, &message),
+                    "Stream" => template_functions::stream_method_error(&method_name, &message),
                     _ => template_functions::method_error(&message),
                 };
                 let _ =
@@ -367,6 +368,14 @@ fn print_runtime_error(error: RuntimeError, context: &DiagnosticContext) {
         }
         RuntimeError::TomlConversionError { message } => {
             let template = template_functions::toml_conversion_error(&message);
+            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
+        }
+        RuntimeError::StreamError { message } => {
+            let template = template_functions::stream_error(&message);
+            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
+        }
+        RuntimeError::SerializationError { message } => {
+            let template = template_functions::serialization_error(&message);
             let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
         }
     }

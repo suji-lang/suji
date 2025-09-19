@@ -1,0 +1,15 @@
+# Test list::first() and list::last() with default parameters
+import std:println
+
+# Test first with default on non-empty list (should ignore default)
+nums = [1, 2, 3]
+result1 = nums::first(99)
+
+# Test first with default on empty list (should use default)
+empty = []
+result2 = empty::first(42)
+
+# Test last with default on empty list
+result3 = empty::last("n/a")
+
+println("${result1},${result2},${result3}")  # 1,42,n/a

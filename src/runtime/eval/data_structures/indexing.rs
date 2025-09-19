@@ -89,6 +89,22 @@ pub fn eval_index(target: &Expr, index: &Expr, env: Rc<Env>) -> EvalResult<Value
                 }),
             }
         }
+        Value::EnvMap(ref env_proxy) => {
+            let key_str = match index_value {
+                Value::String(s) => s,
+                _ => {
+                    return Err(RuntimeError::TypeError {
+                        message: "ENV keys must be strings".to_string(),
+                    });
+                }
+            };
+            match env_proxy.get(&key_str) {
+                Some(value) => Ok(Value::String(value)),
+                None => Err(RuntimeError::KeyNotFound {
+                    message: format!("Environment variable not found: {}", key_str),
+                }),
+            }
+        }
         _ => Err(RuntimeError::TypeError {
             message: format!("Cannot index {}", target_value.type_name()),
         }),
@@ -263,6 +279,12 @@ pub fn eval_map_access_by_name(target: &Expr, key: &str, env: Rc<Env>) -> EvalRe
                 }),
             }
         }
+        Value::EnvMap(ref env_proxy) => match env_proxy.get(key) {
+            Some(value) => Ok(Value::String(value)),
+            None => Err(RuntimeError::KeyNotFound {
+                message: format!("Environment variable not found: {}", key),
+            }),
+        },
         _ => Err(RuntimeError::TypeError {
             message: format!(
                 "Cannot access key '{}' on {}",

@@ -308,25 +308,82 @@ pub fn call_list_method(
             }
         }
         "first" => {
-            if !args.is_empty() {
-                return Err(RuntimeError::ArityMismatch {
-                    message: "first() takes no arguments".to_string(),
-                });
-            }
+            let default_value = match args.len() {
+                0 => Value::Nil,
+                1 => args[0].clone(),
+                _ => {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "first() takes at most one argument (default value)".to_string(),
+                    });
+                }
+            };
+
             if let Value::List(items) = receiver.get() {
-                Ok(items.first().cloned().unwrap_or(Value::Nil))
+                Ok(items.first().cloned().unwrap_or(default_value))
             } else {
                 unreachable!()
             }
         }
         "last" => {
+            let default_value = match args.len() {
+                0 => Value::Nil,
+                1 => args[0].clone(),
+                _ => {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "last() takes at most one argument (default value)".to_string(),
+                    });
+                }
+            };
+
+            if let Value::List(items) = receiver.get() {
+                Ok(items.last().cloned().unwrap_or(default_value))
+            } else {
+                unreachable!()
+            }
+        }
+        "average" => {
             if !args.is_empty() {
                 return Err(RuntimeError::ArityMismatch {
-                    message: "last() takes no arguments".to_string(),
+                    message: "average() takes no arguments".to_string(),
+                });
+            }
+
+            if let Value::List(items) = receiver.get() {
+                if items.is_empty() {
+                    return Ok(Value::Nil);
+                }
+
+                let mut sum = 0.0;
+                let mut count = 0;
+
+                for item in items {
+                    match item {
+                        Value::Number(n) => {
+                            sum += n;
+                            count += 1;
+                        }
+                        _ => {
+                            return Err(RuntimeError::TypeError {
+                                message: "average() requires all elements to be numbers"
+                                    .to_string(),
+                            });
+                        }
+                    }
+                }
+
+                Ok(Value::Number(sum / count as f64))
+            } else {
+                unreachable!()
+            }
+        }
+        "to_string" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "to_string() takes no arguments".to_string(),
                 });
             }
             if let Value::List(items) = receiver.get() {
-                Ok(items.last().cloned().unwrap_or(Value::Nil))
+                Ok(Value::String(format!("{}", Value::List(items.clone()))))
             } else {
                 unreachable!()
             }
@@ -763,5 +820,158 @@ mod tests {
 
         let result = call_list_method(receiver, "last", vec![]).unwrap();
         assert_eq!(result, Value::Nil);
+    }
+
+    #[test]
+    fn test_list_to_string() {
+        let list = Value::List(vec![
+            Value::Number(1.0),
+            Value::String("test".to_string()),
+            Value::Boolean(true),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "to_string", vec![]).unwrap();
+        assert_eq!(result, Value::String("[1, test, true]".to_string()));
+
+        // Test empty list
+        let empty_list = Value::List(vec![]);
+        let receiver2 = ValueRef::Immutable(&empty_list);
+        let result2 = call_list_method(receiver2, "to_string", vec![]).unwrap();
+        assert_eq!(result2, Value::String("[]".to_string()));
+    }
+
+    #[test]
+    fn test_list_to_string_arity_mismatch() {
+        let list = Value::List(vec![Value::Number(1.0)]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_list_first_with_default() {
+        // Test non-empty list ignores default
+        let list = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+        let receiver = ValueRef::Immutable(&list);
+        let result = call_list_method(receiver, "first", vec![Value::Number(99.0)]).unwrap();
+        assert_eq!(result, Value::Number(1.0));
+
+        // Test empty list uses default
+        let empty = Value::List(vec![]);
+        let receiver2 = ValueRef::Immutable(&empty);
+        let result2 = call_list_method(
+            receiver2,
+            "first",
+            vec![Value::String("default".to_string())],
+        )
+        .unwrap();
+        assert_eq!(result2, Value::String("default".to_string()));
+
+        // Test empty list without default returns nil
+        let receiver3 = ValueRef::Immutable(&empty);
+        let result3 = call_list_method(receiver3, "first", vec![]).unwrap();
+        assert_eq!(result3, Value::Nil);
+    }
+
+    #[test]
+    fn test_list_last_with_default() {
+        // Test non-empty list ignores default
+        let list = Value::List(vec![
+            Value::Number(1.0),
+            Value::Number(2.0),
+            Value::Number(3.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+        let result = call_list_method(receiver, "last", vec![Value::Number(99.0)]).unwrap();
+        assert_eq!(result, Value::Number(3.0));
+
+        // Test empty list uses default
+        let empty = Value::List(vec![]);
+        let receiver2 = ValueRef::Immutable(&empty);
+        let result2 = call_list_method(
+            receiver2,
+            "last",
+            vec![Value::String("default".to_string())],
+        )
+        .unwrap();
+        assert_eq!(result2, Value::String("default".to_string()));
+
+        // Test empty list without default returns nil
+        let receiver3 = ValueRef::Immutable(&empty);
+        let result3 = call_list_method(receiver3, "last", vec![]).unwrap();
+        assert_eq!(result3, Value::Nil);
+    }
+
+    #[test]
+    fn test_list_average() {
+        // Test normal case
+        let list = Value::List(vec![
+            Value::Number(1.0),
+            Value::Number(2.0),
+            Value::Number(3.0),
+            Value::Number(4.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+        let result = call_list_method(receiver, "average", vec![]).unwrap();
+        assert_eq!(result, Value::Number(2.5));
+
+        // Test single element
+        let single = Value::List(vec![Value::Number(10.0)]);
+        let receiver2 = ValueRef::Immutable(&single);
+        let result2 = call_list_method(receiver2, "average", vec![]).unwrap();
+        assert_eq!(result2, Value::Number(10.0));
+
+        // Test empty list
+        let empty = Value::List(vec![]);
+        let receiver3 = ValueRef::Immutable(&empty);
+        let result3 = call_list_method(receiver3, "average", vec![]).unwrap();
+        assert_eq!(result3, Value::Nil);
+    }
+
+    #[test]
+    fn test_list_average_mixed_types() {
+        let list = Value::List(vec![
+            Value::Number(1.0),
+            Value::String("not a number".to_string()),
+            Value::Number(3.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+        let result = call_list_method(receiver, "average", vec![]);
+        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+    }
+
+    #[test]
+    fn test_list_first_last_arity_errors() {
+        let list = Value::List(vec![Value::Number(1.0)]);
+        let receiver = ValueRef::Immutable(&list);
+
+        // Test too many arguments for first
+        let result = call_list_method(
+            receiver,
+            "first",
+            vec![Value::Number(1.0), Value::Number(2.0)],
+        );
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
+
+        let receiver2 = ValueRef::Immutable(&list);
+        // Test too many arguments for last
+        let result2 = call_list_method(
+            receiver2,
+            "last",
+            vec![Value::Number(1.0), Value::Number(2.0)],
+        );
+        assert!(matches!(result2, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_list_average_arity_error() {
+        let list = Value::List(vec![Value::Number(1.0)]);
+        let receiver = ValueRef::Immutable(&list);
+
+        // Test too many arguments for average
+        let result = call_list_method(receiver, "average", vec![Value::Number(1.0)]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 }

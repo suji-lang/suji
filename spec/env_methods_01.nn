@@ -1,0 +1,10 @@
+# Test ENV keys method
+import std:ENV
+import std:println
+
+# Set a test variable
+ENV:TEST_KEYS = "test"
+
+# Get all keys and check if our test key is in there
+keys = ENV::keys()
+println(keys::contains("TEST_KEYS"))  # true

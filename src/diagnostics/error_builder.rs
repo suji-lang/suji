@@ -115,7 +115,6 @@ impl ErrorBuilder {
     }
 }
 
-
 /// Helper function to convert line/column to ariadne's range format (for errors without spans)
 pub fn line_column_to_range(source: &str, line: usize, column: usize) -> std::ops::Range<usize> {
     // Handle the case where the source ends with a newline (common case)

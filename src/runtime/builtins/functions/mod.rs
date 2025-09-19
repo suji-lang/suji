@@ -41,14 +41,14 @@ pub fn get_builtins() -> Vec<Builtin> {
         Builtin {
             name: "print",
             func: builtin_print,
-            min_args: 0,
-            max_args: None, // variadic
+            min_args: 1,
+            max_args: Some(2),
         },
         Builtin {
             name: "println",
             func: builtin_println,
-            min_args: 0,
-            max_args: None, // variadic
+            min_args: 1,
+            max_args: Some(2),
         },
         Builtin {
             name: "json_parse",
@@ -88,7 +88,6 @@ pub fn get_builtins() -> Vec<Builtin> {
         },
     ]
 }
-
 
 /// Call a built-in function by name
 pub fn call_builtin(name: &str, args: &[Value]) -> Result<Value, RuntimeError> {

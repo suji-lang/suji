@@ -98,4 +98,10 @@ pub enum RuntimeError {
 
     #[error("Map method error: {message}")]
     MapMethodError { method: String, message: String },
+
+    #[error("Stream error: {message}")]
+    StreamError { message: String },
+
+    #[error("Serialization error: {message}")]
+    SerializationError { message: String },
 }

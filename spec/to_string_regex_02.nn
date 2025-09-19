@@ -1,0 +1,7 @@
+import std:println
+
+# Test regex::to_string() method with complex pattern
+r = /\d+\.\d+/
+result = r::to_string()
+
+println(result)  # /\d+\.\d+/

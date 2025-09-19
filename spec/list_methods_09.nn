@@ -1,0 +1,6 @@
+# Test list::average() method
+import std:println
+
+nums = [1, 2, 3, 4, 5]
+result = nums::average()
+println(result)  # 3

@@ -10,6 +10,7 @@
 pub mod functions;
 pub mod json;
 pub mod modules;
+pub mod nn_loader;
 pub mod toml;
 pub mod yaml;
 
@@ -35,22 +36,22 @@ pub fn setup_global_env(env: &Env) {
 mod tests {
     use super::*;
 
-
     #[test]
     fn test_call_builtin() {
         let args = vec![crate::runtime::value::Value::String("test".to_string())];
+        // print returns number of bytes written
         assert_eq!(
             call_builtin("print", &args).unwrap(),
-            crate::runtime::value::Value::Nil
+            crate::runtime::value::Value::Number(4.0)
         );
+        // println returns number of bytes including newline
         assert_eq!(
             call_builtin("println", &args).unwrap(),
-            crate::runtime::value::Value::Nil
+            crate::runtime::value::Value::Number(5.0)
         );
 
         assert!(call_builtin("invalid", &args).is_err());
     }
-
 
     #[test]
     fn test_json_call_builtin() {

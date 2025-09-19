@@ -1,0 +1,7 @@
+import std:println
+
+# Test regex::to_string() method
+r = /hello/
+result = r::to_string()
+
+println(result)  # /hello/

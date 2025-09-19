@@ -1,0 +1,7 @@
+import std:println
+
+# Test map::to_string() method
+m = {"name": "Alice", "age": 30}
+result = m::to_string()
+
+println(result)  # {name: Alice, age: 30}

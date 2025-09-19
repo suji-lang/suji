@@ -1,0 +1,7 @@
+import std:println
+
+# Test map::to_string() method with empty map
+m = {}
+result = m::to_string()
+
+println(result)  # {}

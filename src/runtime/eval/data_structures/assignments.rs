@@ -332,6 +332,22 @@ fn get_index_value(target: &Value, index: &Value) -> EvalResult<Value> {
                     message: "Key not found in map".to_string(),
                 })
         }
+        (Value::EnvMap(env_proxy), key) => {
+            let key_str = match key {
+                Value::String(s) => s,
+                _ => {
+                    return Err(RuntimeError::TypeError {
+                        message: "ENV keys must be strings".to_string(),
+                    });
+                }
+            };
+            match env_proxy.get(key_str) {
+                Some(value) => Ok(Value::String(value)),
+                None => Err(RuntimeError::KeyNotFound {
+                    message: format!("Environment variable not found: {}", key_str),
+                }),
+            }
+        }
         _ => Err(RuntimeError::TypeError {
             message: format!(
                 "Cannot index {} with {}",
@@ -353,6 +369,12 @@ fn get_map_access_value(target: &Value, key: &str) -> EvalResult<Value> {
                     message: format!("Key '{}' not found in map", key),
                 })
         }
+        Value::EnvMap(env_proxy) => match env_proxy.get(key) {
+            Some(value) => Ok(Value::String(value)),
+            None => Err(RuntimeError::KeyNotFound {
+                message: format!("Environment variable not found: {}", key),
+            }),
+        },
         _ => Err(RuntimeError::TypeError {
             message: format!("Cannot access key '{}' on {}", key, target.type_name()),
         }),
@@ -395,6 +417,20 @@ fn update_index_value(target: &Value, index: &Value, value: &Value) -> EvalResul
             updated_map.insert(map_key, value.clone());
             Ok(Value::Map(updated_map))
         }
+        (Value::EnvMap(env_proxy), key) => {
+            let key_str = match key {
+                Value::String(s) => s,
+                _ => {
+                    return Err(RuntimeError::TypeError {
+                        message: "ENV keys must be strings".to_string(),
+                    });
+                }
+            };
+            let value_str = value.to_string();
+            env_proxy.set(key_str, &value_str)?;
+            // Return the original EnvMap (since it's a proxy, changes are in-place)
+            Ok(Value::EnvMap(env_proxy.clone()))
+        }
         _ => Err(RuntimeError::TypeError {
             message: format!("Cannot assign index on {}", target.type_name()),
         }),
@@ -409,6 +445,12 @@ fn update_map_access_value(target: &Value, key: &str, value: &Value) -> EvalResu
             let mut updated_map = map.clone();
             updated_map.insert(map_key, value.clone());
             Ok(Value::Map(updated_map))
+        }
+        Value::EnvMap(env_proxy) => {
+            let value_str = value.to_string();
+            env_proxy.set(key, &value_str)?;
+            // Return the original EnvMap (since it's a proxy, changes are in-place)
+            Ok(Value::EnvMap(env_proxy.clone()))
         }
         _ => Err(RuntimeError::TypeError {
             message: format!("Cannot assign key '{}' on {}", key, target.type_name()),

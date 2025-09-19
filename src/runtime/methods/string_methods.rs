@@ -1,7 +1,7 @@
 use super::super::value::{RuntimeError, Value};
 use super::common::ValueRef;
 
-/// String methods: length(), split(separator=" "), to_number(), to_list(), index_of()
+/// String methods: length(), split(separator=" "), to_number(), to_list(), index_of(), to_string()
 pub fn call_string_method(
     receiver: ValueRef,
     method: &str,
@@ -185,6 +185,14 @@ pub fn call_string_method(
                         message: "repeat() argument must be a number".to_string(),
                     }),
                 }
+            }
+            "to_string" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "to_string() takes no arguments".to_string(),
+                    });
+                }
+                Ok(Value::String(s.clone()))
             }
             _ => Err(RuntimeError::MethodError {
                 message: format!("String has no method '{}'", method),
@@ -587,5 +595,33 @@ mod tests {
         let receiver7 = ValueRef::Immutable(&s);
         let result7 = call_string_method(receiver7, "repeat", vec![]);
         assert!(matches!(result7, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_string_to_string() {
+        let s = Value::String("hello world".to_string());
+        let receiver = ValueRef::Immutable(&s);
+        let result = call_string_method(receiver, "to_string", vec![]).unwrap();
+        assert_eq!(result, Value::String("hello world".to_string()));
+
+        // Test with empty string
+        let empty = Value::String("".to_string());
+        let receiver2 = ValueRef::Immutable(&empty);
+        let result2 = call_string_method(receiver2, "to_string", vec![]).unwrap();
+        assert_eq!(result2, Value::String("".to_string()));
+
+        // Test with special characters
+        let special = Value::String("Hello, 世界! 🌍".to_string());
+        let receiver3 = ValueRef::Immutable(&special);
+        let result3 = call_string_method(receiver3, "to_string", vec![]).unwrap();
+        assert_eq!(result3, Value::String("Hello, 世界! 🌍".to_string()));
+    }
+
+    #[test]
+    fn test_string_to_string_arity_mismatch() {
+        let s = Value::String("test".to_string());
+        let receiver = ValueRef::Immutable(&s);
+        let result = call_string_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 }

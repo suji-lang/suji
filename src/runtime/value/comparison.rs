@@ -11,6 +11,7 @@ impl PartialEq for Value {
             (Value::Tuple(a), Value::Tuple(b)) => a == b,
             (Value::Regex(a), Value::Regex(b)) => a.as_str() == b.as_str(),
             (Value::Function(a), Value::Function(b)) => a == b,
+            (Value::Stream(_), Value::Stream(_)) => false, // Streams are never equal
             (Value::Nil, Value::Nil) => true,
             _ => false,
         }
@@ -39,7 +40,7 @@ impl PartialOrd for Value {
             (Value::Number(a), Value::Number(b)) => a.partial_cmp(b),
             (Value::String(a), Value::String(b)) => a.partial_cmp(b),
             (Value::Boolean(a), Value::Boolean(b)) => a.partial_cmp(b),
-            // Lists, maps, tuples, functions, regex, and nil are not comparable
+            // Lists, maps, tuples, functions, regex, streams, and nil are not comparable
             _ => None,
         }
     }
