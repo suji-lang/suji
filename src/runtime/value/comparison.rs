@@ -33,6 +33,18 @@ impl PartialEq for OrderedFloat {
 
 impl Eq for OrderedFloat {}
 
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Value::Number(a), Value::Number(b)) => a.partial_cmp(b),
+            (Value::String(a), Value::String(b)) => a.partial_cmp(b),
+            (Value::Boolean(a), Value::Boolean(b)) => a.partial_cmp(b),
+            // Lists, maps, tuples, functions, regex, and nil are not comparable
+            _ => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::types::MapKey;
@@ -153,5 +165,60 @@ mod tests {
         };
 
         assert_ne!(func1, func3);
+    }
+
+    #[test]
+    fn test_value_ordering() {
+        use std::cmp::Ordering;
+
+        // Numbers
+        assert_eq!(
+            Value::Number(1.0).partial_cmp(&Value::Number(2.0)),
+            Some(Ordering::Less)
+        );
+        assert_eq!(
+            Value::Number(2.0).partial_cmp(&Value::Number(1.0)),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            Value::Number(1.0).partial_cmp(&Value::Number(1.0)),
+            Some(Ordering::Equal)
+        );
+
+        // Strings
+        assert_eq!(
+            Value::String("apple".to_string()).partial_cmp(&Value::String("banana".to_string())),
+            Some(Ordering::Less)
+        );
+        assert_eq!(
+            Value::String("banana".to_string()).partial_cmp(&Value::String("apple".to_string())),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            Value::String("apple".to_string()).partial_cmp(&Value::String("apple".to_string())),
+            Some(Ordering::Equal)
+        );
+
+        // Booleans
+        assert_eq!(
+            Value::Boolean(false).partial_cmp(&Value::Boolean(true)),
+            Some(Ordering::Less)
+        );
+        assert_eq!(
+            Value::Boolean(true).partial_cmp(&Value::Boolean(false)),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            Value::Boolean(true).partial_cmp(&Value::Boolean(true)),
+            Some(Ordering::Equal)
+        );
+
+        // Non-comparable types should return None
+        assert_eq!(
+            Value::Number(1.0).partial_cmp(&Value::String("1".to_string())),
+            None
+        );
+        assert_eq!(Value::List(vec![]).partial_cmp(&Value::List(vec![])), None);
+        assert_eq!(Value::Nil.partial_cmp(&Value::Nil), None);
     }
 }

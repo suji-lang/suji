@@ -1,0 +1,7 @@
+import std:println
+
+# Map get method - existing boolean key
+config = { name: "Alice", age: 30, active: true }
+active = config::get("active")
+
+println(active)  # true

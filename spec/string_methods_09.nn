@@ -1,0 +1,7 @@
+import std:println
+
+# String replace method
+message = "Hello, world! Welcome to the world of programming."
+result = message::replace("world", "universe")
+
+println(result)  # Hello, universe! Welcome to the universe of programming.

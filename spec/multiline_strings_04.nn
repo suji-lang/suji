@@ -1,0 +1,10 @@
+import std:println
+
+# Test multiline string with escape sequences
+message = """
+Line 1: Hello\tWorld
+Line 2: "Quoted text"
+Line 3: Backslash: \\
+"""
+
+println(message::contains("Hello\tWorld"))  # true

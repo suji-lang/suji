@@ -1,0 +1,10 @@
+import std:println
+
+# Test multiline string with leading/trailing whitespace
+padded = """
+    Indented content
+    More indented content
+"""
+
+# Verify whitespace is preserved
+println(padded::starts_with("\n    Indented"))  # true

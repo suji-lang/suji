@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::to_string() method
+data = ("hello", 42, true)
+result = data::to_string()
+
+println(result)  # (hello, 42, true)

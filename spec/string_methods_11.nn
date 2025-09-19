@@ -1,0 +1,7 @@
+import std:println
+
+# String upper method
+mixed = "Hello World"
+result = mixed::upper()
+
+println(result)  # HELLO WORLD

@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple methods with complex nested values
+complex = (("nested", 1), [2, 3], {key: "value"})
+result = complex::length()
+
+println(result)  # 3

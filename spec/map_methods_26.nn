@@ -1,0 +1,7 @@
+import std:println
+
+# Map get method - numeric key
+scores = { 1: 100, 2: 85, 3: 92 }
+score1 = scores::get(1, 0)
+
+println(score1)  # 100

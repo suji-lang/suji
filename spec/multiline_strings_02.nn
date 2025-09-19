@@ -1,0 +1,11 @@
+import std:println
+
+# Test basic triple single quote multiline string
+code = '''
+function hello() {
+    console.log("Hello, world!");
+    return true;
+}
+'''
+
+println(code::starts_with("\nfunction hello()"))  # true

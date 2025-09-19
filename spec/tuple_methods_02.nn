@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::to_list() method
+coords = (100, 200)
+as_list = coords::to_list()
+
+println(as_list)  # [100, 200]

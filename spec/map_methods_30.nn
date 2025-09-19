@@ -1,0 +1,8 @@
+import std:println
+
+# Map merge method - overwriting existing keys
+user = { name: "Bob", age: 25, city: "New York" }
+overlay = { age: 26, city: "Boston", email: "bob@example.com" }
+user::merge(overlay)
+
+println(user)  # {name: Bob, age: 26, city: Boston, email: bob@example.com}

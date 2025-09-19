@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::pow() method
+x = 2
+result = x::pow(3)
+
+println(result)  # 8

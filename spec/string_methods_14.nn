@@ -1,0 +1,7 @@
+import std:println
+
+# String repeat method
+base = "ha"
+result = base::repeat(3)
+
+println(result)  # hahaha

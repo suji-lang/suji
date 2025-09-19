@@ -1,0 +1,7 @@
+import std:println
+
+# Map get method - missing key with custom default
+config = { name: "Alice" }
+email = config::get("email", "N/A")
+
+println(email)  # N/A

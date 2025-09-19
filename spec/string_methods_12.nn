@@ -1,0 +1,7 @@
+import std:println
+
+# String lower method
+mixed = "Hello World"
+result = mixed::lower()
+
+println(result)  # hello world

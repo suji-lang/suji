@@ -33,8 +33,8 @@ for spec_file in spec/*.nn; do
     # Look for comment starting with "# " at the end of the last line
     expected_output=$(tail -n 1 "$spec_file" | perl -pe 's/.*?# (.*)/$1/')
 
-    # Run the spec file and capture output
-    actual_output=$(./target/release/nnlang "$spec_file" 2>/dev/null | tail -n 1)
+    # Run the spec file and capture output, stripping ANSI color codes
+    actual_output=$(./target/release/nnlang "$spec_file" 2>/dev/null | tail -n 1 | sed 's/\x1b\[[0-9;]*m//g')
 
     # Compare actual vs expected
     if [ "$actual_output" = "$expected_output" ]; then

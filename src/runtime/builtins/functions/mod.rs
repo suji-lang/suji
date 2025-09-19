@@ -89,20 +89,6 @@ pub fn get_builtins() -> Vec<Builtin> {
     ]
 }
 
-/// Check if a function name refers to a built-in function
-pub fn is_builtin_function(name: &str) -> bool {
-    matches!(
-        name,
-        "print"
-            | "println"
-            | "json_parse"
-            | "json_generate"
-            | "toml_parse"
-            | "toml_generate"
-            | "yaml_parse"
-            | "yaml_generate"
-    )
-}
 
 /// Call a built-in function by name
 pub fn call_builtin(name: &str, args: &[Value]) -> Result<Value, RuntimeError> {

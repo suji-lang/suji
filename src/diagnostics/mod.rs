@@ -263,8 +263,22 @@ fn print_runtime_error(error: RuntimeError, context: &DiagnosticContext) {
             let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
         }
         RuntimeError::MethodError { message } => {
-            let template = template_functions::method_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
+            // Attempt to parse method/type from the message and route to specific helpers
+            if let Some((value_type, method_name)) = parse_method_error(&message) {
+                let template = match value_type {
+                    "String" => template_functions::string_method_error(&method_name, &message),
+                    "List" => template_functions::list_method_error(&method_name, &message),
+                    "Number" => template_functions::number_method_error(&method_name, &message),
+                    "Tuple" => template_functions::tuple_method_error(&method_name, &message),
+                    _ => template_functions::method_error(&message),
+                };
+                let _ =
+                    ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
+            } else {
+                let template = template_functions::method_error(&message);
+                let _ =
+                    ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
+            }
         }
         RuntimeError::InvalidNumberConversion { message } => {
             let template = template_functions::invalid_number_conversion(&message);
@@ -356,6 +370,23 @@ fn print_runtime_error(error: RuntimeError, context: &DiagnosticContext) {
             let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
         }
     }
+}
+
+/// Try to extract the value type and method name from a generic MethodError message
+/// Expected formats:
+/// - "String has no method 'name'"
+/// - "List has no method 'name'"
+/// - "Number has no method 'name'"
+/// - "Tuple has no method 'name'"
+fn parse_method_error(message: &str) -> Option<(&str, String)> {
+    use regex::Regex;
+
+    // Strict pattern to avoid false positives
+    let regex = Regex::new(r"^(String|List|Number|Tuple) has no method '([^']+)'$").ok()?;
+    let captures = regex.captures(message)?;
+    let value_type = captures.get(1)?.as_str();
+    let method_name = captures.get(2)?.as_str().to_string();
+    Some((value_type, method_name))
 }
 
 /// Find the span of a variable usage in the source code

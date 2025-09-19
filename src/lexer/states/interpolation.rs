@@ -13,8 +13,21 @@ impl InterpolationScanner {
         start_pos: usize,
         mut brace_depth: usize,
     ) -> ScannerResult {
-        // Determine if we're in single or double quote string interpolation
-        let is_single_quote = matches!(state, LexState::InSingleStringInterp { .. });
+        // Extract state information
+        let (quote_type, multiline) = match state {
+            LexState::InStringInterp {
+                quote_type,
+                multiline,
+                ..
+            } => (*quote_type, *multiline),
+            _ => {
+                return Err(super::LexError::UnexpectedCharacter {
+                    ch: ' ',
+                    line: context.line,
+                    column: context.column,
+                });
+            }
+        };
         // Scan normal tokens until we hit the closing brace
         let token_result = NormalScanner::scan_token(context, state);
 
@@ -23,27 +36,22 @@ impl InterpolationScanner {
                 match &token_with_span.token {
                     Token::LeftBrace => {
                         brace_depth += 1;
-                        if is_single_quote {
-                            *state = LexState::InSingleStringInterp {
-                                start_pos,
-                                brace_depth,
-                            };
-                        } else {
-                            *state = LexState::InStringInterp {
-                                start_pos,
-                                brace_depth,
-                            };
-                        }
+                        *state = LexState::InStringInterp {
+                            start_pos,
+                            quote_type,
+                            multiline,
+                            brace_depth,
+                        };
                     }
                     Token::RightBrace => {
                         brace_depth -= 1;
                         if brace_depth == 0 {
                             // End interpolation, return to string parsing
-                            if is_single_quote {
-                                *state = LexState::InSingleString { start_pos };
-                            } else {
-                                *state = LexState::InString { start_pos };
-                            }
+                            *state = LexState::InString {
+                                start_pos,
+                                quote_type,
+                                multiline,
+                            };
                             let span = Span::new(
                                 start_pos,
                                 context.position,
@@ -52,30 +60,24 @@ impl InterpolationScanner {
                             );
                             context.prev_token = Some(Token::InterpEnd);
                             return Ok(TokenWithSpan::new(Token::InterpEnd, span));
-                        } else if is_single_quote {
-                            *state = LexState::InSingleStringInterp {
-                                start_pos,
-                                brace_depth,
-                            };
                         } else {
+                            // Keep interpolation state
                             *state = LexState::InStringInterp {
                                 start_pos,
+                                quote_type,
+                                multiline,
                                 brace_depth,
                             };
                         }
                     }
                     _ => {
-                        if is_single_quote {
-                            *state = LexState::InSingleStringInterp {
-                                start_pos,
-                                brace_depth,
-                            };
-                        } else {
-                            *state = LexState::InStringInterp {
-                                start_pos,
-                                brace_depth,
-                            };
-                        }
+                        // Keep interpolation state
+                        *state = LexState::InStringInterp {
+                            start_pos,
+                            quote_type,
+                            multiline,
+                            brace_depth,
+                        };
                     }
                 }
             }

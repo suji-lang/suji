@@ -1,0 +1,11 @@
+import std:println
+
+# Test basic triple double quote multiline string
+poem = """
+Roses are red,
+Violets are blue,
+Sugar is sweet,
+And so are you.
+"""
+
+println(poem::contains("Roses are red"))  # true

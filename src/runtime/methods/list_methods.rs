@@ -195,6 +195,142 @@ pub fn call_list_method(
                 unreachable!()
             }
         }
+        "contains" => {
+            if args.len() != 1 {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "contains() takes exactly one argument".to_string(),
+                });
+            }
+            if let Value::List(items) = receiver.get() {
+                Ok(Value::Boolean(items.contains(&args[0])))
+            } else {
+                unreachable!()
+            }
+        }
+        "reverse" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "reverse() takes no arguments".to_string(),
+                });
+            }
+            if let Value::List(items) = receiver.get() {
+                let mut reversed_items = items.clone();
+                reversed_items.reverse();
+                Ok(Value::List(reversed_items))
+            } else {
+                unreachable!()
+            }
+        }
+        "sort" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "sort() takes no arguments".to_string(),
+                });
+            }
+            if let Value::List(items) = receiver.get() {
+                let mut sorted_items = items.clone();
+                sorted_items.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+                Ok(Value::List(sorted_items))
+            } else {
+                unreachable!()
+            }
+        }
+        "min" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "min() takes no arguments".to_string(),
+                });
+            }
+            if let Value::List(items) = receiver.get() {
+                if items.is_empty() {
+                    return Err(RuntimeError::InvalidOperation {
+                        message: "min() called on empty list".to_string(),
+                    });
+                }
+                let mut min_val = None;
+                for item in items {
+                    match item {
+                        Value::Number(n) => {
+                            if let Some(current_min) = min_val {
+                                if n < &current_min {
+                                    min_val = Some(*n);
+                                }
+                            } else {
+                                min_val = Some(*n);
+                            }
+                        }
+                        _ => {
+                            return Err(RuntimeError::TypeError {
+                                message: "min() can only be called on lists of numbers".to_string(),
+                            });
+                        }
+                    }
+                }
+                Ok(Value::Number(min_val.unwrap()))
+            } else {
+                unreachable!()
+            }
+        }
+        "max" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "max() takes no arguments".to_string(),
+                });
+            }
+            if let Value::List(items) = receiver.get() {
+                if items.is_empty() {
+                    return Err(RuntimeError::InvalidOperation {
+                        message: "max() called on empty list".to_string(),
+                    });
+                }
+                let mut max_val = None;
+                for item in items {
+                    match item {
+                        Value::Number(n) => {
+                            if let Some(current_max) = max_val {
+                                if n > &current_max {
+                                    max_val = Some(*n);
+                                }
+                            } else {
+                                max_val = Some(*n);
+                            }
+                        }
+                        _ => {
+                            return Err(RuntimeError::TypeError {
+                                message: "max() can only be called on lists of numbers".to_string(),
+                            });
+                        }
+                    }
+                }
+                Ok(Value::Number(max_val.unwrap()))
+            } else {
+                unreachable!()
+            }
+        }
+        "first" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "first() takes no arguments".to_string(),
+                });
+            }
+            if let Value::List(items) = receiver.get() {
+                Ok(items.first().cloned().unwrap_or(Value::Nil))
+            } else {
+                unreachable!()
+            }
+        }
+        "last" => {
+            if !args.is_empty() {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "last() takes no arguments".to_string(),
+                });
+            }
+            if let Value::List(items) = receiver.get() {
+                Ok(items.last().cloned().unwrap_or(Value::Nil))
+            } else {
+                unreachable!()
+            }
+        }
         _ => Err(RuntimeError::MethodError {
             message: format!("List has no method '{}'", method),
         }),
@@ -316,5 +452,316 @@ mod tests {
         let receiver = ValueRef::Immutable(&list);
         let result = call_list_method(receiver, "sum", vec![]);
         assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+    }
+
+    #[test]
+    fn test_list_contains() {
+        let list = Value::List(vec![
+            Value::String("apple".to_string()),
+            Value::String("banana".to_string()),
+            Value::String("cherry".to_string()),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        // Test contains with existing item
+        let result = call_list_method(
+            receiver,
+            "contains",
+            vec![Value::String("banana".to_string())],
+        )
+        .unwrap();
+        assert_eq!(result, Value::Boolean(true));
+
+        // Test contains with non-existing item
+        let receiver2 = ValueRef::Immutable(&list);
+        let result2 = call_list_method(
+            receiver2,
+            "contains",
+            vec![Value::String("grape".to_string())],
+        )
+        .unwrap();
+        assert_eq!(result2, Value::Boolean(false));
+
+        // Test contains with numbers
+        let numbers = Value::List(vec![
+            Value::Number(1.0),
+            Value::Number(2.0),
+            Value::Number(3.0),
+        ]);
+        let receiver3 = ValueRef::Immutable(&numbers);
+        let result3 = call_list_method(receiver3, "contains", vec![Value::Number(2.0)]).unwrap();
+        assert_eq!(result3, Value::Boolean(true));
+    }
+
+    #[test]
+    fn test_list_reverse() {
+        let list = Value::List(vec![
+            Value::Number(1.0),
+            Value::Number(2.0),
+            Value::Number(3.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "reverse", vec![]).unwrap();
+        if let Value::List(reversed) = result {
+            assert_eq!(
+                reversed,
+                vec![Value::Number(3.0), Value::Number(2.0), Value::Number(1.0),]
+            );
+        } else {
+            panic!("Expected list");
+        }
+
+        // Ensure original list is unchanged
+        if let Value::List(original) = &list {
+            assert_eq!(
+                original,
+                &vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0),]
+            );
+        }
+
+        // Test with empty list
+        let empty = Value::List(vec![]);
+        let receiver2 = ValueRef::Immutable(&empty);
+        let result2 = call_list_method(receiver2, "reverse", vec![]).unwrap();
+        if let Value::List(reversed_empty) = result2 {
+            assert_eq!(reversed_empty, vec![]);
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_list_sort() {
+        let list = Value::List(vec![
+            Value::Number(3.0),
+            Value::Number(1.0),
+            Value::Number(4.0),
+            Value::Number(1.0),
+            Value::Number(5.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "sort", vec![]).unwrap();
+        if let Value::List(sorted) = result {
+            assert_eq!(
+                sorted,
+                vec![
+                    Value::Number(1.0),
+                    Value::Number(1.0),
+                    Value::Number(3.0),
+                    Value::Number(4.0),
+                    Value::Number(5.0),
+                ]
+            );
+        } else {
+            panic!("Expected list");
+        }
+
+        // Test with strings
+        let words = Value::List(vec![
+            Value::String("zebra".to_string()),
+            Value::String("apple".to_string()),
+            Value::String("banana".to_string()),
+        ]);
+        let receiver2 = ValueRef::Immutable(&words);
+        let result2 = call_list_method(receiver2, "sort", vec![]).unwrap();
+        if let Value::List(sorted_words) = result2 {
+            assert_eq!(
+                sorted_words,
+                vec![
+                    Value::String("apple".to_string()),
+                    Value::String("banana".to_string()),
+                    Value::String("zebra".to_string()),
+                ]
+            );
+        } else {
+            panic!("Expected list");
+        }
+
+        // Test with booleans
+        let bools = Value::List(vec![
+            Value::Boolean(true),
+            Value::Boolean(false),
+            Value::Boolean(true),
+            Value::Boolean(false),
+        ]);
+        let receiver3 = ValueRef::Immutable(&bools);
+        let result3 = call_list_method(receiver3, "sort", vec![]).unwrap();
+        if let Value::List(sorted_bools) = result3 {
+            assert_eq!(
+                sorted_bools,
+                vec![
+                    Value::Boolean(false),
+                    Value::Boolean(false),
+                    Value::Boolean(true),
+                    Value::Boolean(true),
+                ]
+            );
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_list_min() {
+        let list = Value::List(vec![
+            Value::Number(85.0),
+            Value::Number(92.0),
+            Value::Number(78.0),
+            Value::Number(96.0),
+            Value::Number(88.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "min", vec![]).unwrap();
+        assert_eq!(result, Value::Number(78.0));
+
+        // Test with negative numbers
+        let temps = Value::List(vec![
+            Value::Number(-5.0),
+            Value::Number(10.0),
+            Value::Number(-15.0),
+            Value::Number(20.0),
+            Value::Number(0.0),
+        ]);
+        let receiver2 = ValueRef::Immutable(&temps);
+        let result2 = call_list_method(receiver2, "min", vec![]).unwrap();
+        assert_eq!(result2, Value::Number(-15.0));
+    }
+
+    #[test]
+    fn test_list_max() {
+        let list = Value::List(vec![
+            Value::Number(85.0),
+            Value::Number(92.0),
+            Value::Number(78.0),
+            Value::Number(96.0),
+            Value::Number(88.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "max", vec![]).unwrap();
+        assert_eq!(result, Value::Number(96.0));
+
+        // Test with negative numbers
+        let temps = Value::List(vec![
+            Value::Number(-5.0),
+            Value::Number(10.0),
+            Value::Number(-15.0),
+            Value::Number(20.0),
+            Value::Number(0.0),
+        ]);
+        let receiver2 = ValueRef::Immutable(&temps);
+        let result2 = call_list_method(receiver2, "max", vec![]).unwrap();
+        assert_eq!(result2, Value::Number(20.0));
+    }
+
+    #[test]
+    fn test_list_min_empty() {
+        let list = Value::List(vec![]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "min", vec![]);
+        assert!(matches!(result, Err(RuntimeError::InvalidOperation { .. })));
+    }
+
+    #[test]
+    fn test_list_max_empty() {
+        let list = Value::List(vec![]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "max", vec![]);
+        assert!(matches!(result, Err(RuntimeError::InvalidOperation { .. })));
+    }
+
+    #[test]
+    fn test_list_min_non_numbers() {
+        let list = Value::List(vec![
+            Value::Number(1.0),
+            Value::String("not a number".to_string()),
+            Value::Number(3.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "min", vec![]);
+        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+    }
+
+    #[test]
+    fn test_list_max_non_numbers() {
+        let list = Value::List(vec![
+            Value::Number(1.0),
+            Value::String("not a number".to_string()),
+            Value::Number(3.0),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "max", vec![]);
+        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+    }
+
+    #[test]
+    fn test_list_first() {
+        let list = Value::List(vec![
+            Value::String("first".to_string()),
+            Value::String("middle".to_string()),
+            Value::String("last".to_string()),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "first", vec![]).unwrap();
+        assert_eq!(result, Value::String("first".to_string()));
+
+        // Test with numbers
+        let numbers = Value::List(vec![
+            Value::Number(10.0),
+            Value::Number(20.0),
+            Value::Number(30.0),
+        ]);
+        let receiver2 = ValueRef::Immutable(&numbers);
+        let result2 = call_list_method(receiver2, "first", vec![]).unwrap();
+        assert_eq!(result2, Value::Number(10.0));
+    }
+
+    #[test]
+    fn test_list_last() {
+        let list = Value::List(vec![
+            Value::String("first".to_string()),
+            Value::String("middle".to_string()),
+            Value::String("last".to_string()),
+        ]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "last", vec![]).unwrap();
+        assert_eq!(result, Value::String("last".to_string()));
+
+        // Test with numbers
+        let numbers = Value::List(vec![
+            Value::Number(10.0),
+            Value::Number(20.0),
+            Value::Number(30.0),
+        ]);
+        let receiver2 = ValueRef::Immutable(&numbers);
+        let result2 = call_list_method(receiver2, "last", vec![]).unwrap();
+        assert_eq!(result2, Value::Number(30.0));
+    }
+
+    #[test]
+    fn test_list_first_empty() {
+        let list = Value::List(vec![]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "first", vec![]).unwrap();
+        assert_eq!(result, Value::Nil);
+    }
+
+    #[test]
+    fn test_list_last_empty() {
+        let list = Value::List(vec![]);
+        let receiver = ValueRef::Immutable(&list);
+
+        let result = call_list_method(receiver, "last", vec![]).unwrap();
+        assert_eq!(result, Value::Nil);
     }
 }

@@ -1,7 +1,6 @@
+# Test list::reverse() method
 import std:println
 
-# List push method
-list = [1, 2]
-list::push(3)
-
-println(list)  # [1, 2, 3]
+numbers = [1, 2, 3, 4, 5]
+reversed = numbers::reverse()
+println(reversed)  # [5, 4, 3, 2, 1]

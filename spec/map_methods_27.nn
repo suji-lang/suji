@@ -1,0 +1,7 @@
+import std:println
+
+# Map get method - missing numeric key with default
+scores = { 1: 100, 2: 85, 3: 92 }
+score4 = scores::get(4, 0)
+
+println(score4)  # 0

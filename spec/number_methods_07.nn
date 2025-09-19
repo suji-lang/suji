@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::min() method
+x = 10
+result = x::min(20)
+
+println(result)  # 10

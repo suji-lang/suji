@@ -1,0 +1,8 @@
+import std:println
+
+# Map merge method - basic merge
+user = { name: "Bob", age: 25 }
+additional_info = { city: "New York", email: "bob@example.com" }
+user::merge(additional_info)
+
+println(user)  # {name: Bob, age: 25, city: New York, email: bob@example.com}

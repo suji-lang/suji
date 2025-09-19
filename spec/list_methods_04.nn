@@ -1,6 +1,6 @@
+# Test list::min() method
 import std:println
 
-# List join method with default separator
-result = ["a", "b", "c"]::join()
-
-println(result)  # a b c
+scores = [85, 92, 78, 96, 88]
+result = scores::min()
+println(result)  # 78

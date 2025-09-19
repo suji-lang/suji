@@ -1,0 +1,12 @@
+import std:println
+
+# Test multiline string with interpolation
+name = "Alice"
+age = 30
+profile = """
+Name: ${name}
+Age: ${age}
+Status: Active
+"""
+
+println(profile::contains("Name: Alice"))  # true

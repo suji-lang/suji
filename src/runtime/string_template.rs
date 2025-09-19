@@ -1,9 +1,6 @@
 use super::value::{RuntimeError, Value};
 use crate::ast::StringPart;
 
-/// Evaluator function type for expressions in string templates
-pub type ExprEvaluator = dyn Fn(&crate::ast::Expr) -> Result<Value, RuntimeError>;
-
 /// Evaluate a string template by processing its parts
 pub fn evaluate_string_template<F>(
     parts: &[StringPart],
@@ -29,32 +26,6 @@ where
     Ok(result)
 }
 
-/// Evaluate a string template using a provided expression evaluator
-/// This is a convenience function for when you have a boxed evaluator
-pub fn evaluate_template_with_evaluator(
-    parts: &[StringPart],
-    evaluator: &ExprEvaluator,
-) -> Result<String, RuntimeError> {
-    evaluate_string_template(parts, |expr| evaluator(expr))
-}
-
-/// Create a simple string from parts (for testing without expression evaluation)
-pub fn parts_to_simple_string(parts: &[StringPart]) -> String {
-    let mut result = String::new();
-
-    for part in parts {
-        match part {
-            StringPart::Text(text) => {
-                result.push_str(text);
-            }
-            StringPart::Expr(_) => {
-                result.push_str("${...}"); // Placeholder for expressions
-            }
-        }
-    }
-
-    result
-}
 
 #[cfg(test)]
 mod tests {
@@ -170,20 +141,6 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn test_parts_to_simple_string() {
-        let parts = vec![
-            StringPart::Text("Hello, ".to_string()),
-            StringPart::Expr(Expr::Literal(Literal::Identifier(
-                "name".to_string(),
-                Span::default(),
-            ))),
-            StringPart::Text("!".to_string()),
-        ];
-
-        let result = parts_to_simple_string(&parts);
-        assert_eq!(result, "Hello, ${...}!");
-    }
 
     #[test]
     fn test_empty_template() {

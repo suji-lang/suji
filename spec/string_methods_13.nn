@@ -1,0 +1,7 @@
+import std:println
+
+# String reverse method
+forward = "hello"
+result = forward::reverse()
+
+println(result)  # olleh

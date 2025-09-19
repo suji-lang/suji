@@ -1,0 +1,7 @@
+import std:println
+
+# String ends_with method
+filename = "document.pdf"
+result = filename::ends_with(".pdf")
+
+println(result)  # true

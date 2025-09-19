@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::sqrt() method
+x = 16
+result = x::sqrt()
+
+println(result)  # 4

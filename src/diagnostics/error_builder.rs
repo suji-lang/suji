@@ -115,10 +115,6 @@ impl ErrorBuilder {
     }
 }
 
-/// Helper function to convert a Span to ariadne's range format
-pub fn span_to_range(span: &Span) -> std::ops::Range<usize> {
-    span.start..span.end
-}
 
 /// Helper function to convert line/column to ariadne's range format (for errors without spans)
 pub fn line_column_to_range(source: &str, line: usize, column: usize) -> std::ops::Range<usize> {

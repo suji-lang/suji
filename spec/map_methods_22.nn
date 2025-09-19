@@ -1,0 +1,7 @@
+import std:println
+
+# Map get method - existing number key
+config = { name: "Alice", age: 30, active: true }
+age = config::get("age")
+
+println(age)  # 30

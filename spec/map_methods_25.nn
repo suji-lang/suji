@@ -1,0 +1,7 @@
+import std:println
+
+# Map get method - missing key with nil default (implicit)
+config = { name: "Alice" }
+missing = config::get("missing")
+
+println(missing)  # nil

@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::to_string() with empty tuple
+empty = ()
+result = empty::to_string()
+
+println(result)  # ()

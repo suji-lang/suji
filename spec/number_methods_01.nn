@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::abs() method
+x = -5
+result = x::abs()
+
+println(result)  # 5

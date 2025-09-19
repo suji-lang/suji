@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::to_list() with empty tuple
+empty = ()
+as_list = empty::to_list()
+
+println(as_list)  # []

@@ -1,0 +1,9 @@
+import std:println
+
+# Test empty multiline string
+empty = """
+
+"""
+
+# Verify empty multiline string (contains newlines)
+println(empty::length())  # 2

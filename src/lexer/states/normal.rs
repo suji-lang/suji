@@ -1,5 +1,5 @@
 use super::super::utils::LexerUtils;
-use super::{LexError, LexState, ScannerContext, ScannerResult};
+use super::{LexError, LexState, QuoteType, ScannerContext, ScannerResult};
 use crate::token::{Span, Token, TokenWithSpan};
 
 /// Scanner for normal token state
@@ -21,12 +21,52 @@ impl NormalScanner {
 
         let token = match ch {
             '"' => {
-                *state = LexState::InString { start_pos };
-                Token::StringStart
+                let next_char = context.input.chars().nth(start_pos + 1);
+                let next_next_char = context.input.chars().nth(start_pos + 2);
+                if next_char == Some('"') && next_next_char == Some('"') {
+                    // Triple double quotes - multiline string
+                    context.advance(); // consume second "
+                    context.advance(); // consume third "
+                    // First " was already consumed by context.advance() on line 20
+                    *state = LexState::InString {
+                        start_pos,
+                        quote_type: QuoteType::Double,
+                        multiline: true,
+                    };
+                    Token::StringStart // Reuse existing token
+                } else {
+                    // Single double quote - regular string
+                    *state = LexState::InString {
+                        start_pos,
+                        quote_type: QuoteType::Double,
+                        multiline: false,
+                    };
+                    Token::StringStart
+                }
             }
             '\'' => {
-                *state = LexState::InSingleString { start_pos };
-                Token::StringStart
+                let next_char = context.input.chars().nth(start_pos + 1);
+                let next_next_char = context.input.chars().nth(start_pos + 2);
+                if next_char == Some('\'') && next_next_char == Some('\'') {
+                    // Triple single quotes - multiline string
+                    context.advance(); // consume second '
+                    context.advance(); // consume third '
+                    // First ' was already consumed by context.advance() on line 20
+                    *state = LexState::InString {
+                        start_pos,
+                        quote_type: QuoteType::Single,
+                        multiline: true,
+                    };
+                    Token::StringStart // Reuse existing token
+                } else {
+                    // Single single quote - regular string
+                    *state = LexState::InString {
+                        start_pos,
+                        quote_type: QuoteType::Single,
+                        multiline: false,
+                    };
+                    Token::StringStart
+                }
             }
             '`' => {
                 *state = LexState::InShellCommand { start_pos };

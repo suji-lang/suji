@@ -1,0 +1,11 @@
+import std:println
+
+# Test multiline string line break preservation
+text = """
+Line 1
+Line 2
+Line 3
+"""
+
+# Verify line breaks are preserved (contains newline characters)
+println(text::contains("\nLine 2\n"))  # true

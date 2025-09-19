@@ -322,6 +322,8 @@ pub mod predefined {
             "length" => "map::length() - returns number of key-value pairs",
             "contains" => "map::contains(key) - checks if key exists",
             "delete" => "map::delete(key) - removes key-value pair",
+            "get" => "map::get(key, default=nil) - value or default",
+            "merge" => "map::merge(other_map) - merge entries, overwriting existing keys",
             _ => "Check the method name and arguments",
         };
 
@@ -353,5 +355,97 @@ pub mod predefined {
             .with_suggestion("TOML keys must be strings")
             .with_suggestion("TOML does not support nil values")
             .with_suggestion("Check the data types being converted")
+    }
+
+    pub fn string_method_error(method: &str, message: &str) -> ErrorTemplate {
+        let method_help = match method {
+            "contains" => "string::contains(substring) - returns true if substring exists",
+            "starts_with" => {
+                "string::starts_with(prefix) - returns true if string starts with prefix"
+            }
+            "ends_with" => "string::ends_with(suffix) - returns true if string ends with suffix",
+            "replace" => "string::replace(old, new) - replace all occurrences of old with new",
+            "trim" => "string::trim() - remove leading and trailing whitespace",
+            "upper" => "string::upper() - convert to uppercase",
+            "lower" => "string::lower() - convert to lowercase",
+            "reverse" => "string::reverse() - reverse characters",
+            "repeat" => "string::repeat(count) - repeat string count times",
+            _ => "Check the method name and arguments",
+        };
+
+        ErrorTemplate::new(34, "String method error", "String method error")
+            .with_suggestion(message)
+            .with_suggestion(&format!("String method '{}' usage:", method))
+            .with_suggestion(method_help)
+    }
+
+    pub fn list_method_error(method: &str, message: &str) -> ErrorTemplate {
+        let method_help = match method {
+            "contains" => "list::contains(item) - returns true if item exists",
+            "reverse" => "list::reverse() - returns a new list reversed",
+            "sort" => "list::sort() - returns a new sorted list",
+            "min" => "list::min() - returns minimum number in list",
+            "max" => "list::max() - returns maximum number in list",
+            "first" => "list::first() - returns first element or nil",
+            "last" => "list::last() - returns last element or nil",
+            _ => "Check the method name and arguments",
+        };
+
+        ErrorTemplate::new(35, "List method error", "List method error")
+            .with_suggestion(message)
+            .with_suggestion(&format!("List method '{}' usage:", method))
+            .with_suggestion(method_help)
+    }
+
+    pub fn number_method_error(method: &str, message: &str) -> ErrorTemplate {
+        let method_help = match method {
+            "abs" => "number::abs() - absolute value",
+            "ceil" => "number::ceil() - smallest integer >= number",
+            "floor" => "number::floor() - largest integer <= number",
+            "round" => "number::round() - nearest integer",
+            "sqrt" => "number::sqrt() - square root (non-negative only)",
+            "pow" => "number::pow(exponent) - raise to power",
+            "min" => "number::min(other) - minimum of two numbers",
+            "max" => "number::max(other) - maximum of two numbers",
+            _ => "Check the method name and arguments",
+        };
+
+        ErrorTemplate::new(36, "Number method error", "Number method error")
+            .with_suggestion(message)
+            .with_suggestion(&format!("Number method '{}' usage:", method))
+            .with_suggestion(method_help)
+    }
+
+    pub fn tuple_method_error(method: &str, message: &str) -> ErrorTemplate {
+        let method_help = match method {
+            "length" => "tuple::length() - number of elements",
+            "to_list" => "tuple::to_list() - convert to list",
+            "to_string" => "tuple::to_string() - string representation",
+            _ => "Check the method name and arguments",
+        };
+
+        ErrorTemplate::new(37, "Tuple method error", "Tuple method error")
+            .with_suggestion(message)
+            .with_suggestion(&format!("Tuple method '{}' usage:", method))
+            .with_suggestion(method_help)
+    }
+
+    // Multiline string lexer errors (0.1.5)
+    pub fn expected_end_of_multiline_string() -> ErrorTemplate {
+        ErrorTemplate::new(
+            1,
+            "Expected end of multiline string literal",
+            "Expected end of multiline string literal",
+        )
+        .with_suggestion("Close the multiline string with triple quotes: \"\"\" or '''")
+    }
+
+    pub fn expected_multiline_content_or_interpolation() -> ErrorTemplate {
+        ErrorTemplate::new(
+            1,
+            "Expected multiline string content or interpolation",
+            "Expected multiline string content or interpolation",
+        )
+        .with_suggestion("Provide text content or an interpolation: ${ expression }")
     }
 }

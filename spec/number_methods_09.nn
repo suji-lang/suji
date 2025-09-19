@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::sqrt() with negative number (should error)
+x = -4
+result = x::sqrt()
+
+println(result)  # [12] Error: Invalid operation

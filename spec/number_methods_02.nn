@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::ceil() method
+x = 2.5
+result = x::ceil()
+
+println(result)  # 3

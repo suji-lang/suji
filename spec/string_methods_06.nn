@@ -1,0 +1,7 @@
+import std:println
+
+# String contains method
+text = "hello world"
+result = text::contains("world")
+
+println(result)  # true

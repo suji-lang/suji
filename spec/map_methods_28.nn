@@ -1,0 +1,7 @@
+import std:println
+
+# Map get method - boolean key
+flags = { true: "yes", false: "no" }
+yes = flags::get(true, "maybe")
+
+println(yes)  # yes

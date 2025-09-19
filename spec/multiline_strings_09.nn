@@ -1,0 +1,10 @@
+import std:println
+
+# Test multiline string with nested quotes
+nested = """
+He said, "Hello there!"
+She replied, 'Hi back!'
+"""
+
+# Verify nested quotes work correctly
+println(nested::contains('"Hello there!"'))  # true

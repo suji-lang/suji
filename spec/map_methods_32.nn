@@ -1,0 +1,8 @@
+import std:println
+
+# Map merge method - merging empty map with data
+empty_user = {}
+data = { name: "Charlie", age: 30 }
+empty_user::merge(data)
+
+println(empty_user)  # {name: Charlie, age: 30}

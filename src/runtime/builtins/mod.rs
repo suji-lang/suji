@@ -17,7 +17,7 @@ pub mod yaml;
 pub use functions::{
     Builtin, BuiltinFunction, builtin_json_generate, builtin_json_parse, builtin_print,
     builtin_println, builtin_toml_generate, builtin_toml_parse, builtin_yaml_generate,
-    builtin_yaml_parse, call_builtin, get_builtins, is_builtin_function,
+    builtin_yaml_parse, call_builtin, get_builtins,
 };
 pub use modules::{create_json_module, create_std_module, create_toml_module, create_yaml_module};
 
@@ -35,14 +35,6 @@ pub fn setup_global_env(env: &Env) {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_builtin_detection() {
-        assert!(is_builtin_function("print"));
-        assert!(is_builtin_function("println"));
-        assert!(is_builtin_function("json_parse"));
-        assert!(is_builtin_function("json_generate"));
-        assert!(!is_builtin_function("not_a_builtin"));
-    }
 
     #[test]
     fn test_call_builtin() {
@@ -59,12 +51,6 @@ mod tests {
         assert!(call_builtin("invalid", &args).is_err());
     }
 
-    #[test]
-    fn test_json_builtin_detection() {
-        assert!(is_builtin_function("json_parse"));
-        assert!(is_builtin_function("json_generate"));
-        assert!(!is_builtin_function("json_invalid"));
-    }
 
     #[test]
     fn test_json_call_builtin() {

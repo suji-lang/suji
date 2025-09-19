@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::max() method
+x = 10
+result = x::max(20)
+
+println(result)  # 20

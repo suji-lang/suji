@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::length() with single element tuple
+single = (42,)
+result = single::length()
+
+println(result)  # 1

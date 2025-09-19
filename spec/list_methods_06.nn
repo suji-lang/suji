@@ -1,6 +1,6 @@
+# Test list::first() method
 import std:println
 
-# List join with single element
-result = ["single"]::join()
-
-println(result)  # single
+items = ["first", "middle", "last"]
+result = items::first()
+println(result)  # first

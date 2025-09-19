@@ -1,7 +1,7 @@
 use super::super::value::{RuntimeError, Value};
 use super::common::ValueRef;
 
-/// Map methods: delete(key), contains(key), keys(), values(), to_list(), length()
+/// Map methods: delete(key), contains(key), keys(), values(), to_list(), length(), get(key, default=nil), merge(other_map)
 pub fn call_map_method(
     mut receiver: ValueRef,
     method: &str,
@@ -92,6 +92,52 @@ pub fn call_map_method(
             }
             if let Value::Map(map_data) = receiver.get() {
                 Ok(Value::Number(map_data.len() as f64))
+            } else {
+                unreachable!()
+            }
+        }
+        "get" => {
+            if args.is_empty() || args.len() > 2 {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "get() takes one or two arguments".to_string(),
+                });
+            }
+
+            let key = args[0].clone().try_into_map_key()?;
+            let default = if args.len() == 2 {
+                args[1].clone()
+            } else {
+                Value::Nil
+            };
+
+            if let Value::Map(map_data) = receiver.get() {
+                Ok(map_data.get(&key).cloned().unwrap_or(default))
+            } else {
+                unreachable!()
+            }
+        }
+        "merge" => {
+            if args.len() != 1 {
+                return Err(RuntimeError::ArityMismatch {
+                    message: "merge() takes exactly one argument".to_string(),
+                });
+            }
+
+            let other_map = match &args[0] {
+                Value::Map(other) => other,
+                _ => {
+                    return Err(RuntimeError::TypeError {
+                        message: "merge() argument must be a map".to_string(),
+                    });
+                }
+            };
+
+            let map = receiver.get_mut()?;
+            if let Value::Map(map_data) = map {
+                for (key, value) in other_map {
+                    map_data.insert(key.clone(), value.clone());
+                }
+                Ok(Value::Nil)
             } else {
                 unreachable!()
             }
@@ -535,5 +581,368 @@ mod tests {
         } else {
             panic!("Expected list");
         }
+    }
+
+    // Tests for map::get() method
+    #[test]
+    fn test_map_get_existing_key() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(MapKey::String("active".to_string()), Value::Boolean(true));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Get existing values
+        let name =
+            call_map_method(receiver, "get", vec![Value::String("name".to_string())]).unwrap();
+        assert_eq!(name, Value::String("Alice".to_string()));
+
+        let receiver2 = ValueRef::Immutable(&map);
+        let age =
+            call_map_method(receiver2, "get", vec![Value::String("age".to_string())]).unwrap();
+        assert_eq!(age, Value::Number(30.0));
+
+        let receiver3 = ValueRef::Immutable(&map);
+        let active =
+            call_map_method(receiver3, "get", vec![Value::String("active".to_string())]).unwrap();
+        assert_eq!(active, Value::Boolean(true));
+    }
+
+    #[test]
+    fn test_map_get_missing_key_with_default() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Get missing key with custom default
+        let email = call_map_method(
+            receiver,
+            "get",
+            vec![
+                Value::String("email".to_string()),
+                Value::String("N/A".to_string()),
+            ],
+        )
+        .unwrap();
+        assert_eq!(email, Value::String("N/A".to_string()));
+
+        let receiver2 = ValueRef::Immutable(&map);
+        let phone = call_map_method(
+            receiver2,
+            "get",
+            vec![
+                Value::String("phone".to_string()),
+                Value::String("Unknown".to_string()),
+            ],
+        )
+        .unwrap();
+        assert_eq!(phone, Value::String("Unknown".to_string()));
+    }
+
+    #[test]
+    fn test_map_get_missing_key_with_nil_default() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Alice".to_string()),
+        );
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Get missing key with nil default (implicit)
+        let missing =
+            call_map_method(receiver, "get", vec![Value::String("missing".to_string())]).unwrap();
+        assert_eq!(missing, Value::Nil);
+    }
+
+    #[test]
+    fn test_map_get_with_different_key_types() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(MapKey::Number(OrderedFloat(1.0)), Value::Number(100.0));
+        map_data.insert(MapKey::Number(OrderedFloat(2.0)), Value::Number(85.0));
+        map_data.insert(MapKey::Boolean(true), Value::String("yes".to_string()));
+
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Get with numeric key
+        let score1 = call_map_method(
+            receiver,
+            "get",
+            vec![Value::Number(1.0), Value::Number(0.0)],
+        )
+        .unwrap();
+        assert_eq!(score1, Value::Number(100.0));
+
+        let receiver2 = ValueRef::Immutable(&map);
+        let score4 = call_map_method(
+            receiver2,
+            "get",
+            vec![Value::Number(4.0), Value::Number(0.0)],
+        )
+        .unwrap();
+        assert_eq!(score4, Value::Number(0.0));
+
+        // Get with boolean key
+        let receiver3 = ValueRef::Immutable(&map);
+        let yes = call_map_method(
+            receiver3,
+            "get",
+            vec![Value::Boolean(true), Value::String("no".to_string())],
+        )
+        .unwrap();
+        assert_eq!(yes, Value::String("yes".to_string()));
+    }
+
+    #[test]
+    fn test_map_get_arity_mismatch() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Test no arguments
+        let result1 = call_map_method(receiver, "get", vec![]);
+        assert!(matches!(result1, Err(RuntimeError::ArityMismatch { .. })));
+
+        // Test too many arguments
+        let receiver2 = ValueRef::Immutable(&map);
+        let result2 = call_map_method(
+            receiver2,
+            "get",
+            vec![
+                Value::String("key1".to_string()),
+                Value::String("default1".to_string()),
+                Value::String("extra".to_string()),
+            ],
+        );
+        assert!(matches!(result2, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_map_get_invalid_key_type() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        // Test with invalid key type (list)
+        let result = call_map_method(receiver, "get", vec![Value::List(vec![])]);
+        assert!(matches!(result, Err(RuntimeError::InvalidKeyType { .. })));
+    }
+
+    // Tests for map::merge() method
+    #[test]
+    fn test_map_merge_basic() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Bob".to_string()),
+        );
+        map_data.insert(MapKey::String("age".to_string()), Value::Number(25.0));
+
+        let mut map = Value::Map(map_data);
+        let receiver = ValueRef::Mutable(&mut map);
+
+        let mut other_data = IndexMap::new();
+        other_data.insert(
+            MapKey::String("city".to_string()),
+            Value::String("New York".to_string()),
+        );
+        other_data.insert(
+            MapKey::String("email".to_string()),
+            Value::String("bob@example.com".to_string()),
+        );
+
+        let other_map = Value::Map(other_data);
+
+        // Merge additional info
+        let result = call_map_method(receiver, "merge", vec![other_map]).unwrap();
+        assert_eq!(result, Value::Nil);
+
+        // Check that the map was modified
+        if let Value::Map(map_data) = &map {
+            assert_eq!(map_data.len(), 4);
+            assert_eq!(
+                map_data.get(&MapKey::String("name".to_string())),
+                Some(&Value::String("Bob".to_string()))
+            );
+            assert_eq!(
+                map_data.get(&MapKey::String("age".to_string())),
+                Some(&Value::Number(25.0))
+            );
+            assert_eq!(
+                map_data.get(&MapKey::String("city".to_string())),
+                Some(&Value::String("New York".to_string()))
+            );
+            assert_eq!(
+                map_data.get(&MapKey::String("email".to_string())),
+                Some(&Value::String("bob@example.com".to_string()))
+            );
+        } else {
+            panic!("Expected map");
+        }
+    }
+
+    #[test]
+    fn test_map_merge_overwrite_existing() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Bob".to_string()),
+        );
+        map_data.insert(MapKey::String("age".to_string()), Value::Number(25.0));
+
+        let mut map = Value::Map(map_data);
+        let receiver = ValueRef::Mutable(&mut map);
+
+        let mut overlay_data = IndexMap::new();
+        overlay_data.insert(MapKey::String("age".to_string()), Value::Number(26.0));
+        overlay_data.insert(
+            MapKey::String("city".to_string()),
+            Value::String("Boston".to_string()),
+        );
+
+        let overlay_map = Value::Map(overlay_data);
+
+        // Merge overlay (should overwrite age)
+        let result = call_map_method(receiver, "merge", vec![overlay_map]).unwrap();
+        assert_eq!(result, Value::Nil);
+
+        // Check that age was overwritten
+        if let Value::Map(map_data) = &map {
+            assert_eq!(map_data.len(), 3);
+            assert_eq!(
+                map_data.get(&MapKey::String("age".to_string())),
+                Some(&Value::Number(26.0))
+            );
+            assert_eq!(
+                map_data.get(&MapKey::String("city".to_string())),
+                Some(&Value::String("Boston".to_string()))
+            );
+        } else {
+            panic!("Expected map");
+        }
+    }
+
+    #[test]
+    fn test_map_merge_with_empty_map() {
+        let mut map_data = IndexMap::new();
+        map_data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Charlie".to_string()),
+        );
+
+        let mut map = Value::Map(map_data);
+        let receiver = ValueRef::Mutable(&mut map);
+
+        let empty_map = Value::Map(IndexMap::new());
+
+        // Merge empty map (should not change anything)
+        let result = call_map_method(receiver, "merge", vec![empty_map]).unwrap();
+        assert_eq!(result, Value::Nil);
+
+        // Check that the map is unchanged
+        if let Value::Map(map_data) = &map {
+            assert_eq!(map_data.len(), 1);
+            assert_eq!(
+                map_data.get(&MapKey::String("name".to_string())),
+                Some(&Value::String("Charlie".to_string()))
+            );
+        } else {
+            panic!("Expected map");
+        }
+    }
+
+    #[test]
+    fn test_map_merge_empty_map_with_data() {
+        let mut map = Value::Map(IndexMap::new());
+        let receiver = ValueRef::Mutable(&mut map);
+
+        let mut data = IndexMap::new();
+        data.insert(
+            MapKey::String("name".to_string()),
+            Value::String("Charlie".to_string()),
+        );
+        data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+
+        let data_map = Value::Map(data);
+
+        // Merge data into empty map
+        let result = call_map_method(receiver, "merge", vec![data_map]).unwrap();
+        assert_eq!(result, Value::Nil);
+
+        // Check that the map now has the data
+        if let Value::Map(map_data) = &map {
+            assert_eq!(map_data.len(), 2);
+            assert_eq!(
+                map_data.get(&MapKey::String("name".to_string())),
+                Some(&Value::String("Charlie".to_string()))
+            );
+            assert_eq!(
+                map_data.get(&MapKey::String("age".to_string())),
+                Some(&Value::Number(30.0))
+            );
+        } else {
+            panic!("Expected map");
+        }
+    }
+
+    #[test]
+    fn test_map_merge_arity_mismatch() {
+        let map_data = IndexMap::new();
+        let mut map = Value::Map(map_data);
+        let receiver = ValueRef::Mutable(&mut map);
+
+        // Test no arguments
+        let result1 = call_map_method(receiver, "merge", vec![]);
+        assert!(matches!(result1, Err(RuntimeError::ArityMismatch { .. })));
+
+        // Test too many arguments
+        let receiver2 = ValueRef::Mutable(&mut map);
+        let other_map = Value::Map(IndexMap::new());
+        let result2 = call_map_method(
+            receiver2,
+            "merge",
+            vec![other_map, Value::String("extra".to_string())],
+        );
+        assert!(matches!(result2, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_map_merge_type_error() {
+        let map_data = IndexMap::new();
+        let mut map = Value::Map(map_data);
+        let receiver = ValueRef::Mutable(&mut map);
+
+        // Test with non-map argument
+        let result = call_map_method(
+            receiver,
+            "merge",
+            vec![Value::String("not a map".to_string())],
+        );
+        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+    }
+
+    #[test]
+    fn test_map_merge_immutable_error() {
+        let map_data = IndexMap::new();
+        let map = Value::Map(map_data);
+        let receiver = ValueRef::Immutable(&map);
+
+        let other_map = Value::Map(IndexMap::new());
+
+        // Test merge on immutable map
+        let result = call_map_method(receiver, "merge", vec![other_map]);
+        assert!(matches!(result, Err(RuntimeError::MethodError { .. })));
     }
 }

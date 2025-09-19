@@ -1,6 +1,12 @@
 use crate::token::{Span, Token, TokenWithSpan};
 use thiserror::Error;
 
+#[derive(Debug, Clone, Copy)]
+pub enum QuoteType {
+    Double,
+    Single,
+}
+
 #[derive(Error, Debug, Clone)]
 pub enum LexError {
     #[error("Unterminated string literal at line {line}, column {column}")]
@@ -34,16 +40,13 @@ pub enum LexState {
     Normal,
     InString {
         start_pos: usize,
-    },
-    InSingleString {
-        start_pos: usize,
+        quote_type: QuoteType,
+        multiline: bool,
     },
     InStringInterp {
         start_pos: usize,
-        brace_depth: usize,
-    },
-    InSingleStringInterp {
-        start_pos: usize,
+        quote_type: QuoteType,
+        multiline: bool,
         brace_depth: usize,
     },
     InShellCommand {
@@ -58,9 +61,8 @@ pub enum LexState {
     },
     StringContentReturned {
         start_pos: usize,
-    },
-    SingleStringContentReturned {
-        start_pos: usize,
+        quote_type: QuoteType,
+        multiline: bool,
     },
     RegexContentReturned {
         start_pos: usize,
@@ -75,9 +77,7 @@ impl LexState {
     pub fn is_in_interpolation(&self) -> bool {
         matches!(
             self,
-            LexState::InStringInterp { .. }
-                | LexState::InSingleStringInterp { .. }
-                | LexState::InShellInterp { .. }
+            LexState::InStringInterp { .. } | LexState::InShellInterp { .. }
         )
     }
 
@@ -86,9 +86,7 @@ impl LexState {
         matches!(
             self,
             LexState::InString { .. }
-                | LexState::InSingleString { .. }
                 | LexState::InStringInterp { .. }
-                | LexState::InSingleStringInterp { .. }
                 | LexState::InShellCommand { .. }
                 | LexState::InShellInterp { .. }
         )
@@ -97,15 +95,12 @@ impl LexState {
     /// Returns the start position for the current context
     pub fn start_pos(&self) -> Option<usize> {
         match self {
-            LexState::InString { start_pos }
-            | LexState::InSingleString { start_pos }
+            LexState::InString { start_pos, .. }
             | LexState::InStringInterp { start_pos, .. }
-            | LexState::InSingleStringInterp { start_pos, .. }
             | LexState::InShellCommand { start_pos }
             | LexState::InShellInterp { start_pos, .. }
             | LexState::InRegex { start_pos }
-            | LexState::StringContentReturned { start_pos }
-            | LexState::SingleStringContentReturned { start_pos }
+            | LexState::StringContentReturned { start_pos, .. }
             | LexState::RegexContentReturned { start_pos }
             | LexState::ShellContentReturned { start_pos } => Some(*start_pos),
             LexState::Normal => None,
@@ -154,6 +149,10 @@ impl<'a> ScannerContext<'a> {
 
     pub fn peek_next(&self) -> Option<char> {
         self.input.chars().nth(self.position + 1)
+    }
+
+    pub fn peek_next_next(&self) -> Option<char> {
+        self.input.chars().nth(self.position + 2)
     }
 
     pub fn advance(&mut self) -> char {

@@ -1,17 +1,18 @@
 use super::super::utils::LexerUtils;
-use super::{LexError, LexState, ScannerContext, ScannerResult};
+use super::{LexError, LexState, QuoteType, ScannerContext, ScannerResult};
 use crate::token::{Span, Token, TokenWithSpan};
 
 /// Scanner for string literal state
 pub struct StringScanner;
 
 impl StringScanner {
-    /// Scan string content with a specific quote character
-    pub fn scan_content_with_quote(
+    /// Scan string content with a specific quote character and multiline flag
+    pub fn scan_content(
         context: &mut ScannerContext,
         state: &mut LexState,
         start_pos: usize,
         quote_char: char,
+        multiline: bool,
     ) -> ScannerResult {
         let mut content = String::new();
         let start_line = context.line;
@@ -20,19 +21,49 @@ impl StringScanner {
         while !context.is_at_end() {
             let ch = context.peek();
 
-            if ch == quote_char {
+            // Check for end of string
+            let is_end = if multiline {
+                // For multiline strings, check for triple quotes
+                ch == quote_char
+                    && context.peek_next() == Some(quote_char)
+                    && context.peek_next_next() == Some(quote_char)
+            } else {
+                // For regular strings, check for single quote
+                ch == quote_char
+            };
+
+            if is_end {
                 // End of string
-                context.advance(); // consume closing quote
+                if multiline {
+                    // Consume triple quotes
+                    context.advance(); // consume first quote
+                    context.advance(); // consume second quote
+                    context.advance(); // consume third quote
+                } else {
+                    // Consume single quote
+                    context.advance();
+                }
                 *state = LexState::Normal;
 
                 if !content.is_empty() {
                     // Return accumulated content first, then we'll be called again for StringEnd
-                    if quote_char == '"' {
-                        *state = LexState::StringContentReturned { start_pos };
+                    let quote_type = if quote_char == '"' {
+                        QuoteType::Double
                     } else {
-                        *state = LexState::SingleStringContentReturned { start_pos };
-                    }
-                    let span = Span::new(start_pos, context.position - 1, start_line, start_column);
+                        QuoteType::Single
+                    };
+                    *state = LexState::StringContentReturned {
+                        start_pos,
+                        quote_type,
+                        multiline,
+                    };
+                    let span_offset = if multiline { 3 } else { 1 };
+                    let span = Span::new(
+                        start_pos,
+                        context.position - span_offset,
+                        start_line,
+                        start_column,
+                    );
                     return Ok(TokenWithSpan::new(Token::StringText(content), span));
                 } else {
                     // Empty string content, return StringEnd directly
@@ -52,17 +83,17 @@ impl StringScanner {
                     // Start interpolation
                     context.advance(); // consume $
                     context.advance(); // consume {
-                    if quote_char == '"' {
-                        *state = LexState::InStringInterp {
-                            start_pos,
-                            brace_depth: 1,
-                        };
+                    let quote_type = if quote_char == '"' {
+                        QuoteType::Double
                     } else {
-                        *state = LexState::InSingleStringInterp {
-                            start_pos,
-                            brace_depth: 1,
-                        };
-                    }
+                        QuoteType::Single
+                    };
+                    *state = LexState::InStringInterp {
+                        start_pos,
+                        quote_type,
+                        multiline,
+                        brace_depth: 1,
+                    };
                     let span = Span::new(start_pos, context.position, start_line, start_column);
                     return Ok(TokenWithSpan::new(Token::InterpStart, span));
                 }
@@ -86,14 +117,5 @@ impl StringScanner {
             line: context.line,
             column: context.column,
         })
-    }
-
-    /// Scan string content (backward compatibility for double quotes)
-    pub fn scan_content(
-        context: &mut ScannerContext,
-        state: &mut LexState,
-        start_pos: usize,
-    ) -> ScannerResult {
-        Self::scan_content_with_quote(context, state, start_pos, '"')
     }
 }

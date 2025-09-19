@@ -12,7 +12,6 @@ mod helpers;
 mod imports;
 mod indexing;
 mod literals;
-mod methods;
 mod operators;
 mod patterns;
 mod postfix;
@@ -27,7 +26,6 @@ pub use functions::*;
 pub use helpers::*;
 pub use imports::*;
 pub use literals::*;
-pub use methods::*;
 pub use operators::*;
 pub use patterns::*;
 pub use postfix::*;
@@ -162,7 +160,3 @@ pub fn eval_program_with_modules(
     Ok(last_value)
 }
 
-/// Evaluate a program (list of statements) using default module registry
-pub fn eval_program(statements: &[Stmt], env: Rc<Env>) -> EvalResult<Option<Value>> {
-    eval_program_with_modules(statements, env, &ModuleRegistry::new())
-}

@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::to_list() with mixed types
+mixed = (1, "two", true, nil)
+as_list = mixed::to_list()
+
+println(as_list)  # [1, two, true, nil]

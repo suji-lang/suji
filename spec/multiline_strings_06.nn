@@ -1,0 +1,15 @@
+import std:println
+
+# Test multiline string with mixed content and interpolation
+data = """
+{
+    "users": [
+        {"name": "Alice", "age": ${30}},
+        {"name": "Bob", "age": ${25}}
+    ],
+    "total": ${2}
+}
+"""
+
+# Verify complex multiline string with interpolation
+println(data::contains('"name": "Alice"'))  # true

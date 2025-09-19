@@ -1,0 +1,7 @@
+import std:println
+
+# Test number::floor() method
+x = 2.5
+result = x::floor()
+
+println(result)  # 2

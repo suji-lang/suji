@@ -1,0 +1,7 @@
+import std:println
+
+# Test tuple::length() method
+point = (10, 20, 30)
+result = point::length()
+
+println(result)  # 3

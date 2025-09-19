@@ -3,7 +3,7 @@ use crate::lexer::states::normal::NormalScanner;
 use crate::lexer::states::regex::RegexScanner;
 use crate::lexer::states::shell::ShellScanner;
 use crate::lexer::states::string::StringScanner;
-use crate::lexer::states::{LexState, ScannerContext};
+use crate::lexer::states::{LexState, QuoteType, ScannerContext};
 use crate::token::{Span, Token, TokenWithSpan};
 
 pub mod states;
@@ -44,14 +44,15 @@ impl<'a> Lexer<'a> {
     fn next_token(&mut self) -> Result<TokenWithSpan, LexError> {
         match self.state.clone() {
             LexState::Normal => self.scan_normal_token(),
-            LexState::InString { start_pos } => self.scan_string_content(start_pos),
-            LexState::InSingleString { start_pos } => self.scan_single_string_content(start_pos),
+            LexState::InString {
+                start_pos,
+                quote_type,
+                multiline,
+            } => self.scan_string_content(start_pos, quote_type, multiline),
             LexState::InStringInterp {
                 start_pos,
-                brace_depth,
-            } => self.scan_string_interpolation(start_pos, brace_depth),
-            LexState::InSingleStringInterp {
-                start_pos,
+                quote_type: _,
+                multiline: _,
                 brace_depth,
             } => self.scan_string_interpolation(start_pos, brace_depth),
             LexState::InShellCommand { start_pos } => self.scan_shell_content(start_pos),
@@ -60,10 +61,7 @@ impl<'a> Lexer<'a> {
                 brace_depth,
             } => self.scan_shell_interpolation(start_pos, brace_depth),
             LexState::InRegex { start_pos } => self.scan_regex_content(start_pos),
-            LexState::StringContentReturned { start_pos } => {
-                self.handle_content_returned_state(Token::StringEnd, start_pos)
-            }
-            LexState::SingleStringContentReturned { start_pos } => {
+            LexState::StringContentReturned { start_pos, .. } => {
                 self.handle_content_returned_state(Token::StringEnd, start_pos)
             }
             LexState::RegexContentReturned { start_pos } => {
@@ -96,12 +94,23 @@ impl<'a> Lexer<'a> {
         NormalScanner::scan_token(&mut self.context, &mut self.state)
     }
 
-    fn scan_string_content(&mut self, start_pos: usize) -> Result<TokenWithSpan, LexError> {
-        StringScanner::scan_content(&mut self.context, &mut self.state, start_pos)
-    }
-
-    fn scan_single_string_content(&mut self, start_pos: usize) -> Result<TokenWithSpan, LexError> {
-        StringScanner::scan_content_with_quote(&mut self.context, &mut self.state, start_pos, '\'')
+    fn scan_string_content(
+        &mut self,
+        start_pos: usize,
+        quote_type: QuoteType,
+        multiline: bool,
+    ) -> Result<TokenWithSpan, LexError> {
+        let quote_char = match quote_type {
+            QuoteType::Double => '"',
+            QuoteType::Single => '\'',
+        };
+        StringScanner::scan_content(
+            &mut self.context,
+            &mut self.state,
+            start_pos,
+            quote_char,
+            multiline,
+        )
     }
 
     fn scan_string_interpolation(
