@@ -1,7 +1,4 @@
-//! NN-language builtin loader for std:print and std:println
-//!
-//! Evaluates embedded NN source files by pre-binding required names in an
-//! evaluation environment and directly evaluating the export statement.
+//! Loader for NN-language builtins (print, println).
 
 use crate::parser::parse_program;
 use crate::runtime::env::Env;

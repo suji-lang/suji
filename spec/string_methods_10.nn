@@ -1,7 +1,7 @@
 import std:println
 
-# String trim method
-padded = "   hello world   "
-result = padded::trim()
+# String upper method
+mixed = "Hello World"
+result = mixed::upper()
 
-println(result)  # hello world
+println(result)  # HELLO WORLD

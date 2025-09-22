@@ -1,10 +1,10 @@
-# Test ENV to_list method
-import std:ENV
+# Test env:var to_list method
+import std:env:var
 import std:println
 
 # Set a test variable
-ENV:TEST_TO_LIST = "test"
+var:TEST_TO_LIST = "test"
 
 # Convert to list and check length is greater than 0
-env_list = ENV::to_list()
+env_list = var::to_list()
 println(env_list::length() > 0)  # true

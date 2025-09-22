@@ -66,7 +66,8 @@ impl Parser {
 
                     // Check for default value
                     let default = if self.match_token(Token::Assign) {
-                        Some(self.expression()?)
+                        // Use an expression parser that doesn't consume the '|' param terminator as a pipe op
+                        Some(self.expression_without_pipe()?)
                     } else {
                         None
                     };
@@ -95,6 +96,8 @@ impl Parser {
         self.consume(Token::Pipe, "Expected '|' after function parameters")?;
 
         // Parse function body (either block or single expression)
+        // When parsing function literals, a top-level '|' should terminate param list,
+        // not act as a binary operator inside defaults/body parsing.
         let body = self.parse_function_body(start_span.clone())?;
 
         Ok(Expr::FunctionLiteral {

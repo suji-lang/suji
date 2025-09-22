@@ -1,9 +1,0 @@
-# Test simple ENV functionality
-import std:ENV
-import std:println
-
-# Set a test environment variable
-ENV:TEST_VAR = "hello"
-
-# Read it back
-println(ENV:TEST_VAR)  # hello

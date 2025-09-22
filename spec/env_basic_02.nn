@@ -1,9 +1,6 @@
-# Test basic ENV functionality
-import std:ENV
+# Test env:var get method
+import std:env:var
 import std:println
 
-# Set a test environment variable
-ENV:TEST_VAR = "hello_world"
-
-# Read it back and print the length
-println(ENV:TEST_VAR::length())  # 11
+# Try to use get method with a non-existent variable
+println(var::get("NONEXISTENT_VAR_12345", "not_found"))  # not_found

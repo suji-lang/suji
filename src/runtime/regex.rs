@@ -12,7 +12,9 @@ static REGEX_CACHE: Lazy<Mutex<HashMap<String, Result<Regex, String>>>> =
 pub fn compile_regex(pattern: &str) -> Result<Regex, RuntimeError> {
     // Check cache first
     {
-        let cache = REGEX_CACHE.lock().unwrap();
+        let cache = REGEX_CACHE.lock().map_err(|_| RuntimeError::RegexError {
+            message: "regex cache poisoned".into(),
+        })?;
         if let Some(cached_result) = cache.get(pattern) {
             return match cached_result {
                 Ok(regex) => Ok(regex.clone()),
@@ -33,7 +35,9 @@ pub fn compile_regex(pattern: &str) -> Result<Regex, RuntimeError> {
 
     // Cache the result (both success and failure)
     {
-        let mut cache = REGEX_CACHE.lock().unwrap();
+        let mut cache = REGEX_CACHE.lock().map_err(|_| RuntimeError::RegexError {
+            message: "regex cache poisoned".into(),
+        })?;
         match &compile_result {
             Ok(regex) => {
                 cache.insert(pattern.to_string(), Ok(regex.clone()));
@@ -65,20 +69,31 @@ pub fn regex_match_compiled(text: &str, regex: &Regex) -> bool {
     regex.is_match(text)
 }
 
-/// Clear the regex cache (useful for testing)
+/// Clear the regex cache (for tests)
 #[cfg(test)]
 pub fn clear_regex_cache() {
-    let mut cache = REGEX_CACHE.lock().unwrap();
-    cache.clear();
+    match REGEX_CACHE.lock() {
+        Ok(mut cache) => cache.clear(),
+        Err(poisoned) => poisoned.into_inner().clear(),
+    }
 }
 
-/// Get cache statistics (for debugging)
+/// Get cache statistics (debug only)
 #[cfg(debug_assertions)]
 pub fn regex_cache_stats() -> (usize, usize) {
-    let cache = REGEX_CACHE.lock().unwrap();
-    let total = cache.len();
-    let successful = cache.values().filter(|r| r.is_ok()).count();
-    (total, successful)
+    match REGEX_CACHE.lock() {
+        Ok(cache) => {
+            let total = cache.len();
+            let successful = cache.values().filter(|r| r.is_ok()).count();
+            (total, successful)
+        }
+        Err(poisoned) => {
+            let cache = poisoned.into_inner();
+            let total = cache.len();
+            let successful = cache.values().filter(|r| r.is_ok()).count();
+            (total, successful)
+        }
+    }
 }
 
 #[cfg(test)]

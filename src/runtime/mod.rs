@@ -1,5 +1,6 @@
 pub mod builtins;
 pub mod env;
+pub mod env_overlay;
 pub mod eval;
 pub mod methods;
 pub mod module;

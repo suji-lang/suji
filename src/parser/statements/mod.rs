@@ -1,5 +1,4 @@
-// Main dispatcher for statement parsing
-// This module coordinates between different statement types
+//! Statement parsing dispatcher.
 
 use super::{ParseError, ParseResult, Parser};
 use crate::ast::Stmt;

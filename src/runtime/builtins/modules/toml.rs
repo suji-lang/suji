@@ -1,6 +1,4 @@
-//! TOML module creation
-//!
-//! This module handles the creation of the toml builtin module.
+//! TOML module creation.
 
 use crate::runtime::value::{MapKey, Value};
 use indexmap::IndexMap;

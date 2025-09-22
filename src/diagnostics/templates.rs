@@ -497,6 +497,8 @@ pub mod predefined {
             "write" => "stream::write(text) - write text and return bytes written",
             "read_all" => "stream::read_all() - read until EOF (may block)",
             "read_lines" => "stream::read_lines() - read all lines as list (may block)",
+            "read_line" => "stream::read_line() - read one line (may block)",
+            "is_terminal" => "stream::is_terminal() - true if attached to TTY",
             "close" => "stream::close() - close the stream",
             "to_string" => "stream::to_string() - get stream description",
             _ => "Check the method name and arguments",

@@ -1,7 +1,0 @@
-import std:println
-
-# Function default parameters
-calc = |base, multiplier = 2| { return base * multiplier }
-result = calc(5, 3)
-
-println(result)  # 15

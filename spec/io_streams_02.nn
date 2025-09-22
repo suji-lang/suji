@@ -1,0 +1,3 @@
+import std:println
+import std:io:stdout
+println(stdout::to_string())  # <stream:stdout>

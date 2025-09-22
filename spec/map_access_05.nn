@@ -1,7 +1,0 @@
-import std:println
-
-# Map access functionality
-m = { 1: "one", "two": 2, true: "boolean" }
-result = m[true]
-
-println(result)  # boolean

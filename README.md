@@ -33,8 +33,8 @@ A dynamically and strongly typed language with familiar syntax, higher-order fun
   - [Deep Nesting](#deep-nesting)
   - [Optional Braces](#optional-braces)
 - [Standard Library](#standard-library)
-  - [ENV](#env)
-  - [FD (Process Streams)](#fd-process-streams)
+  - [env](#env)
+  - [io (Process Streams)](#io-process-streams)
   - [JSON Module](#json-module)
   - [YAML Module](#yaml-module)
   - [TOML Module](#toml-module)
@@ -45,6 +45,8 @@ A dynamically and strongly typed language with familiar syntax, higher-order fun
   - [File Processing](#file-processing)
   - [Configuration Management](#configuration-management)
 - [Installation](#installation)
+- [CLI & REPL Usage](#cli--repl-usage)
+- [Spec & Testing](#spec--testing)
 - [Language Versions](#language-versions)
 
 ## Quick Start
@@ -259,18 +261,18 @@ has_numbers = "abc123" ~ number_pattern  # true
 Blocking I/O type for file descriptors and process streams. Methods may block; `read()` returns nil on EOF.
 
 ```nn
-import std:FD
+import std:io
 
 # Read a single chunk (may block)
-chunk = FD:stdin::read()
+chunk = io:stdin::read()
 
 # Read everything or lines until EOF
-all   = FD:stdin::read_all()
-lines = FD:stdin::read_lines()
+all   = io:stdin::read_all()
+lines = io:stdin::read_lines()
 
 # Write to stdout/stderr
-FD:stdout::write("Hello, world!\n")
-FD:stderr::write("Warning: something happened\n")
+io:stdout::write("Hello, world!\n")
+io:stderr::write("Warning: something happened\n")
 ```
 
 ### Nil
@@ -466,7 +468,7 @@ sum = numbers::fold(0, |acc, x| acc + x)  # 15
 
 ## Modules
 
-Modules provide namespacing and code reuse. The standard library is available under the `std` module (e.g., `import std:println`, `import std:ENV`, `import std:FD`):
+Modules provide namespacing and code reuse. The standard library is available under the `std` module (e.g., `import std:println`, `import std:env:var`, `import std:io`):
 
 ```nn
 # math.nn
@@ -605,50 +607,50 @@ config = { name: "Bob", active: true }
 toml_output = toml:generate(config)
 ```
 
-### ENV
+### env
 
-Environment variables exposed as a map under the standard library. Changing `ENV` affects the process environment (and child processes).
+Environment variables exposed as a map under the standard library at `std:env:var`. Changing `var` affects the process environment (and child processes).
 
 ```nn
-import std:ENV
+import std:env
 import std:println
 
-path = ENV:PATH
-home = ENV["HOME"]
+path = env:var:PATH
+home = env:var["HOME"]
 println("PATH: ${path}")
 println("HOME: ${home}")
 
 # Defaults and existence
-editor = ENV::get("EDITOR", "vi")
+editor = env:var::get("EDITOR", "vi")
 println("Editor: ${editor}")
 ```
 
-### FD (Process Streams)
+### io (Process Streams)
 
 Access standard streams as `stream` values. Operations may block.
 
 ```nn
-import std:FD
+import std:io
 import std:println
 
-input = FD:stdin::read()
+input = io:stdin::read()
 println("Read: ${input}")
-FD:stdout::write("ok\n")
-FD:stderr::write("err\n")
+io:stdout::write("ok\n")
+io:stderr::write("err\n")
 ```
 
 ### print and println
 
-Convenience output functions that write to streams. Default target is `std:FD:stdout`.
+Convenience output functions that write to streams. Default target is `std:io:stdout`.
 
 ```nn
 import std:print
 import std:println
-import std:FD
+import std:io
 
 print("Hello, world!\n")
 println("line without manual newline")
-println("to stderr", FD:stderr)
+println("to stderr", io:stderr)
 ```
 
 ## Examples
@@ -738,6 +740,38 @@ cargo run -- examples/hello.nn
 
 # Start REPL
 cargo run
+```
+
+## CLI & REPL Usage
+
+Run a file:
+
+```bash
+cargo run -- examples/hello.nn
+# or after building in release:
+target/release/nnlang examples/hello.nn
+```
+
+Start the REPL:
+
+```bash
+cargo run
+# Exit: Ctrl-D
+```
+
+## Spec & Testing
+
+Specification tests live under `spec/`. Each spec file contains a single test and ends with one `println` outputting the result. Use the helper scripts to verify behavior:
+
+```bash
+scripts/verify_spec.sh
+scripts/verify_examples.sh
+```
+
+Rust unit/integration tests:
+
+```bash
+cargo test
 ```
 
 ## Language Versions

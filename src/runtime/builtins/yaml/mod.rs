@@ -1,6 +1,4 @@
-//! YAML conversion utilities
-//!
-//! This module provides YAML parsing and generation capabilities for the NN language.
+//! YAML conversion utilities.
 
 pub mod converter;
 pub mod types;

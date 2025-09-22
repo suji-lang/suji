@@ -1,0 +1,4 @@
+import std:println
+import std:env:args
+
+println(args::length() >= 1)  # true

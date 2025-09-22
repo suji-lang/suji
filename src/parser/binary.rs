@@ -224,9 +224,28 @@ impl Parser {
         Ok(expr)
     }
 
+    /// Parse pipe expressions (|)
+    pub(super) fn pipe(&mut self) -> ParseResult<Expr> {
+        let mut expr = self.logical_or()?;
+
+        while self.match_token(Token::Pipe) {
+            let op = crate::ast::BinaryOp::Pipe;
+            let span = self.previous().span.clone();
+            let right = self.logical_or()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                op,
+                right: Box::new(right),
+                span,
+            };
+        }
+
+        Ok(expr)
+    }
+
     /// Parse assignment expressions (right-associative)
     pub(super) fn assignment(&mut self) -> ParseResult<Expr> {
-        let expr = self.logical_or()?;
+        let expr = self.pipe()?;
 
         if self.match_token(Token::Assign) {
             let span = self.previous().span.clone();
@@ -300,5 +319,11 @@ impl Parser {
     /// Parse an expression
     pub(super) fn expression(&mut self) -> ParseResult<Expr> {
         self.assignment()
+    }
+
+    /// Parse an expression but without considering the pipe operator layer.
+    /// Useful in contexts (like function parameter defaults) where '|' is a terminator.
+    pub(super) fn expression_without_pipe(&mut self) -> ParseResult<Expr> {
+        self.logical_or()
     }
 }

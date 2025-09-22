@@ -1,7 +1,0 @@
-import std:println
-import std:FD
-# Test that all streams have proper string representations
-stdin_str = FD:stdin::to_string()
-stdout_str = FD:stdout::to_string()
-stderr_str = FD:stderr::to_string()
-println(stdin_str == "<stream:stdin>" && stdout_str == "<stream:stdout>" && stderr_str == "<stream:stderr>")  # true

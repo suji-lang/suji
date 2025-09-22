@@ -1,12 +1,12 @@
-# Test ENV merge method
-import std:ENV
+# Test env:var merge method
+import std:env:var
 import std:println
 
 # Create a regular map to merge
 test_map = { "NEW_VAR": "new_value", "ANOTHER_VAR": "another_value" }
 
-# Merge it with ENV
-result = ENV::merge(test_map)
+# Merge it with env:var
+result = var::merge(test_map)
 
 # Check that the result contains our new variable
 println(result::contains("NEW_VAR"))  # true

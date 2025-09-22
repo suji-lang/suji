@@ -1,0 +1,7 @@
+import std:println
+import std:io
+# Test that all streams have proper string representations
+stdin_str = io:stdin::to_string()
+stdout_str = io:stdout::to_string()
+stderr_str = io:stderr::to_string()
+println(stdin_str == "<stream:stdin>" && stdout_str == "<stream:stdout>" && stderr_str == "<stream:stderr>")  # true

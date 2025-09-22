@@ -1,7 +1,7 @@
 import std:println
 
-# String starts_with method
+# String ends_with method
 filename = "document.pdf"
-result = filename::starts_with("doc")
+result = filename::ends_with(".pdf")
 
 println(result)  # true

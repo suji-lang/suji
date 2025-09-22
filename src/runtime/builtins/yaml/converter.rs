@@ -1,6 +1,4 @@
-//! YAML conversion functions
-//!
-//! This module handles conversion between NN values and YAML values.
+//! YAML conversion functions.
 
 use super::types::YamlError;
 use crate::runtime::value::{MapKey, RuntimeError, Value};

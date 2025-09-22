@@ -1,6 +1,4 @@
-use super::super::env::Env;
 use super::super::value::{RuntimeError, Value};
-use std::rc::Rc;
 
 /// Reference to a value that may be mutable (for method calls)
 pub enum ValueRef<'a> {
@@ -34,23 +32,8 @@ impl<'a> ValueRef<'a> {
 pub fn eval_closure(closure: &Value, args: Vec<Value>) -> Result<Value, RuntimeError> {
     match closure {
         Value::Function(func) => {
-            // Create a new environment for the closure
-            let call_env = Rc::new(Env::new_child(func.env.clone()));
-
-            // Bind arguments to parameters
-            for (param, arg_value) in func.params.iter().zip(args) {
-                call_env.define_or_set(&param.name, arg_value);
-            }
-
-            // Execute the function body
-            let mut loop_stack = Vec::new();
-            match super::super::eval::eval_stmt(&func.body, call_env, &mut loop_stack) {
-                Ok(result) => Ok(result.unwrap_or(Value::Nil)),
-                Err(RuntimeError::ControlFlow {
-                    flow: super::super::value::ControlFlow::Return(value),
-                }) => Ok(*value),
-                Err(other_error) => Err(other_error),
-            }
+            // Use the unified function call implementation with simple closure semantics
+            super::super::eval::call_closure_simple(func, args)
         }
         _ => Err(RuntimeError::TypeError {
             message: "Expected a function for closure evaluation".to_string(),

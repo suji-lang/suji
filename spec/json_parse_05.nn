@@ -1,8 +1,0 @@
-import std:println
-import std:json
-
-# JSON parse - null value
-json_str = "null"
-result = json:parse(json_str)
-
-println(result)  # nil

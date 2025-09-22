@@ -1,6 +1,6 @@
-# Test ENV get method
-import std:ENV
+# Test env:var contains method
+import std:env:var
 import std:println
 
-# Try to use get method with a non-existent variable
-println(ENV::get("NONEXISTENT_VAR_12345", "not_found"))  # not_found
+# Test contains method with PATH (should exist on most systems)
+println(var::contains("PATH"))  # true

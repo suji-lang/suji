@@ -1,11 +1,9 @@
-//! JSON generate builtin function implementation
-//!
-//! This module contains the implementation of the json:generate builtin function.
+//! Built-in: json:generate(value) -> string.
 
 use super::super::json::nn_to_json_value;
 use crate::runtime::value::{RuntimeError, Value};
 
-/// JSON generate function - converts nn value to JSON string
+/// Convert nn value to JSON string.
 pub fn builtin_json_generate(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {
         return Err(RuntimeError::ArityMismatch {

@@ -1,8 +1,8 @@
 import std:println
 import std:json
 
-# JSON parse - array
-json_str = "[1, 2, 3, 4, 5]"
-numbers = json:parse(json_str)
+# JSON parse - nested structure
+json_str = "{\"users\": [{\"name\": \"Alice\"}, {\"name\": \"Bob\"}], \"count\": 2}"
+data = json:parse(json_str)
 
-println(numbers[0])  # 1
+println(data:count)  # 2

@@ -1,3 +1,0 @@
-import std:println
-import std:FD:stdout
-println(stdout::to_string())  # <stream:stdout>

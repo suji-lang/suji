@@ -1,0 +1,11 @@
+import std:println
+
+# Test Unicode characters in multiline strings
+poem = """
+Café ☕ is great,
+Naïve 🙂 people say,
+Résumé 📄 looks good,
+Have a nice day! 🌟
+"""
+
+println(poem::contains("Café"))  # true

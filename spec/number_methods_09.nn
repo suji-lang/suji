@@ -4,4 +4,4 @@ import std:println
 x = -4
 result = x::sqrt()
 
-println(result)  # [12] Error: Invalid operation
+println(result)  # [102] Error: Invalid operation

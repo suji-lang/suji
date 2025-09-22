@@ -3,6 +3,32 @@ use crate::ast::Expr;
 use crate::token::Token;
 
 impl Parser {
+    /// Parse a comma-separated argument list until the specified end token
+    /// Supports trailing commas and empty argument lists
+    fn parse_argument_list(&mut self, end_token: Token) -> ParseResult<Vec<Expr>> {
+        let mut args = Vec::new();
+
+        // Handle empty argument list
+        if !self.check(end_token.clone()) {
+            loop {
+                // Parse each argument expression
+                args.push(self.expression()?);
+
+                // Check for comma separator
+                if !self.match_token(Token::Comma) {
+                    break;
+                }
+
+                // Allow trailing comma - break if we see the end token
+                if self.check(end_token.clone()) {
+                    break;
+                }
+            }
+        }
+
+        Ok(args)
+    }
+
     /// Parse postfix expressions (calls, indexing, method calls, etc.)
     pub(super) fn postfix(&mut self) -> ParseResult<Expr> {
         let mut expr = self.primary()?;
@@ -44,20 +70,8 @@ impl Parser {
 
     /// Finish parsing a function call
     pub(super) fn finish_call(&mut self, callee: Expr) -> ParseResult<Expr> {
-        let mut args = Vec::new();
-
-        if !self.check(Token::RightParen) {
-            loop {
-                args.push(self.expression()?);
-                if !self.match_token(Token::Comma) {
-                    break;
-                }
-                // Allow trailing comma
-                if self.check(Token::RightParen) {
-                    break;
-                }
-            }
-        }
+        // Use shared argument parser
+        let args = self.parse_argument_list(Token::RightParen)?;
 
         let span = self
             .consume(Token::RightParen, "Expected ')' after function arguments")?
@@ -133,19 +147,8 @@ impl Parser {
 
             self.consume(Token::LeftParen, "Expected '(' after method name")?;
 
-            let mut args = Vec::new();
-            if !self.check(Token::RightParen) {
-                loop {
-                    args.push(self.expression()?);
-                    if !self.match_token(Token::Comma) {
-                        break;
-                    }
-                    // Allow trailing comma
-                    if self.check(Token::RightParen) {
-                        break;
-                    }
-                }
-            }
+            // Use shared argument parser
+            let args = self.parse_argument_list(Token::RightParen)?;
 
             let span = self
                 .consume(Token::RightParen, "Expected ')' after method arguments")?

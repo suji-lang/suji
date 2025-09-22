@@ -498,12 +498,6 @@ mod tests {
         let receiver2 = ValueRef::Immutable(&s2);
         let result2 = call_string_method(receiver2, "upper", vec![]).unwrap();
         assert_eq!(result2, Value::String("HELLO WORLD".to_string()));
-
-        // Test error case - with arguments
-        let receiver3 = ValueRef::Immutable(&s);
-        let result3 =
-            call_string_method(receiver3, "upper", vec![Value::String("test".to_string())]);
-        assert!(matches!(result3, Err(RuntimeError::ArityMismatch { .. })));
     }
 
     #[test]
@@ -519,12 +513,6 @@ mod tests {
         let receiver2 = ValueRef::Immutable(&s2);
         let result2 = call_string_method(receiver2, "lower", vec![]).unwrap();
         assert_eq!(result2, Value::String("hello world".to_string()));
-
-        // Test error case - with arguments
-        let receiver3 = ValueRef::Immutable(&s);
-        let result3 =
-            call_string_method(receiver3, "lower", vec![Value::String("test".to_string())]);
-        assert!(matches!(result3, Err(RuntimeError::ArityMismatch { .. })));
     }
 
     #[test]
@@ -546,15 +534,29 @@ mod tests {
         let receiver3 = ValueRef::Immutable(&s3);
         let result3 = call_string_method(receiver3, "reverse", vec![]).unwrap();
         assert_eq!(result3, Value::String("a".to_string()));
+    }
 
-        // Test error case - with arguments
-        let receiver4 = ValueRef::Immutable(&s);
-        let result4 = call_string_method(
-            receiver4,
-            "reverse",
-            vec![Value::String("test".to_string())],
-        );
-        assert!(matches!(result4, Err(RuntimeError::ArityMismatch { .. })));
+    #[test]
+    fn test_string_no_arg_methods_arity_mismatch() {
+        let s = Value::String("test".to_string());
+
+        // Test upper() with arguments (should fail)
+        let receiver1 = ValueRef::Immutable(&s);
+        let result1 =
+            call_string_method(receiver1, "upper", vec![Value::String("arg".to_string())]);
+        assert!(matches!(result1, Err(RuntimeError::ArityMismatch { .. })));
+
+        // Test lower() with arguments (should fail)
+        let receiver2 = ValueRef::Immutable(&s);
+        let result2 =
+            call_string_method(receiver2, "lower", vec![Value::String("arg".to_string())]);
+        assert!(matches!(result2, Err(RuntimeError::ArityMismatch { .. })));
+
+        // Test reverse() with arguments (should fail)
+        let receiver3 = ValueRef::Immutable(&s);
+        let result3 =
+            call_string_method(receiver3, "reverse", vec![Value::String("arg".to_string())]);
+        assert!(matches!(result3, Err(RuntimeError::ArityMismatch { .. })));
     }
 
     #[test]

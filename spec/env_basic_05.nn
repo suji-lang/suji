@@ -1,9 +1,9 @@
-# Test ENV colon assignment
-import std:ENV
+# Test env:var bracket assignment
+import std:env:var
 import std:println
 
-# Try colon assignment
-ENV:TEST_VAR_COLON = "hello"
+# Try bracket assignment
+var["TEST_VAR_BRACKET"] = "hello"
 
 # Try to read it back with get method
-println(ENV::get("TEST_VAR_COLON", "not_found"))  # hello
+println(var::get("TEST_VAR_BRACKET", "not_found"))  # hello

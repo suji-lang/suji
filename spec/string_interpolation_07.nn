@@ -1,8 +1,0 @@
-import std:println
-
-# String interpolation
-first = "Ada"
-last = "Lovelace"
-result = "${first} ${last} was a mathematician"
-
-println(result)  # Ada Lovelace was a mathematician

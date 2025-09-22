@@ -1,6 +1,4 @@
-//! YAML module creation
-//!
-//! This module handles the creation of the yaml builtin module.
+//! YAML module creation.
 
 use crate::runtime::value::{MapKey, Value};
 use indexmap::IndexMap;

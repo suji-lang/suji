@@ -1,11 +1,4 @@
-//! Builtin functions and modules
-//!
-//! This module provides builtin functions and modules for the NN language runtime.
-//! It's organized into submodules for better maintainability:
-//!
-//! - `functions/` - Individual builtin function implementations
-//! - `json/` - JSON conversion utilities
-//! - `modules/` - Builtin module creation (std, json)
+//! Builtins: functions and modules used by the runtime.
 
 pub mod functions;
 pub mod json;
@@ -48,6 +41,12 @@ mod tests {
         assert_eq!(
             call_builtin("println", &args).unwrap(),
             crate::runtime::value::Value::Number(5.0)
+        );
+
+        // Test println with no arguments (should print just newline)
+        assert_eq!(
+            call_builtin("println", &[]).unwrap(),
+            crate::runtime::value::Value::Number(1.0)
         );
 
         assert!(call_builtin("invalid", &args).is_err());

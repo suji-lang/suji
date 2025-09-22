@@ -1,6 +1,4 @@
-//! Module creation and management
-//!
-//! This module handles the creation of builtin modules like std, json, yaml, and toml.
+//! Creation of built-in modules (std, json, yaml, toml).
 
 pub mod json;
 pub mod std;

@@ -1,5 +1,6 @@
 use super::super::value::{RuntimeError, StreamBackend, StreamHandle, Value};
 use super::common::ValueRef;
+use std::io::IsTerminal;
 use std::io::{BufRead, Read, Write};
 
 /// Stream methods: read(chunk_kb=8), write(text), read_all(), read_lines(), close(), to_string()
@@ -48,6 +49,25 @@ pub fn call_stream_method(
                     }
 
                     stream_read_chunk(stream_handle, (chunk_kb * 1024.0) as usize)
+                }
+                "read_line" => {
+                    if !args.is_empty() {
+                        return Err(RuntimeError::ArityMismatch {
+                            message: "stream::read_line() takes no arguments".to_string(),
+                        });
+                    }
+
+                    // Check if stream is readable
+                    if !stream_handle.is_readable() {
+                        return Err(RuntimeError::StreamError {
+                            message: format!(
+                                "Cannot read from write-only stream: {}",
+                                stream_handle.name
+                            ),
+                        });
+                    }
+
+                    stream_read_line(stream_handle)
                 }
                 "write" => {
                     if args.len() != 1 {
@@ -107,6 +127,31 @@ pub fn call_stream_method(
 
                     stream_read_lines(stream_handle)
                 }
+                "is_terminal" => {
+                    if !args.is_empty() {
+                        return Err(RuntimeError::ArityMismatch {
+                            message: "stream::is_terminal() takes no arguments".to_string(),
+                        });
+                    }
+
+                    let is_tty = match &stream_handle.backend {
+                        StreamBackend::Stdin(reader_ref) => {
+                            let reader = reader_ref.borrow();
+                            reader.get_ref().is_terminal()
+                        }
+                        StreamBackend::Stdout(stdout_ref) => {
+                            let stdout = stdout_ref.borrow();
+                            stdout.is_terminal()
+                        }
+                        StreamBackend::Stderr(stderr_ref) => {
+                            let stderr = stderr_ref.borrow();
+                            stderr.is_terminal()
+                        }
+                        _ => false,
+                    };
+
+                    Ok(Value::Boolean(is_tty))
+                }
                 "close" => {
                     if !args.is_empty() {
                         return Err(RuntimeError::ArityMismatch {
@@ -161,6 +206,26 @@ fn stream_read_chunk(
                 }),
             }
         }
+        StreamBackend::MemoryReadable(cursor_ref) => {
+            let mut cursor = cursor_ref.borrow_mut();
+            let mut buffer = vec![0u8; chunk_size];
+
+            match cursor.read(&mut buffer) {
+                Ok(0) => Ok(Value::Nil), // EOF
+                Ok(bytes_read) => {
+                    buffer.truncate(bytes_read);
+                    match String::from_utf8(buffer) {
+                        Ok(text) => Ok(Value::String(text)),
+                        Err(_) => Err(RuntimeError::StreamError {
+                            message: "Stream read produced invalid UTF-8".to_string(),
+                        }),
+                    }
+                }
+                Err(e) => Err(RuntimeError::StreamError {
+                    message: format!("Failed to read from stream: {}", e),
+                }),
+            }
+        }
         #[cfg(test)]
         StreamBackend::TestReadable(cursor_ref) => {
             let mut cursor = cursor_ref.borrow_mut();
@@ -179,6 +244,73 @@ fn stream_read_chunk(
                 }
                 Err(e) => Err(RuntimeError::StreamError {
                     message: format!("Failed to read from stream: {}", e),
+                }),
+            }
+        }
+        _ => Err(RuntimeError::StreamError {
+            message: format!("Cannot read from stream: {}", stream_handle.name),
+        }),
+    }
+}
+
+/// Read a single line from a stream
+fn stream_read_line(stream_handle: &StreamHandle) -> Result<Value, RuntimeError> {
+    match &stream_handle.backend {
+        StreamBackend::Stdin(reader_ref) => {
+            let mut reader = reader_ref.borrow_mut();
+            let mut line = String::new();
+            match reader.read_line(&mut line) {
+                Ok(0) => Ok(Value::Nil),
+                Ok(_) => {
+                    if line.ends_with('\n') {
+                        line.pop();
+                        if line.ends_with('\r') {
+                            line.pop();
+                        }
+                    }
+                    Ok(Value::String(line))
+                }
+                Err(e) => Err(RuntimeError::StreamError {
+                    message: format!("Failed to read line from stream: {}", e),
+                }),
+            }
+        }
+        StreamBackend::MemoryReadable(cursor_ref) => {
+            let mut cursor = cursor_ref.borrow_mut();
+            let mut line = String::new();
+            match cursor.read_line(&mut line) {
+                Ok(0) => Ok(Value::Nil),
+                Ok(_) => {
+                    if line.ends_with('\n') {
+                        line.pop();
+                        if line.ends_with('\r') {
+                            line.pop();
+                        }
+                    }
+                    Ok(Value::String(line))
+                }
+                Err(e) => Err(RuntimeError::StreamError {
+                    message: format!("Failed to read line from stream: {}", e),
+                }),
+            }
+        }
+        #[cfg(test)]
+        StreamBackend::TestReadable(cursor_ref) => {
+            let mut cursor = cursor_ref.borrow_mut();
+            let mut line = String::new();
+            match cursor.read_line(&mut line) {
+                Ok(0) => Ok(Value::Nil),
+                Ok(_) => {
+                    if line.ends_with('\n') {
+                        line.pop();
+                        if line.ends_with('\r') {
+                            line.pop();
+                        }
+                    }
+                    Ok(Value::String(line))
+                }
+                Err(e) => Err(RuntimeError::StreamError {
+                    message: format!("Failed to read line from stream: {}", e),
                 }),
             }
         }
@@ -217,6 +349,11 @@ fn stream_write(stream_handle: &StreamHandle, text: &str) -> Result<Value, Runti
                 }),
             }
         }
+        StreamBackend::MemoryWritable(buffer_ref) => {
+            let mut buffer = buffer_ref.borrow_mut();
+            buffer.extend_from_slice(bytes);
+            Ok(Value::Number(bytes.len() as f64))
+        }
         #[cfg(test)]
         StreamBackend::TestWritable(buffer_ref) => {
             let mut buffer = buffer_ref.borrow_mut();
@@ -237,6 +374,17 @@ fn stream_read_all(stream_handle: &StreamHandle) -> Result<Value, RuntimeError> 
             let mut content = String::new();
 
             match reader.read_to_string(&mut content) {
+                Ok(_) => Ok(Value::String(content)),
+                Err(e) => Err(RuntimeError::StreamError {
+                    message: format!("Failed to read from stream: {}", e),
+                }),
+            }
+        }
+        StreamBackend::MemoryReadable(cursor_ref) => {
+            let mut cursor = cursor_ref.borrow_mut();
+            let mut content = String::new();
+
+            match cursor.read_to_string(&mut content) {
                 Ok(_) => Ok(Value::String(content)),
                 Err(e) => Err(RuntimeError::StreamError {
                     message: format!("Failed to read from stream: {}", e),
@@ -271,6 +419,34 @@ fn stream_read_lines(stream_handle: &StreamHandle) -> Result<Value, RuntimeError
             loop {
                 let mut line = String::new();
                 match reader.read_line(&mut line) {
+                    Ok(0) => break, // EOF
+                    Ok(_) => {
+                        // Remove trailing newline if present
+                        if line.ends_with('\n') {
+                            line.pop();
+                            if line.ends_with('\r') {
+                                line.pop();
+                            }
+                        }
+                        lines.push(Value::String(line));
+                    }
+                    Err(e) => {
+                        return Err(RuntimeError::StreamError {
+                            message: format!("Failed to read line from stream: {}", e),
+                        });
+                    }
+                }
+            }
+
+            Ok(Value::List(lines))
+        }
+        StreamBackend::MemoryReadable(cursor_ref) => {
+            let mut cursor = cursor_ref.borrow_mut();
+            let mut lines = Vec::new();
+
+            loop {
+                let mut line = String::new();
+                match cursor.read_line(&mut line) {
                     Ok(0) => break, // EOF
                     Ok(_) => {
                         // Remove trailing newline if present
@@ -380,6 +556,82 @@ mod tests {
             Value::String("line3".to_string()),
         ]);
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_stream_read_line_basic() {
+        let stream = Rc::new(StreamHandle::new_test_readable("a\nb\n"));
+        let stream_value = Value::Stream(stream);
+
+        let receiver = ValueRef::Immutable(&stream_value);
+        let r1 = call_stream_method(receiver, "read_line", vec![]).unwrap();
+        assert_eq!(r1, Value::String("a".to_string()));
+
+        let receiver = ValueRef::Immutable(&stream_value);
+        let r2 = call_stream_method(receiver, "read_line", vec![]).unwrap();
+        assert_eq!(r2, Value::String("b".to_string()));
+
+        let receiver = ValueRef::Immutable(&stream_value);
+        let r3 = call_stream_method(receiver, "read_line", vec![]).unwrap();
+        assert_eq!(r3, Value::Nil);
+    }
+
+    #[test]
+    fn test_stream_read_line_crlf_and_edge_cases() {
+        let stream = Rc::new(StreamHandle::new_test_readable("x\r\ny\r\n\nlast"));
+        let stream_value = Value::Stream(stream);
+
+        // x\r\n -> x
+        let receiver = ValueRef::Immutable(&stream_value);
+        let r1 = call_stream_method(receiver, "read_line", vec![]).unwrap();
+        assert_eq!(r1, Value::String("x".to_string()));
+
+        // y\r\n -> y
+        let receiver = ValueRef::Immutable(&stream_value);
+        let r2 = call_stream_method(receiver, "read_line", vec![]).unwrap();
+        assert_eq!(r2, Value::String("y".to_string()));
+
+        // \n -> empty line
+        let receiver = ValueRef::Immutable(&stream_value);
+        let r3 = call_stream_method(receiver, "read_line", vec![]).unwrap();
+        assert_eq!(r3, Value::String("".to_string()));
+
+        // last (no trailing newline)
+        let receiver = ValueRef::Immutable(&stream_value);
+        let r4 = call_stream_method(receiver, "read_line", vec![]).unwrap();
+        assert_eq!(r4, Value::String("last".to_string()));
+
+        // EOF -> nil
+        let receiver = ValueRef::Immutable(&stream_value);
+        let r5 = call_stream_method(receiver, "read_line", vec![]).unwrap();
+        assert_eq!(r5, Value::Nil);
+    }
+
+    #[test]
+    fn test_stream_read_line_arity_error() {
+        let stream = Rc::new(StreamHandle::new_test_readable("test"));
+        let stream_value = Value::Stream(stream);
+        let receiver = ValueRef::Immutable(&stream_value);
+
+        let result = call_stream_method(receiver, "read_line", vec![Value::Number(1.0)]);
+        assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
+    }
+
+    #[test]
+    fn test_stream_is_terminal_on_test_backends_is_false() {
+        // Readable test backend
+        let read_stream = Rc::new(StreamHandle::new_test_readable("data"));
+        let read_value = Value::Stream(read_stream);
+        let receiver_r = ValueRef::Immutable(&read_value);
+        let r = call_stream_method(receiver_r, "is_terminal", vec![]).unwrap();
+        assert_eq!(r, Value::Boolean(false));
+
+        // Writable test backend
+        let write_stream = Rc::new(StreamHandle::new_test_writable());
+        let write_value = Value::Stream(write_stream);
+        let receiver_w = ValueRef::Immutable(&write_value);
+        let w = call_stream_method(receiver_w, "is_terminal", vec![]).unwrap();
+        assert_eq!(w, Value::Boolean(false));
     }
 
     #[test]

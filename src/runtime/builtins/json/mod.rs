@@ -1,7 +1,4 @@
-//! JSON conversion and utilities
-//!
-//! This module handles conversion between NN values and JSON, including
-//! error handling and type validation.
+//! JSON conversion utilities.
 
 pub mod converter;
 pub mod types;

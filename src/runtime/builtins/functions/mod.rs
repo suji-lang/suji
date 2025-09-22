@@ -1,6 +1,4 @@
-//! Builtin function implementations
-//!
-//! This module contains all builtin function implementations, organized by functionality.
+//! Built-in function implementations.
 
 pub mod json_generate;
 pub mod json_parse;
@@ -47,7 +45,7 @@ pub fn get_builtins() -> Vec<Builtin> {
         Builtin {
             name: "println",
             func: builtin_println,
-            min_args: 1,
+            min_args: 0,
             max_args: Some(2),
         },
         Builtin {

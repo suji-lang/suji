@@ -160,165 +160,6 @@ pub fn call_map_method(
     }
 }
 
-/// ENV map methods: contains(key), get(key, default=nil), keys(), values(), to_list(), length(), delete(key), merge(other_map)
-pub fn call_env_map_method(
-    receiver: ValueRef,
-    method: &str,
-    args: Vec<Value>,
-) -> Result<Value, RuntimeError> {
-    if let Value::EnvMap(env_proxy) = receiver.get() {
-        match method {
-            "contains" => {
-                if args.len() != 1 {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "contains() takes exactly one argument".to_string(),
-                    });
-                }
-
-                let key = match &args[0] {
-                    Value::String(s) => s,
-                    _ => {
-                        return Err(RuntimeError::TypeError {
-                            message: "ENV keys must be strings".to_string(),
-                        });
-                    }
-                };
-
-                Ok(Value::Boolean(env_proxy.contains(key)))
-            }
-            "get" => {
-                if args.is_empty() || args.len() > 2 {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "get() takes one or two arguments".to_string(),
-                    });
-                }
-
-                let key = match &args[0] {
-                    Value::String(s) => s,
-                    _ => {
-                        return Err(RuntimeError::TypeError {
-                            message: "ENV keys must be strings".to_string(),
-                        });
-                    }
-                };
-
-                let default = if args.len() == 2 {
-                    args[1].clone()
-                } else {
-                    Value::Nil
-                };
-
-                match env_proxy.get(key) {
-                    Some(value) => Ok(Value::String(value)),
-                    None => Ok(default),
-                }
-            }
-            "keys" => {
-                if !args.is_empty() {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "keys() takes no arguments".to_string(),
-                    });
-                }
-                let keys: Vec<Value> = env_proxy.keys().into_iter().map(Value::String).collect();
-                Ok(Value::List(keys))
-            }
-            "values" => {
-                if !args.is_empty() {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "values() takes no arguments".to_string(),
-                    });
-                }
-                let values: Vec<Value> =
-                    env_proxy.values().into_iter().map(Value::String).collect();
-                Ok(Value::List(values))
-            }
-            "to_list" => {
-                if !args.is_empty() {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "to_list() takes no arguments".to_string(),
-                    });
-                }
-                let pairs: Vec<Value> = env_proxy
-                    .to_list()
-                    .into_iter()
-                    .map(|(k, v)| Value::Tuple(vec![Value::String(k), Value::String(v)]))
-                    .collect();
-                Ok(Value::List(pairs))
-            }
-            "length" => {
-                if !args.is_empty() {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "length() takes no arguments".to_string(),
-                    });
-                }
-                Ok(Value::Number(env_proxy.length() as f64))
-            }
-            "delete" => {
-                if args.len() != 1 {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "delete() takes exactly one argument".to_string(),
-                    });
-                }
-
-                let key = match &args[0] {
-                    Value::String(s) => s,
-                    _ => {
-                        return Err(RuntimeError::TypeError {
-                            message: "ENV keys must be strings".to_string(),
-                        });
-                    }
-                };
-
-                Ok(Value::Boolean(env_proxy.delete(key)))
-            }
-            "merge" => {
-                if args.len() != 1 {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "merge() takes exactly one argument".to_string(),
-                    });
-                }
-
-                let other_map = match &args[0] {
-                    Value::Map(map) => map,
-                    _ => {
-                        return Err(RuntimeError::TypeError {
-                            message: "merge() argument must be a map".to_string(),
-                        });
-                    }
-                };
-
-                for (key, value) in other_map {
-                    let key_str = match key {
-                        super::super::value::MapKey::String(s) => s,
-                        _ => {
-                            return Err(RuntimeError::TypeError {
-                                message: "ENV keys must be strings".to_string(),
-                            });
-                        }
-                    };
-                    let value_str = value.to_string();
-                    env_proxy.set(key_str, &value_str)?;
-                }
-                // Return the same EnvMap after merging
-                Ok(Value::EnvMap(env_proxy.clone()))
-            }
-            "to_string" => {
-                if !args.is_empty() {
-                    return Err(RuntimeError::ArityMismatch {
-                        message: "to_string() takes no arguments".to_string(),
-                    });
-                }
-                Ok(Value::String("<env>".to_string()))
-            }
-            _ => Err(RuntimeError::MethodError {
-                message: format!("ENV has no method '{}'", method),
-            }),
-        }
-    } else {
-        unreachable!()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::super::super::value::{MapKey, OrderedFloat};
@@ -603,94 +444,81 @@ mod tests {
     }
 
     #[test]
-    fn test_map_keys_empty_map() {
-        let map_data = IndexMap::new();
-        let map = Value::Map(map_data);
-        let receiver = ValueRef::Immutable(&map);
-        let result = call_map_method(receiver, "keys", vec![]).unwrap();
+    fn test_map_methods_empty_map() {
+        let empty_map = Value::Map(IndexMap::new());
 
-        if let Value::List(keys) = result {
+        // Test keys() on empty map
+        let receiver1 = ValueRef::Immutable(&empty_map);
+        let keys_result = call_map_method(receiver1, "keys", vec![]).unwrap();
+        if let Value::List(keys) = keys_result {
             assert_eq!(keys.len(), 0);
         } else {
             panic!("Expected list");
         }
-    }
 
-    #[test]
-    fn test_map_values_empty_map() {
-        let map_data = IndexMap::new();
-        let map = Value::Map(map_data);
-        let receiver = ValueRef::Immutable(&map);
-        let result = call_map_method(receiver, "values", vec![]).unwrap();
-
-        if let Value::List(values) = result {
+        // Test values() on empty map
+        let receiver2 = ValueRef::Immutable(&empty_map);
+        let values_result = call_map_method(receiver2, "values", vec![]).unwrap();
+        if let Value::List(values) = values_result {
             assert_eq!(values.len(), 0);
         } else {
             panic!("Expected list");
         }
-    }
 
-    #[test]
-    fn test_map_to_list_empty_map() {
-        let map_data = IndexMap::new();
-        let map = Value::Map(map_data);
-        let receiver = ValueRef::Immutable(&map);
-        let result = call_map_method(receiver, "to_list", vec![]).unwrap();
-
-        if let Value::List(pairs) = result {
+        // Test to_list() on empty map
+        let receiver3 = ValueRef::Immutable(&empty_map);
+        let to_list_result = call_map_method(receiver3, "to_list", vec![]).unwrap();
+        if let Value::List(pairs) = to_list_result {
             assert_eq!(pairs.len(), 0);
         } else {
             panic!("Expected list");
         }
+
+        // Test length() on empty map
+        let receiver4 = ValueRef::Immutable(&empty_map);
+        let length_result = call_map_method(receiver4, "length", vec![]).unwrap();
+        assert_eq!(length_result, Value::Number(0.0));
     }
 
     #[test]
-    fn test_map_length_empty_map() {
-        let map_data = IndexMap::new();
-        let map = Value::Map(map_data);
-        let receiver = ValueRef::Immutable(&map);
-        let result = call_map_method(receiver, "length", vec![]).unwrap();
-        assert_eq!(result, Value::Number(0.0));
-    }
+    fn test_map_no_arg_methods_arity_mismatch() {
+        let empty_map = Value::Map(IndexMap::new());
 
-    #[test]
-    fn test_map_keys_arity_mismatch() {
-        let map_data = IndexMap::new();
-        let map = Value::Map(map_data);
-        let receiver = ValueRef::Immutable(&map);
+        // Test keys() with arguments (should fail)
+        let receiver1 = ValueRef::Immutable(&empty_map);
+        let keys_result =
+            call_map_method(receiver1, "keys", vec![Value::String("arg".to_string())]);
+        assert!(matches!(
+            keys_result,
+            Err(RuntimeError::MapMethodError { .. })
+        ));
 
-        let result = call_map_method(receiver, "keys", vec![Value::String("arg".to_string())]);
-        assert!(matches!(result, Err(RuntimeError::MapMethodError { .. })));
-    }
+        // Test values() with arguments (should fail)
+        let receiver2 = ValueRef::Immutable(&empty_map);
+        let values_result =
+            call_map_method(receiver2, "values", vec![Value::String("arg".to_string())]);
+        assert!(matches!(
+            values_result,
+            Err(RuntimeError::MapMethodError { .. })
+        ));
 
-    #[test]
-    fn test_map_values_arity_mismatch() {
-        let map_data = IndexMap::new();
-        let map = Value::Map(map_data);
-        let receiver = ValueRef::Immutable(&map);
+        // Test to_list() with arguments (should fail)
+        let receiver3 = ValueRef::Immutable(&empty_map);
+        let to_list_result =
+            call_map_method(receiver3, "to_list", vec![Value::String("arg".to_string())]);
+        assert!(matches!(
+            to_list_result,
+            Err(RuntimeError::MapMethodError { .. })
+        ));
 
-        let result = call_map_method(receiver, "values", vec![Value::String("arg".to_string())]);
-        assert!(matches!(result, Err(RuntimeError::MapMethodError { .. })));
-    }
-
-    #[test]
-    fn test_map_to_list_arity_mismatch() {
-        let map_data = IndexMap::new();
-        let map = Value::Map(map_data);
-        let receiver = ValueRef::Immutable(&map);
-
-        let result = call_map_method(receiver, "to_list", vec![Value::String("arg".to_string())]);
-        assert!(matches!(result, Err(RuntimeError::MapMethodError { .. })));
-    }
-
-    #[test]
-    fn test_map_length_arity_mismatch() {
-        let map_data = IndexMap::new();
-        let map = Value::Map(map_data);
-        let receiver = ValueRef::Immutable(&map);
-
-        let result = call_map_method(receiver, "length", vec![Value::String("arg".to_string())]);
-        assert!(matches!(result, Err(RuntimeError::MapMethodError { .. })));
+        // Test length() with arguments (should fail)
+        let receiver4 = ValueRef::Immutable(&empty_map);
+        let length_result =
+            call_map_method(receiver4, "length", vec![Value::String("arg".to_string())]);
+        assert!(matches!(
+            length_result,
+            Err(RuntimeError::MapMethodError { .. })
+        ));
     }
 
     #[test]

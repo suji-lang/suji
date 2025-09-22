@@ -1,0 +1,6 @@
+import std:println
+
+# Test Unicode string length calculation
+text = "café"
+
+println(text::length())  # 4

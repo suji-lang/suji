@@ -1,14 +1,16 @@
+use super::env_overlay::apply_env_overlay_to_command;
 use super::value::{RuntimeError, Value};
 use std::process::Command;
 
-/// Execute a shell command and capture its stdout
-/// Returns the stdout as a UTF-8 string, trimming trailing newline
+/// Execute a shell command and return stdout as UTF-8 (trims trailing newline)
 pub fn run_shell(command: &str) -> Result<String, RuntimeError> {
     // Determine shell to use
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
 
     // Execute command using shell
-    let output = Command::new(&shell)
+    let mut cmd = Command::new(&shell);
+    apply_env_overlay_to_command(&mut cmd)?;
+    let output = cmd
         .arg("-c")
         .arg(command)
         .output()
@@ -45,14 +47,13 @@ pub fn run_shell(command: &str) -> Result<String, RuntimeError> {
     Ok(result)
 }
 
-/// Execute a shell command template and return the result as a Value::String
+/// Execute a shell command template and return Value::String
 pub fn execute_shell_template(command: &str) -> Result<Value, RuntimeError> {
     let output = run_shell(command)?;
     Ok(Value::String(output))
 }
 
-/// Check if a command is safe to execute (basic validation)
-/// This is a simple safety check - in production you might want more restrictions
+/// Basic safety check for commands (non-empty)
 pub fn is_safe_command(command: &str) -> bool {
     // Reject empty commands
     if command.trim().is_empty() {
@@ -79,17 +80,21 @@ mod tests {
     }
 
     #[test]
-    fn test_command_with_output() {
+    fn test_basic_echo_commands() {
+        // Test echo with quoted output
         let result = run_shell("echo 'Hello, World!'");
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "Hello, World!");
-    }
 
-    #[test]
-    fn test_command_with_numbers() {
+        // Test echo with numbers
         let result = run_shell("echo 42");
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "42");
+
+        // Test echo with spaces
+        let result = run_shell("echo hello world");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "hello world");
     }
 
     #[test]
@@ -97,13 +102,6 @@ mod tests {
         let result = run_shell("printf 'line1\\nline2\\nline3'");
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "line1\nline2\nline3");
-    }
-
-    #[test]
-    fn test_command_with_spaces() {
-        let result = run_shell("echo hello world");
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "hello world");
     }
 
     #[test]

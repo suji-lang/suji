@@ -715,47 +715,44 @@ mod tests {
     }
 
     #[test]
-    fn test_list_min_empty() {
-        let list = Value::List(vec![]);
-        let receiver = ValueRef::Immutable(&list);
+    fn test_list_min_max_errors() {
+        // Test empty list errors for both min and max
+        let empty_list = Value::List(vec![]);
 
-        let result = call_list_method(receiver, "min", vec![]);
-        assert!(matches!(result, Err(RuntimeError::InvalidOperation { .. })));
-    }
+        let receiver1 = ValueRef::Immutable(&empty_list);
+        let min_result = call_list_method(receiver1, "min", vec![]);
+        assert!(matches!(
+            min_result,
+            Err(RuntimeError::InvalidOperation { .. })
+        ));
 
-    #[test]
-    fn test_list_max_empty() {
-        let list = Value::List(vec![]);
-        let receiver = ValueRef::Immutable(&list);
+        let receiver2 = ValueRef::Immutable(&empty_list);
+        let max_result = call_list_method(receiver2, "max", vec![]);
+        assert!(matches!(
+            max_result,
+            Err(RuntimeError::InvalidOperation { .. })
+        ));
 
-        let result = call_list_method(receiver, "max", vec![]);
-        assert!(matches!(result, Err(RuntimeError::InvalidOperation { .. })));
-    }
-
-    #[test]
-    fn test_list_min_non_numbers() {
-        let list = Value::List(vec![
+        // Test non-number type errors for both min and max
+        let mixed_list = Value::List(vec![
             Value::Number(1.0),
             Value::String("not a number".to_string()),
             Value::Number(3.0),
         ]);
-        let receiver = ValueRef::Immutable(&list);
 
-        let result = call_list_method(receiver, "min", vec![]);
-        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
-    }
+        let receiver3 = ValueRef::Immutable(&mixed_list);
+        let min_type_result = call_list_method(receiver3, "min", vec![]);
+        assert!(matches!(
+            min_type_result,
+            Err(RuntimeError::TypeError { .. })
+        ));
 
-    #[test]
-    fn test_list_max_non_numbers() {
-        let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::String("not a number".to_string()),
-            Value::Number(3.0),
-        ]);
-        let receiver = ValueRef::Immutable(&list);
-
-        let result = call_list_method(receiver, "max", vec![]);
-        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+        let receiver4 = ValueRef::Immutable(&mixed_list);
+        let max_type_result = call_list_method(receiver4, "max", vec![]);
+        assert!(matches!(
+            max_type_result,
+            Err(RuntimeError::TypeError { .. })
+        ));
     }
 
     #[test]
@@ -805,21 +802,18 @@ mod tests {
     }
 
     #[test]
-    fn test_list_first_empty() {
-        let list = Value::List(vec![]);
-        let receiver = ValueRef::Immutable(&list);
+    fn test_list_first_last_empty() {
+        let empty_list = Value::List(vec![]);
 
-        let result = call_list_method(receiver, "first", vec![]).unwrap();
-        assert_eq!(result, Value::Nil);
-    }
+        // Test first() on empty list returns nil
+        let receiver1 = ValueRef::Immutable(&empty_list);
+        let first_result = call_list_method(receiver1, "first", vec![]).unwrap();
+        assert_eq!(first_result, Value::Nil);
 
-    #[test]
-    fn test_list_last_empty() {
-        let list = Value::List(vec![]);
-        let receiver = ValueRef::Immutable(&list);
-
-        let result = call_list_method(receiver, "last", vec![]).unwrap();
-        assert_eq!(result, Value::Nil);
+        // Test last() on empty list returns nil
+        let receiver2 = ValueRef::Immutable(&empty_list);
+        let last_result = call_list_method(receiver2, "last", vec![]).unwrap();
+        assert_eq!(last_result, Value::Nil);
     }
 
     #[test]

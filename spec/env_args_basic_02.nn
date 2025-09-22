@@ -1,0 +1,5 @@
+import std:println
+import std:env:args
+import std:env:argv
+
+println(argv::length() == args::length())  # true

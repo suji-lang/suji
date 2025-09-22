@@ -1,9 +1,0 @@
-# Test ENV colon assignment
-import std:ENV
-import std:println
-
-# Try colon assignment
-ENV:TEST_VAR_COLON = "hello"
-
-# Try to read it back with get method
-println(ENV::get("TEST_VAR_COLON", "not_found"))  # hello

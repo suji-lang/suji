@@ -1,6 +1,4 @@
-//! JSON-specific types and utilities
-//!
-//! This module contains types and utilities specific to JSON conversion.
+//! JSON-specific types and utilities.
 
 use crate::runtime::value::RuntimeError;
 

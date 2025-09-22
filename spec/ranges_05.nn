@@ -1,6 +1,0 @@
-import std:println
-
-# Range operations
-result = 1..2+2
-
-println(result)  # [1, 2, 3]

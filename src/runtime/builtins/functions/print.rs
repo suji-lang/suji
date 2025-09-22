@@ -1,13 +1,10 @@
-//! Print builtin function implementation
-//!
-//! Implements std:print(text, out = std:FD:stdout) -> number of bytes written
+//! Built-in: print(text, out=std:FD:stdout) -> bytes written.
 
 use crate::runtime::methods::{ValueRef, call_method};
 use crate::runtime::value::{RuntimeError, Value};
 use std::rc::Rc;
 
-/// print function - writes text to a stream and returns bytes written
-/// Signature: print(text, out = std:FD:stdout)
+/// Write text to a stream; return bytes written.
 pub fn builtin_print(args: &[Value]) -> Result<Value, RuntimeError> {
     // Expect 1 or 2 args: text, optional out stream
     if args.is_empty() || args.len() > 2 {

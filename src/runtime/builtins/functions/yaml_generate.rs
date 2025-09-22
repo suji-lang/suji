@@ -1,11 +1,9 @@
-//! YAML generate builtin function implementation
-//!
-//! This module contains the implementation of the yaml:generate builtin function.
+//! Built-in: yaml:generate(value) -> string.
 
 use super::super::yaml::nn_to_yaml_value;
 use crate::runtime::value::{RuntimeError, Value};
 
-/// YAML generate function - converts nn value to YAML string
+/// Convert nn value to YAML string.
 pub fn builtin_yaml_generate(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {
         return Err(RuntimeError::ArityMismatch {

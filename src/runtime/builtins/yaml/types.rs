@@ -1,6 +1,4 @@
-//! YAML-specific error types
-//!
-//! This module defines YAML-specific error types for parsing and generation.
+//! YAML-specific error types.
 
 use crate::runtime::value::RuntimeError;
 

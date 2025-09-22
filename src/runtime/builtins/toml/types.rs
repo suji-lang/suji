@@ -1,6 +1,4 @@
-//! TOML error types and utilities
-//!
-//! This module defines error types specific to TOML operations.
+//! TOML-specific error types.
 
 use crate::runtime::value::RuntimeError;
 

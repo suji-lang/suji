@@ -23,6 +23,13 @@ impl ModuleRegistry {
         registry
     }
 
+    /// Create a clone of this registry with a custom override for the `std` module
+    pub fn with_custom_std(&self, std_value: Value) -> Self {
+        let mut new_registry = self.clone();
+        new_registry.builtins.insert("std".to_string(), std_value);
+        new_registry
+    }
+
     /// Register all built-in modules
     fn register_builtin_modules(&mut self) {
         // Register the std module

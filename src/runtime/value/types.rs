@@ -5,6 +5,8 @@ use std::cell::{Cell, RefCell};
 use std::io::BufReader;
 use std::rc::Rc;
 
+use super::super::env_overlay::EnvProxy;
+
 /// Runtime values in the NN language
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -90,6 +92,10 @@ pub enum StreamBackend {
     /// Test backend that captures writes (for testing only)
     #[cfg(test)]
     TestWritable(RefCell<Vec<u8>>),
+    /// In-memory readable stream (general purpose)
+    MemoryReadable(RefCell<std::io::Cursor<Vec<u8>>>),
+    /// In-memory writable stream (general purpose)
+    MemoryWritable(RefCell<Vec<u8>>),
 }
 
 /// Handle for stream I/O operations
@@ -162,11 +168,41 @@ impl StreamHandle {
         }
     }
 
+    /// Create a new general-purpose memory readable stream from bytes
+    pub fn new_memory_readable(bytes: Vec<u8>) -> Self {
+        Self {
+            backend: StreamBackend::MemoryReadable(RefCell::new(std::io::Cursor::new(bytes))),
+            is_closed: Cell::new(false),
+            name: "mem_read".to_string(),
+        }
+    }
+
+    /// Create a new general-purpose memory writable stream
+    pub fn new_memory_writable() -> Self {
+        Self {
+            backend: StreamBackend::MemoryWritable(RefCell::new(Vec::new())),
+            is_closed: Cell::new(false),
+            name: "mem_write".to_string(),
+        }
+    }
+
+    /// Take the captured bytes from a memory writable stream, if applicable
+    pub fn take_memory_output(&self) -> Option<Vec<u8>> {
+        match &self.backend {
+            StreamBackend::MemoryWritable(buffer) => {
+                let mut buf = buffer.borrow_mut();
+                let out = std::mem::take(&mut *buf);
+                Some(out)
+            }
+            _ => None,
+        }
+    }
+
     /// Check if this stream is readable
     pub fn is_readable(&self) -> bool {
         matches!(
             self.backend,
-            StreamBackend::Stdin(_) | StreamBackend::File(_)
+            StreamBackend::Stdin(_) | StreamBackend::File(_) | StreamBackend::MemoryReadable(_)
         ) || {
             #[cfg(test)]
             {
@@ -183,7 +219,10 @@ impl StreamHandle {
     pub fn is_writable(&self) -> bool {
         matches!(
             self.backend,
-            StreamBackend::Stdout(_) | StreamBackend::Stderr(_) | StreamBackend::File(_)
+            StreamBackend::Stdout(_)
+                | StreamBackend::Stderr(_)
+                | StreamBackend::File(_)
+                | StreamBackend::MemoryWritable(_)
         ) || {
             #[cfg(test)]
             {
@@ -194,86 +233,5 @@ impl StreamHandle {
                 false
             }
         }
-    }
-}
-
-/// Proxy for environment variable operations
-///
-/// This struct provides a map-like interface to process environment variables.
-/// All operations delegate to std::env functions and affect the actual process
-/// environment, which means changes are visible to subprocesses.
-#[derive(Debug)]
-pub struct EnvProxy;
-
-impl Default for EnvProxy {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl EnvProxy {
-    /// Create a new environment proxy
-    pub fn new() -> Self {
-        Self
-    }
-
-    /// Get an environment variable value
-    pub fn get(&self, key: &str) -> Option<String> {
-        std::env::var(key).ok()
-    }
-
-    /// Set an environment variable
-    pub fn set(&self, key: &str, value: &str) -> Result<(), super::RuntimeError> {
-        if key.is_empty() {
-            return Err(super::RuntimeError::InvalidOperation {
-                message: "Environment variable key cannot be empty".to_string(),
-            });
-        }
-        // SAFETY: We validate that key is not empty, which prevents undefined behavior
-        // from setting environment variables with empty keys. The key and value are
-        // valid UTF-8 strings, which is required by set_var.
-        unsafe {
-            std::env::set_var(key, value);
-        }
-        Ok(())
-    }
-
-    /// Delete an environment variable
-    pub fn delete(&self, key: &str) -> bool {
-        if std::env::var(key).is_ok() {
-            // SAFETY: We check that the variable exists before removing it, and
-            // the key is a valid UTF-8 string, which is required by remove_var.
-            unsafe {
-                std::env::remove_var(key);
-            }
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Check if an environment variable exists
-    pub fn contains(&self, key: &str) -> bool {
-        std::env::var(key).is_ok()
-    }
-
-    /// Get all environment variable keys
-    pub fn keys(&self) -> Vec<String> {
-        std::env::vars().map(|(k, _)| k).collect()
-    }
-
-    /// Get all environment variable values
-    pub fn values(&self) -> Vec<String> {
-        std::env::vars().map(|(_, v)| v).collect()
-    }
-
-    /// Get all environment variables as key-value pairs
-    pub fn to_list(&self) -> Vec<(String, String)> {
-        std::env::vars().collect()
-    }
-
-    /// Get the number of environment variables
-    pub fn length(&self) -> usize {
-        std::env::vars().count()
     }
 }

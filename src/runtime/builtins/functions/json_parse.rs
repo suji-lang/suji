@@ -1,11 +1,9 @@
-//! JSON parse builtin function implementation
-//!
-//! This module contains the implementation of the json:parse builtin function.
+//! Built-in: json:parse(string) -> value.
 
 use super::super::json::json_to_nn_value;
 use crate::runtime::value::{RuntimeError, Value};
 
-/// JSON parse function - parses JSON string to nn value
+/// Parse JSON string to nn value.
 pub fn builtin_json_parse(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {
         return Err(RuntimeError::ArityMismatch {

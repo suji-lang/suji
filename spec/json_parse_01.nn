@@ -1,8 +1,8 @@
 import std:println
 import std:json
 
-# JSON parse - basic object
-json_str = "{\"name\": \"Alice\", \"age\": 30}"
-data = json:parse(json_str)
+# JSON parse - array
+json_str = "[1, 2, 3, 4, 5]"
+numbers = json:parse(json_str)
 
-println(data:name)  # Alice
+println(numbers[0])  # 1

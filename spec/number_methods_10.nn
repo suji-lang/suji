@@ -4,4 +4,4 @@ import std:println
 x = 2
 result = x::pow("invalid")
 
-println(result)  # [10] Error: Type error
+println(result)  # [100] Error: Type error

@@ -1,0 +1,6 @@
+import std:println
+
+# Test basic Unicode string handling
+text = "Hello 🌍 World"
+
+println(text)  # Hello 🌍 World

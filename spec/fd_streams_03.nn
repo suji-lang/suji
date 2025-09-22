@@ -1,4 +1,0 @@
-import std:println
-import std:FD
-bytes_written = FD:stderr::write("test")
-println(bytes_written)  # 4

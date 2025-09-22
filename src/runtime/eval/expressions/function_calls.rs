@@ -94,6 +94,16 @@ pub fn eval_function_call(callee: &Expr, args: &[Expr], env: Rc<Env>) -> EvalRes
             // Create new environment for function execution
             let call_env = Rc::new(Env::new_child(func.env.clone()));
 
+            // Propagate stage-local standard library override if present
+            // This allows nested function bodies to resolve `import std:*` against
+            // the caller's `std` binding (env-first resolution), which is required
+            // for the pipe operator's per-stage IO redirection.
+            if env.contains("std")
+                && let Ok(std_val) = env.get("std")
+            {
+                call_env.define_or_set("std", std_val);
+            }
+
             // Bind parameters
             for (param, arg_value) in func.params.iter().zip(final_args) {
                 call_env.define_or_set(&param.name, arg_value);

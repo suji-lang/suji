@@ -1,7 +1,7 @@
 import std:println
 
-# String ends_with method
-filename = "document.pdf"
-result = filename::ends_with(".pdf")
+# String replace method
+message = "Hello, world! Welcome to the world of programming."
+result = message::replace("world", "universe")
 
-println(result)  # true
+println(result)  # Hello, universe! Welcome to the universe of programming.

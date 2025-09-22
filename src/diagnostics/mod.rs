@@ -1,12 +1,15 @@
+//! Diagnostics: rich error reporting utilities.
 use std::path::Path;
 
 use crate::lexer::LexError;
 use crate::parser::ParseError;
 use crate::runtime::value::RuntimeError;
 pub mod error_builder;
+pub mod error_router;
 pub mod templates;
 
 use error_builder::{ErrorBuilder, line_column_to_range};
+use error_router::ErrorTemplateRouter;
 use templates::ErrorTemplate;
 use templates::predefined as template_functions;
 
@@ -207,195 +210,31 @@ fn print_parse_error(error: ParseError, context: &DiagnosticContext) {
 
 /// Print a runtime error using ariadne
 fn print_runtime_error(error: RuntimeError, context: &DiagnosticContext) {
-    match error {
-        RuntimeError::TypeError { message } => {
-            let template = template_functions::type_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::UndefinedVariable { name } => {
-            let suggestions = find_similar_variables(&name, &context.source);
-            let template = if suggestions.is_empty() {
-                template_functions::undefined_variable(&name)
-            } else {
-                ErrorTemplate::new(11, "Undefined variable", "Undefined variable").with_suggestion(
-                    &format!(
-                        "Variable '{}' is not defined. Did you mean: {}?",
-                        name,
-                        suggestions.join(", ")
-                    ),
-                )
-            };
+    // Handle special case for UndefinedVariable with variable name suggestions
+    if let RuntimeError::UndefinedVariable { name } = &error {
+        let suggestions = find_similar_variables(name, &context.source);
+        let mut template = error.to_template();
 
-            // Try to find the variable usage in the source code
-            if let Some(span) = find_variable_usage(&name, &context.source) {
-                let _ = ErrorBuilder::new(template, context.clone()).print_with_range(span);
-            } else {
-                let _ =
-                    ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-            }
+        if !suggestions.is_empty() {
+            template = ErrorTemplate::new(template.code, template.title, &template.message)
+                .with_suggestion(&format!(
+                    "Variable '{}' is not defined. Did you mean: {}?",
+                    name,
+                    suggestions.join(", ")
+                ));
         }
-        RuntimeError::InvalidOperation { message } => {
-            let template = template_functions::invalid_operation(&message);
+
+        // Try to find the variable usage in the source code
+        if let Some(span) = find_variable_usage(name, &context.source) {
+            let _ = ErrorBuilder::new(template, context.clone()).print_with_range(span);
+        } else {
             let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
         }
-        RuntimeError::IndexOutOfBounds { message } => {
-            let template = template_functions::index_out_of_bounds(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::KeyNotFound { message } => {
-            let template = template_functions::key_not_found(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::InvalidKeyType { message } => {
-            let template = template_functions::invalid_key_type(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::ShellError { message } => {
-            let template = template_functions::shell_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::RegexError { message } => {
-            let template = template_functions::regex_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::ArityMismatch { message } => {
-            let template = template_functions::arity_mismatch(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::MethodError { message } => {
-            // Attempt to parse method/type from the message and route to specific helpers
-            if let Some((value_type, method_name)) = parse_method_error(&message) {
-                let template = match value_type {
-                    "String" => template_functions::string_method_error(&method_name, &message),
-                    "List" => template_functions::list_method_error(&method_name, &message),
-                    "Number" => template_functions::number_method_error(&method_name, &message),
-                    "Tuple" => template_functions::tuple_method_error(&method_name, &message),
-                    "Stream" => template_functions::stream_method_error(&method_name, &message),
-                    _ => template_functions::method_error(&message),
-                };
-                let _ =
-                    ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-            } else {
-                let template = template_functions::method_error(&message);
-                let _ =
-                    ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-            }
-        }
-        RuntimeError::InvalidNumberConversion { message } => {
-            let template = template_functions::invalid_number_conversion(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::ControlFlow { flow } => {
-            let template = template_functions::control_flow_error(&format!("{:?}", flow));
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::StringIndexError {
-            message,
-            index,
-            length,
-        } => {
-            let template = template_functions::string_index_error(&message, index, length as usize);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::RangeError {
-            message,
-            start,
-            end,
-        } => {
-            let template = template_functions::range_error(
-                &message,
-                start.map(|s| s as i64),
-                end.map(|e| e as i64),
-            );
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::ListConcatenationError {
-            message,
-            left_type,
-            right_type,
-        } => {
-            let template =
-                template_functions::list_concatenation_error(&message, &left_type, &right_type);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::MapContainsError { message, key_type } => {
-            let template = template_functions::map_contains_error(&message, &key_type);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::ConditionalMatchError { message } => {
-            let template = template_functions::conditional_match_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::JsonParseError {
-            message,
-            json_input: _,
-        } => {
-            let template = template_functions::json_parse_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::JsonGenerateError {
-            message,
-            value_type,
-        } => {
-            let template = template_functions::json_generate_error(&message, &value_type);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::YamlParseError {
-            message,
-            yaml_input: _,
-        } => {
-            let template = template_functions::yaml_parse_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::YamlGenerateError {
-            message,
-            value_type,
-        } => {
-            let template = template_functions::yaml_generate_error(&message, &value_type);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::MapMethodError { method, message } => {
-            let template = template_functions::map_method_error(&method, &message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::TomlParseError { message, .. } => {
-            let template = template_functions::toml_parse_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::TomlGenerateError { message, .. } => {
-            let template = template_functions::toml_generate_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::TomlConversionError { message } => {
-            let template = template_functions::toml_conversion_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::StreamError { message } => {
-            let template = template_functions::stream_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
-        RuntimeError::SerializationError { message } => {
-            let template = template_functions::serialization_error(&message);
-            let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
-        }
+    } else {
+        // Use centralized router for all other errors
+        let template = error.to_template();
+        let _ = ErrorBuilder::new(template, context.clone()).print_with_range_no_label(0..0);
     }
-}
-
-/// Try to extract the value type and method name from a generic MethodError message
-/// Expected formats:
-/// - "String has no method 'name'"
-/// - "List has no method 'name'"
-/// - "Number has no method 'name'"
-/// - "Tuple has no method 'name'"
-fn parse_method_error(message: &str) -> Option<(&str, String)> {
-    use regex::Regex;
-
-    // Strict pattern to avoid false positives
-    let regex = Regex::new(r"^(String|List|Number|Tuple) has no method '([^']+)'$").ok()?;
-    let captures = regex.captures(message)?;
-    let value_type = captures.get(1)?.as_str();
-    let method_name = captures.get(2)?.as_str().to_string();
-    Some((value_type, method_name))
 }
 
 /// Find the span of a variable usage in the source code
@@ -443,27 +282,27 @@ fn find_similar_variables(target: &str, source: &str) -> Vec<String> {
     candidates.into_iter().map(|(name, _)| name).collect()
 }
 
-/// Calculate similarity between two strings (simple implementation)
+/// Calculate similarity between two strings (Unicode-safe implementation)
 fn calculate_similarity(s1: &str, s2: &str) -> f64 {
     if s1 == s2 {
         return 1.0;
     }
 
-    let len1 = s1.len();
-    let len2 = s2.len();
+    let char_count1 = s1.chars().count();
+    let char_count2 = s2.chars().count();
 
-    if len1 == 0 && len2 == 0 {
+    if char_count1 == 0 && char_count2 == 0 {
         return 1.0;
     }
-    if len1 == 0 || len2 == 0 {
+    if char_count1 == 0 || char_count2 == 0 {
         return 0.0;
     }
 
-    // Check for exact prefix match
-    let min_len = len1.min(len2);
+    // Check for exact prefix match using single-pass iterator
+    let min_char_count = char_count1.min(char_count2);
     let mut common_prefix = 0;
-    for i in 0..min_len {
-        if s1.chars().nth(i) == s2.chars().nth(i) {
+    for (a, b) in s1.chars().zip(s2.chars()) {
+        if a == b {
             common_prefix += 1;
         } else {
             break;
@@ -471,15 +310,16 @@ fn calculate_similarity(s1: &str, s2: &str) -> f64 {
     }
 
     // Check for substring match
-    let substring_match = if len1 <= len2 {
+    let substring_match = if char_count1 <= char_count2 {
         s2.contains(s1)
     } else {
         s1.contains(s2)
     };
 
-    // Calculate similarity score
-    let prefix_score = common_prefix as f64 / min_len as f64;
-    let length_score = 1.0 - (len1 as f64 - len2 as f64).abs() / (len1 + len2) as f64;
+    // Calculate similarity score using character counts
+    let prefix_score = common_prefix as f64 / min_char_count as f64;
+    let length_score =
+        1.0 - (char_count1 as f64 - char_count2 as f64).abs() / (char_count1 + char_count2) as f64;
     let substring_score = if substring_match { 0.5 } else { 0.0 };
 
     (prefix_score * 0.5 + length_score * 0.3 + substring_score * 0.2).min(1.0)
@@ -512,5 +352,29 @@ mod tests {
         assert!(calculate_similarity("hello", "hell") > 0.7);
         assert!(calculate_similarity("hello", "world") < 0.5);
         assert!(calculate_similarity("var", "variable") > 0.5);
+    }
+
+    #[test]
+    fn test_calculate_similarity_unicode() {
+        // Test exact matches
+        assert_eq!(calculate_similarity("café", "café"), 1.0);
+        assert_eq!(calculate_similarity("🙂", "🙂"), 1.0);
+        assert_eq!(calculate_similarity("🙂🌍", "🙂🌍"), 1.0);
+
+        // Test Unicode vs ASCII similarity
+        assert!(calculate_similarity("café", "cafe") > 0.6); // ~0.675
+        assert!(calculate_similarity("naïve", "naive") > 0.4); // ~0.5
+        assert!(calculate_similarity("résumé", "resume") > 0.3); // ~0.38
+
+        // Test emoji and mixed content similarity
+        assert!(calculate_similarity("hello🌍", "hello🌎") > 0.7); // ~0.716
+        assert!(calculate_similarity("test🚀", "test🛸") > 0.5); // Common prefix "test"
+        assert!(calculate_similarity("a🙂b", "a🙂c") > 0.6); // Common prefix "a🙂"
+
+        // Test comparative similarity (higher similarity should be greater)
+        assert!(calculate_similarity("café", "cafe") > calculate_similarity("café", "xyz"));
+        assert!(
+            calculate_similarity("hello🌍", "hello🌎") > calculate_similarity("hello🌍", "world")
+        );
     }
 }

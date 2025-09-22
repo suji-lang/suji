@@ -7,6 +7,7 @@ use std::rc::Rc;
 // Module declarations
 mod assignments;
 mod exports;
+mod function_call;
 mod functions;
 mod helpers;
 mod imports;
@@ -22,6 +23,7 @@ mod expressions;
 
 // Re-export the main evaluation functions
 pub use exports::eval_export;
+pub use function_call::{call_closure_simple, call_function, call_function_with_modules};
 pub use functions::*;
 pub use helpers::*;
 pub use imports::*;

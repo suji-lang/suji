@@ -1,11 +1,9 @@
-//! TOML parse builtin function implementation
-//!
-//! This module contains the implementation of the toml:parse builtin function.
+//! Built-in: toml:parse(string) -> value.
 
 use super::super::toml::toml_to_nn_value;
 use crate::runtime::value::{RuntimeError, Value};
 
-/// TOML parse function - parses TOML string to nn value
+/// Parse TOML string to nn value.
 pub fn builtin_toml_parse(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {
         return Err(RuntimeError::ArityMismatch {

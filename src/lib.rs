@@ -4,4 +4,4 @@ pub mod lexer;
 pub mod parser;
 pub mod repl;
 pub mod runtime;
-pub mod token;
+pub use lexer::token;

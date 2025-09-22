@@ -1,11 +1,9 @@
-//! YAML parse builtin function implementation
-//!
-//! This module contains the implementation of the yaml:parse builtin function.
+//! Built-in: yaml:parse(string) -> value.
 
 use super::super::yaml::yaml_to_nn_value;
 use crate::runtime::value::{RuntimeError, Value};
 
-/// YAML parse function - parses YAML string to nn value
+/// Parse YAML string to nn value.
 pub fn builtin_yaml_parse(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {
         return Err(RuntimeError::ArityMismatch {

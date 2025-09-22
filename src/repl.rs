@@ -183,7 +183,7 @@ impl Repl {
         }
     }
 
-    /// Print a runtime error with enhanced formatting  
+    /// Print a runtime error with enhanced formatting
     fn print_runtime_error(&self, error: &RuntimeError, input: &str) {
         let context = DiagnosticContext::new(input.to_string());
         if print_diagnostic(DiagnosticKind::Runtime((*error).clone()), &context).is_err() {

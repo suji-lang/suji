@@ -1,0 +1,4 @@
+import std:println
+import std:io
+bytes_written = io:stderr::write("test")
+println(bytes_written)  # 4

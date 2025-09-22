@@ -21,9 +21,13 @@ impl NormalScanner {
 
         let token = match ch {
             '"' => {
-                let next_char = context.input.chars().nth(start_pos + 1);
-                let next_next_char = context.input.chars().nth(start_pos + 2);
-                if next_char == Some('"') && next_next_char == Some('"') {
+                // Check for triple quotes using byte slicing (quotes are ASCII)
+                let bytes = context.input.as_bytes();
+                let is_triple_quote = start_pos + 2 < bytes.len()
+                    && bytes[start_pos] == b'"'
+                    && bytes[start_pos + 1] == b'"'
+                    && bytes[start_pos + 2] == b'"';
+                if is_triple_quote {
                     // Triple double quotes - multiline string
                     context.advance(); // consume second "
                     context.advance(); // consume third "
@@ -45,9 +49,13 @@ impl NormalScanner {
                 }
             }
             '\'' => {
-                let next_char = context.input.chars().nth(start_pos + 1);
-                let next_next_char = context.input.chars().nth(start_pos + 2);
-                if next_char == Some('\'') && next_next_char == Some('\'') {
+                // Check for triple quotes using byte slicing (quotes are ASCII)
+                let bytes = context.input.as_bytes();
+                let is_triple_quote = start_pos + 2 < bytes.len()
+                    && bytes[start_pos] == b'\''
+                    && bytes[start_pos + 1] == b'\''
+                    && bytes[start_pos + 2] == b'\'';
+                if is_triple_quote {
                     // Triple single quotes - multiline string
                     context.advance(); // consume second '
                     context.advance(); // consume third '

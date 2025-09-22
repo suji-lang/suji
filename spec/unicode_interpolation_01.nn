@@ -1,0 +1,7 @@
+import std:println
+
+# Test Unicode characters in string interpolation
+name = "café"
+greeting = "Hello ${name} 🌍"
+
+println(greeting)  # Hello café 🌍

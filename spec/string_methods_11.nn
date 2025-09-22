@@ -1,7 +1,7 @@
 import std:println
 
-# String upper method
+# String lower method
 mixed = "Hello World"
-result = mixed::upper()
+result = mixed::lower()
 
-println(result)  # HELLO WORLD
+println(result)  # hello world

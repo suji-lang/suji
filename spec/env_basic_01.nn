@@ -1,9 +1,9 @@
-# Test simple ENV functionality
-import std:ENV
+# Test simple env:var functionality
+import std:env:var
 import std:println
 
 # Set a test environment variable
-ENV:TEST_VAR = "hello"
+var:TEST_VAR = "hello"
 
 # Read it back
-println(ENV:TEST_VAR)  # hello
+println(var:TEST_VAR)  # hello

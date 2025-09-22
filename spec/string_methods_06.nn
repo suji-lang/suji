@@ -1,7 +1,7 @@
 import std:println
 
-# String contains method
-text = "hello world"
-result = text::contains("world")
+# String starts_with method
+filename = "document.pdf"
+result = filename::starts_with("doc")
 
 println(result)  # true

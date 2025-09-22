@@ -1,6 +1,0 @@
-import std:println
-
-# Unary operations
-result = !false
-
-println(result)  # true

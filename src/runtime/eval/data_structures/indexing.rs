@@ -94,7 +94,7 @@ pub fn eval_index(target: &Expr, index: &Expr, env: Rc<Env>) -> EvalResult<Value
                 Value::String(s) => s,
                 _ => {
                     return Err(RuntimeError::TypeError {
-                        message: "ENV keys must be strings".to_string(),
+                        message: "Environment keys must be strings".to_string(),
                     });
                 }
             };

@@ -1,0 +1,7 @@
+import std:println
+
+# Test string methods with Unicode characters
+text = "naïve café"
+upper_text = text::upper()
+
+println(upper_text)  # NAÏVE CAFÉ

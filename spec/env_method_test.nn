@@ -1,6 +1,0 @@
-# Test ENV contains method
-import std:ENV
-import std:println
-
-# Test contains method with PATH (should exist on most systems)
-println(ENV::contains("PATH"))  # true

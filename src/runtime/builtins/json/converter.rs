@@ -1,6 +1,4 @@
-//! JSON conversion functions
-//!
-//! This module handles conversion between NN values and JSON values.
+//! JSON conversion functions.
 
 use super::types::JsonError;
 use crate::runtime::value::{MapKey, RuntimeError, Value};

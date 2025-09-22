@@ -1,7 +1,4 @@
-//! TOML conversion and utilities
-//!
-//! This module handles conversion between NN values and TOML, including
-//! error handling and type validation.
+//! TOML conversion utilities.
 
 pub mod converter;
 pub mod types;

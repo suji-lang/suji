@@ -1,10 +1,10 @@
-use super::{EvalResult, eval_expr, eval_stmt};
+use super::{EvalResult, eval_expr};
 use crate::ast::{Expr, Stmt, StringPart};
 use crate::runtime::builtins::call_builtin;
 use crate::runtime::env::Env;
 use crate::runtime::shell::execute_shell_template;
 use crate::runtime::string_template::evaluate_string_template;
-use crate::runtime::value::{ControlFlow, FunctionValue, ParamSpec, RuntimeError, Value};
+use crate::runtime::value::{FunctionValue, ParamSpec, RuntimeError, Value};
 use std::rc::Rc;
 
 /// Evaluate a function literal
@@ -59,81 +59,8 @@ pub fn eval_function_call(callee: &Expr, args: &[Expr], env: Rc<Env>) -> EvalRes
                 arg_values.push(eval_expr(arg, env.clone())?);
             }
 
-            // Handle default parameters
-            let mut final_args = arg_values;
-            if final_args.len() < func.params.len() {
-                // Fill missing arguments with defaults
-                for i in final_args.len()..func.params.len() {
-                    match &func.params[i].default {
-                        Some(default_expr) => {
-                            // Evaluate default in function's closure environment
-                            let default_value = eval_expr(default_expr, func.env.clone())?;
-                            final_args.push(default_value);
-                        }
-                        None => {
-                            return Err(RuntimeError::ArityMismatch {
-                                message: format!(
-                                    "Function expects {} arguments, got {}",
-                                    func.params.len(),
-                                    final_args.len()
-                                ),
-                            });
-                        }
-                    }
-                }
-            } else if final_args.len() > func.params.len() {
-                return Err(RuntimeError::ArityMismatch {
-                    message: format!(
-                        "Function expects {} arguments, got {}",
-                        func.params.len(),
-                        final_args.len()
-                    ),
-                });
-            }
-
-            // Create new environment for function execution
-            let call_env = Rc::new(Env::new_child(func.env.clone()));
-
-            // Bind parameters
-            for (param, arg_value) in func.params.iter().zip(final_args) {
-                call_env.define_or_set(&param.name, arg_value);
-            }
-
-            // Execute function body
-            let mut loop_stack = Vec::new();
-            match eval_stmt(&func.body, call_env.clone(), &mut loop_stack) {
-                Ok(result) => {
-                    // Handle implicit returns
-                    match result {
-                        Some(value) => Ok(value), // Statement returned a value
-                        None => {
-                            // No explicit return, check if function body was a single expression
-                            match &func.body {
-                                Stmt::Expr(expr) => {
-                                    // Single expression function body - return its value
-                                    eval_expr(expr, call_env)
-                                }
-                                Stmt::Block { statements, .. } => {
-                                    // Block function body - check if last statement was an expression
-                                    if let Some(last_stmt) = statements.last() {
-                                        match last_stmt {
-                                            Stmt::Expr(expr) => eval_expr(expr, call_env),
-                                            _ => Ok(Value::Nil), // Last statement was not an expression
-                                        }
-                                    } else {
-                                        Ok(Value::Nil) // Empty block
-                                    }
-                                }
-                                _ => Ok(Value::Nil), // Other statement types
-                            }
-                        }
-                    }
-                }
-                Err(RuntimeError::ControlFlow {
-                    flow: ControlFlow::Return(value),
-                }) => Ok(*value),
-                Err(other_error) => Err(other_error),
-            }
+            // Use the unified function call implementation with full validation
+            super::call_function(&func, arg_values, Some(env))
         }
         _ => Err(RuntimeError::TypeError {
             message: format!("Cannot call {}", function_value.type_name()),

@@ -1,11 +1,9 @@
-//! TOML generate builtin function implementation
-//!
-//! This module contains the implementation of the toml:generate builtin function.
+//! Built-in: toml:generate(value) -> string.
 
 use super::super::toml::nn_to_toml_value;
 use crate::runtime::value::{RuntimeError, Value};
 
-/// TOML generate function - converts nn value to TOML string
+/// Convert nn value to TOML string.
 pub fn builtin_toml_generate(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {
         return Err(RuntimeError::ArityMismatch {

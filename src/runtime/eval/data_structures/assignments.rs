@@ -337,7 +337,7 @@ fn get_index_value(target: &Value, index: &Value) -> EvalResult<Value> {
                 Value::String(s) => s,
                 _ => {
                     return Err(RuntimeError::TypeError {
-                        message: "ENV keys must be strings".to_string(),
+                        message: "Environment keys must be strings".to_string(),
                     });
                 }
             };
@@ -422,7 +422,7 @@ fn update_index_value(target: &Value, index: &Value, value: &Value) -> EvalResul
                 Value::String(s) => s,
                 _ => {
                     return Err(RuntimeError::TypeError {
-                        message: "ENV keys must be strings".to_string(),
+                        message: "Environment keys must be strings".to_string(),
                     });
                 }
             };

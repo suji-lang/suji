@@ -1,9 +1,9 @@
 # std:print function - writes text to a stream and returns bytes written
 export {
     print: |text, out = nil| {
-        import std:FD
+        import std:io
         stream = match out {
-            nil: FD:stdout
+            nil: io:stdout
             _: out
         }
         text_str = text::to_string()

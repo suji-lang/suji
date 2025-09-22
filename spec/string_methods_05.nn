@@ -1,6 +1,7 @@
 import std:println
 
-# String methods
-result = "hello"::split(",")
+# String contains method
+text = "hello world"
+result = text::contains("world")
 
-println(result)  # [hello]
+println(result)  # true

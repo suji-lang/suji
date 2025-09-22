@@ -1,11 +1,10 @@
 use super::super::env::Env;
 use super::super::module::ModuleRegistry;
-use super::super::value::RuntimeError;
+use super::super::value::{RuntimeError, Value};
 use crate::ast::ImportSpec;
 use std::rc::Rc;
 
-#[cfg(test)]
-use super::super::value::Value;
+// no test-only imports
 
 /// Evaluate an import statement
 pub fn eval_import(
@@ -13,21 +12,82 @@ pub fn eval_import(
     env: Rc<Env>,
     module_registry: &ModuleRegistry,
 ) -> Result<(), RuntimeError> {
+    // Helper: resolve a module path with env-first semantics, then registry fallback
+    fn resolve_module_path(
+        env: &Rc<Env>,
+        registry: &ModuleRegistry,
+        module_path: &str,
+    ) -> Result<Value, RuntimeError> {
+        let parts: Vec<&str> = module_path.split(':').collect();
+        if parts.is_empty() {
+            return Err(RuntimeError::InvalidOperation {
+                message: "Empty module path".to_string(),
+            });
+        }
+
+        // Try env first for the root module
+        let mut current = match env.get(parts[0]) {
+            Ok(v) => v,
+            Err(_) => registry.resolve_module(parts[0])?,
+        };
+
+        // Traverse nested parts
+        for part in &parts[1..] {
+            match current {
+                Value::Map(ref map) => {
+                    let key = super::super::value::MapKey::String((*part).to_string());
+                    current =
+                        map.get(&key)
+                            .cloned()
+                            .ok_or_else(|| RuntimeError::InvalidOperation {
+                                message: format!(
+                                    "Module '{}' not found in '{}'",
+                                    part,
+                                    parts[..parts.len() - 1].join(":")
+                                ),
+                            })?;
+                }
+                _ => {
+                    return Err(RuntimeError::InvalidOperation {
+                        message: format!("'{}' is not a module (not a map)", parts[0]),
+                    });
+                }
+            }
+        }
+
+        Ok(current)
+    }
+
     match spec {
         ImportSpec::Module { name } => {
             // import module - bind the whole module to the module name
-            let module = module_registry.resolve_module(name)?;
+            // Env-first resolution
+            let module = match env.get(name) {
+                Ok(v) => v,
+                Err(_) => module_registry.resolve_module(name)?,
+            };
             env.define_or_set(name, module);
             Ok(())
         }
 
         ImportSpec::Item { module, name } => {
             // import module:item - bind the specific item to its name
-            // Check if module path contains colons (nested module)
-            let item = if module.contains(':') {
-                module_registry.resolve_nested_module_item(module, name)?
-            } else {
-                module_registry.resolve_module_item(module, name)?
+            // Env-first resolution for module path
+            let base = resolve_module_path(&env, module_registry, module)?;
+            let item = match base {
+                Value::Map(map) => {
+                    let key = super::super::value::MapKey::String(name.to_string());
+                    map.get(&key)
+                        .cloned()
+                        .ok_or_else(|| RuntimeError::InvalidOperation {
+                            message: format!("Item '{}' not found in module '{}'", name, module),
+                        })?
+                }
+                _ => {
+                    return Err(RuntimeError::InvalidOperation {
+                        message: format!("Module '{}' is not a valid module (not a map)", module),
+                    });
+                }
             };
             env.define_or_set(name, item);
             Ok(())
@@ -39,11 +99,21 @@ pub fn eval_import(
             alias,
         } => {
             // import module:item as alias - bind the specific item to the alias
-            // Check if module path contains colons (nested module)
-            let item = if module.contains(':') {
-                module_registry.resolve_nested_module_item(module, name)?
-            } else {
-                module_registry.resolve_module_item(module, name)?
+            let base = resolve_module_path(&env, module_registry, module)?;
+            let item = match base {
+                Value::Map(map) => {
+                    let key = super::super::value::MapKey::String(name.to_string());
+                    map.get(&key)
+                        .cloned()
+                        .ok_or_else(|| RuntimeError::InvalidOperation {
+                            message: format!("Item '{}' not found in module '{}'", name, module),
+                        })?
+                }
+                _ => {
+                    return Err(RuntimeError::InvalidOperation {
+                        message: format!("Module '{}' is not a valid module (not a map)", module),
+                    });
+                }
             };
             env.define_or_set(alias, item);
             Ok(())

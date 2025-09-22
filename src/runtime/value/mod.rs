@@ -1,8 +1,10 @@
 // Core types
 pub use types::{
-    ControlFlow, EnvProxy, FunctionValue, MapKey, OrderedFloat, ParamSpec, StreamBackend,
-    StreamHandle, Value,
+    ControlFlow, FunctionValue, MapKey, OrderedFloat, ParamSpec, StreamBackend, StreamHandle, Value,
 };
+
+// Environment overlay types and functions
+pub use super::env_overlay::{EnvProxy, apply_env_overlay_to_command, get_effective_env_var};
 
 // Error types
 pub use errors::RuntimeError;

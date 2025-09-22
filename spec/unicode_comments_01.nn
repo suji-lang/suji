@@ -1,0 +1,8 @@
+import std:println
+
+# Test Unicode characters in comments: café 🚀 naïve
+# This comment contains Unicode: résumé 📄 emoji 🙂
+
+result = "Unicode comments work"
+
+println(result)  # Unicode comments work

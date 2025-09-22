@@ -1,6 +1,4 @@
-//! JSON module creation
-//!
-//! This module handles the creation of the json builtin module.
+//! JSON module creation.
 
 use crate::runtime::value::{MapKey, Value};
 use indexmap::IndexMap;

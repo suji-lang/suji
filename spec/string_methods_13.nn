@@ -1,7 +1,7 @@
 import std:println
 
-# String reverse method
-forward = "hello"
-result = forward::reverse()
+# String repeat method
+base = "ha"
+result = base::repeat(3)
 
-println(result)  # olleh
+println(result)  # hahaha

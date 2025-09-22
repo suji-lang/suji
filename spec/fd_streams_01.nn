@@ -1,3 +1,0 @@
-import std:println
-import std:FD
-println(FD::contains("stdout"))  # true

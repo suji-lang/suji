@@ -1,6 +1,4 @@
-//! TOML conversion functions
-//!
-//! This module handles conversion between NN values and TOML values.
+//! TOML conversion functions.
 
 use super::types::TomlError;
 use crate::runtime::value::{MapKey, RuntimeError, Value};

@@ -1,0 +1,18 @@
+import std:println
+import std:io
+
+destination = || {
+    lines = io:stdin::read_lines()
+    match lines::length() > 0 {
+        true: { "output received" }
+        false: { "no output" }
+    }
+}
+
+source = || {
+    println("test")
+}
+
+out = source | destination
+
+println(out)  # output received

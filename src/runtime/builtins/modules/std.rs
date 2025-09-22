@@ -1,10 +1,9 @@
-//! Standard library module creation
-//!
-//! This module handles the creation of the std builtin module.
+//! Standard library module creation.
 
 use super::{json::create_json_module, toml::create_toml_module, yaml::create_yaml_module};
 use crate::runtime::builtins::nn_loader::{load_print, load_println};
-use crate::runtime::value::{EnvProxy, MapKey, StreamHandle, Value};
+use crate::runtime::env_overlay::EnvProxy;
+use crate::runtime::value::{MapKey, StreamHandle, Value};
 use indexmap::IndexMap;
 use std::rc::Rc;
 
@@ -30,26 +29,7 @@ fn create_builtin_function_value(name: &str) -> Value {
     })
 }
 
-/// Create the FD module with standard I/O streams
-///
-/// The FD module provides access to the process standard streams:
-/// - `stdin`: readable stream for standard input
-/// - `stdout`: writable stream for standard output
-/// - `stderr`: writable stream for standard error
-///
-/// These streams are shared process-wide. Closing them is discouraged
-/// as it affects subsequent I/O operations.
-///
-/// # Usage
-/// ```nn
-/// import std:FD
-///
-/// # Write to stdout
-/// FD:stdout::write("Hello, world!\n")
-///
-/// # Read from stdin (may block)
-/// input = FD:stdin::read()
-/// ```
+/// Create the FD module with `stdin`, `stdout`, and `stderr` streams.
 pub fn create_fd_module() -> Value {
     let mut fd_map = IndexMap::new();
 
@@ -76,27 +56,7 @@ pub fn create_fd_module() -> Value {
     Value::Map(fd_map)
 }
 
-/// Create the ENV module for environment variable access
-///
-/// The ENV module provides access to process environment variables as a map-like interface:
-/// - All operations delegate to std::env functions
-/// - Changes affect the actual process environment
-/// - Subprocesses inherit environment changes
-/// - Keys and values are always strings
-///
-/// # Usage
-/// ```nn
-/// import std:ENV
-///
-/// # Read environment variable
-/// path = ENV:PATH
-///
-/// # Set environment variable
-/// ENV:MY_VAR = "value"
-///
-/// # Check if variable exists
-/// has_home = ENV::contains("HOME")
-/// ```
+/// Create the ENV module exposing process environment via overlay proxy.
 pub fn create_env_module() -> Value {
     // Create a shared EnvProxy instance
     let env_proxy = Rc::new(EnvProxy::new());
@@ -124,9 +84,43 @@ pub fn create_std_module() -> Value {
     // Add toml module to std module
     std_map.insert(MapKey::String("toml".to_string()), create_toml_module());
 
-    // Build FD and ENV modules and attach
-    std_map.insert(MapKey::String("FD".to_string()), create_fd_module());
-    std_map.insert(MapKey::String("ENV".to_string()), create_env_module());
+    // Build io module (renamed from FD) and attach
+    std_map.insert(MapKey::String("io".to_string()), create_fd_module());
+
+    // Build env module with `var` (renamed from ENV) and attach
+    let mut env_map = IndexMap::new();
+    env_map.insert(MapKey::String("var".to_string()), create_env_module());
+    // Snapshot command-line arguments into maps at startup
+    // Exclude interpreter name (argv[0]) and any interpreter options (leading '-' args)
+    let mut args_map: IndexMap<MapKey, Value> = IndexMap::new();
+    let mut iter = std::env::args();
+    // Skip interpreter name
+    let _ = iter.next();
+    // Skip interpreter options (starting with '-') until first non-option (script path)
+    let mut script_seen = false;
+    for a in iter {
+        if !script_seen {
+            if a.starts_with('-') {
+                continue;
+            } else {
+                // First non-option is the script filename; include it as args["0"]
+                script_seen = true;
+                let idx = args_map.len(); // should be 0
+                args_map.insert(MapKey::String(idx.to_string()), Value::String(a));
+            }
+        } else {
+            // After script filename, remaining items are script arguments
+            let idx = args_map.len();
+            args_map.insert(MapKey::String(idx.to_string()), Value::String(a));
+        }
+    }
+    // Insert args and argv (alias with identical contents at construction time)
+    env_map.insert(
+        MapKey::String("args".to_string()),
+        Value::Map(args_map.clone()),
+    );
+    env_map.insert(MapKey::String("argv".to_string()), Value::Map(args_map));
+    std_map.insert(MapKey::String("env".to_string()), Value::Map(env_map));
 
     Value::Map(std_map)
 }
@@ -136,10 +130,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_fd_module_creation() {
-        let fd_module = create_fd_module();
+    fn test_io_module_creation() {
+        let io_module = create_fd_module();
 
-        if let Value::Map(map) = fd_module {
+        if let Value::Map(map) = io_module {
             // Check all three streams exist
             assert!(map.contains_key(&MapKey::String("stdin".to_string())));
             assert!(map.contains_key(&MapKey::String("stdout".to_string())));
@@ -154,7 +148,7 @@ mod tests {
             assert!(matches!(stdout, Value::Stream(_)));
             assert!(matches!(stderr, Value::Stream(_)));
         } else {
-            panic!("FD module should be a map");
+            panic!("io module should be a map");
         }
     }
 
@@ -165,62 +159,45 @@ mod tests {
         if let Value::Map(map) = std_module {
             assert!(map.contains_key(&MapKey::String("print".to_string())));
             assert!(map.contains_key(&MapKey::String("println".to_string())));
-            assert!(map.contains_key(&MapKey::String("FD".to_string())));
+            assert!(map.contains_key(&MapKey::String("io".to_string())));
+            assert!(map.contains_key(&MapKey::String("env".to_string())));
             let print_val = map.get(&MapKey::String("print".to_string())).unwrap();
             let println_val = map.get(&MapKey::String("println".to_string())).unwrap();
-            let fd_val = map.get(&MapKey::String("FD".to_string())).unwrap();
+            let io_val = map.get(&MapKey::String("io".to_string())).unwrap();
+            let env_val = map.get(&MapKey::String("env".to_string())).unwrap();
             assert!(matches!(print_val, Value::Function(_)));
             assert!(matches!(println_val, Value::Function(_)));
-            assert!(matches!(fd_val, Value::Map(_)));
+            assert!(matches!(io_val, Value::Map(_)));
+            assert!(matches!(env_val, Value::Map(_)));
         } else {
             panic!("std module should be a map");
         }
     }
 
     #[test]
-    fn test_std_module_includes_json() {
+    fn test_std_module_includes_serialization_modules() {
         let std_module = create_std_module();
         if let Value::Map(map) = std_module {
-            assert!(map.contains_key(&MapKey::String("println".to_string())));
+            // Test JSON module
             assert!(map.contains_key(&MapKey::String("json".to_string())));
-
-            // Check that json is a module (map)
             if let Some(Value::Map(json_map)) = map.get(&MapKey::String("json".to_string())) {
                 assert!(json_map.contains_key(&MapKey::String("parse".to_string())));
                 assert!(json_map.contains_key(&MapKey::String("generate".to_string())));
             } else {
                 panic!("JSON should be a module (map)");
             }
-        } else {
-            panic!("std module should be a map");
-        }
-    }
 
-    #[test]
-    fn test_std_module_includes_yaml() {
-        let std_module = create_std_module();
-        if let Value::Map(map) = std_module {
+            // Test YAML module
             assert!(map.contains_key(&MapKey::String("yaml".to_string())));
-
-            // Check that yaml is a module (map)
             if let Some(Value::Map(yaml_map)) = map.get(&MapKey::String("yaml".to_string())) {
                 assert!(yaml_map.contains_key(&MapKey::String("parse".to_string())));
                 assert!(yaml_map.contains_key(&MapKey::String("generate".to_string())));
             } else {
                 panic!("YAML should be a module (map)");
             }
-        } else {
-            panic!("std module should be a map");
-        }
-    }
 
-    #[test]
-    fn test_std_module_includes_toml() {
-        let std_module = create_std_module();
-        if let Value::Map(map) = std_module {
+            // Test TOML module
             assert!(map.contains_key(&MapKey::String("toml".to_string())));
-
-            // Check that toml is a module (map)
             if let Some(Value::Map(toml_map)) = map.get(&MapKey::String("toml".to_string())) {
                 assert!(toml_map.contains_key(&MapKey::String("parse".to_string())));
                 assert!(toml_map.contains_key(&MapKey::String("generate".to_string())));
@@ -233,28 +210,28 @@ mod tests {
     }
 
     #[test]
-    fn test_fd_in_std_module() {
+    fn test_io_in_std_module() {
         let std_module = create_std_module();
 
         if let Value::Map(std_map) = std_module {
-            assert!(std_map.contains_key(&MapKey::String("FD".to_string())));
+            assert!(std_map.contains_key(&MapKey::String("io".to_string())));
 
-            let fd_module = std_map.get(&MapKey::String("FD".to_string())).unwrap();
-            if let Value::Map(fd_map) = fd_module {
-                assert!(fd_map.contains_key(&MapKey::String("stdin".to_string())));
-                assert!(fd_map.contains_key(&MapKey::String("stdout".to_string())));
-                assert!(fd_map.contains_key(&MapKey::String("stderr".to_string())));
+            let io_module = std_map.get(&MapKey::String("io".to_string())).unwrap();
+            if let Value::Map(io_map) = io_module {
+                assert!(io_map.contains_key(&MapKey::String("stdin".to_string())));
+                assert!(io_map.contains_key(&MapKey::String("stdout".to_string())));
+                assert!(io_map.contains_key(&MapKey::String("stderr".to_string())));
 
                 // Verify stream types
-                let stdin = fd_map.get(&MapKey::String("stdin".to_string())).unwrap();
-                let stdout = fd_map.get(&MapKey::String("stdout".to_string())).unwrap();
-                let stderr = fd_map.get(&MapKey::String("stderr".to_string())).unwrap();
+                let stdin = io_map.get(&MapKey::String("stdin".to_string())).unwrap();
+                let stdout = io_map.get(&MapKey::String("stdout".to_string())).unwrap();
+                let stderr = io_map.get(&MapKey::String("stderr".to_string())).unwrap();
 
                 assert!(matches!(stdin, Value::Stream(_)));
                 assert!(matches!(stdout, Value::Stream(_)));
                 assert!(matches!(stderr, Value::Stream(_)));
             } else {
-                panic!("FD should be a map");
+                panic!("io should be a map");
             }
         } else {
             panic!("std module should be a map");
@@ -262,13 +239,13 @@ mod tests {
     }
 
     #[test]
-    fn test_fd_stream_properties() {
-        let fd_module = create_fd_module();
+    fn test_io_stream_properties() {
+        let io_module = create_fd_module();
 
-        if let Value::Map(fd_map) = fd_module {
-            let stdin = fd_map.get(&MapKey::String("stdin".to_string())).unwrap();
-            let stdout = fd_map.get(&MapKey::String("stdout".to_string())).unwrap();
-            let stderr = fd_map.get(&MapKey::String("stderr".to_string())).unwrap();
+        if let Value::Map(io_map) = io_module {
+            let stdin = io_map.get(&MapKey::String("stdin".to_string())).unwrap();
+            let stdout = io_map.get(&MapKey::String("stdout".to_string())).unwrap();
+            let stderr = io_map.get(&MapKey::String("stderr".to_string())).unwrap();
 
             // Verify stream properties
             if let Value::Stream(stdin_handle) = stdin {
@@ -298,7 +275,7 @@ mod tests {
                 panic!("stderr should be a stream");
             }
         } else {
-            panic!("FD module should be a map");
+            panic!("io module should be a map");
         }
     }
 }
