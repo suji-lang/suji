@@ -1,5 +1,6 @@
 use nnlang::ast::{CompoundOp, Expr, Literal, Stmt};
-use nnlang::parser::parse_statement;
+mod common;
+use common::parse_statement;
 
 #[test]
 fn test_parse_semicolon_statement_separators() {

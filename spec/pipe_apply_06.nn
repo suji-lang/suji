@@ -1,0 +1,6 @@
+import std:println
+
+add = |x, y = 10| x + y
+result = 5 |> add
+
+println(result)  # 15

@@ -1,0 +1,6 @@
+import std:println
+
+wrap = |x| "v=" + x::to_string()
+result = 3 |> wrap
+
+println(result) # v=3

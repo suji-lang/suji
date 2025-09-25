@@ -4,6 +4,9 @@ pub mod json_generate;
 pub mod json_parse;
 pub mod print;
 pub mod println;
+pub mod random_core;
+pub mod random_random;
+pub mod random_seed;
 pub mod toml_generate;
 pub mod toml_parse;
 pub mod yaml_generate;
@@ -14,6 +17,8 @@ pub use json_generate::builtin_json_generate;
 pub use json_parse::builtin_json_parse;
 pub use print::builtin_print;
 pub use println::builtin_println;
+pub use random_random::builtin_random_random;
+pub use random_seed::builtin_random_seed;
 pub use toml_generate::builtin_toml_generate;
 pub use toml_parse::builtin_toml_parse;
 pub use yaml_generate::builtin_yaml_generate;
@@ -33,65 +38,13 @@ pub struct Builtin {
     pub max_args: Option<usize>, // None for variadic
 }
 
-/// Get all built-in functions
-pub fn get_builtins() -> Vec<Builtin> {
-    vec![
-        Builtin {
-            name: "print",
-            func: builtin_print,
-            min_args: 1,
-            max_args: Some(2),
-        },
-        Builtin {
-            name: "println",
-            func: builtin_println,
-            min_args: 0,
-            max_args: Some(2),
-        },
-        Builtin {
-            name: "json_parse",
-            func: builtin_json_parse,
-            min_args: 1,
-            max_args: Some(1),
-        },
-        Builtin {
-            name: "json_generate",
-            func: builtin_json_generate,
-            min_args: 1,
-            max_args: Some(1),
-        },
-        Builtin {
-            name: "toml_parse",
-            func: builtin_toml_parse,
-            min_args: 1,
-            max_args: Some(1),
-        },
-        Builtin {
-            name: "toml_generate",
-            func: builtin_toml_generate,
-            min_args: 1,
-            max_args: Some(1),
-        },
-        Builtin {
-            name: "yaml_parse",
-            func: builtin_yaml_parse,
-            min_args: 1,
-            max_args: Some(1),
-        },
-        Builtin {
-            name: "yaml_generate",
-            func: builtin_yaml_generate,
-            min_args: 1,
-            max_args: Some(1),
-        },
-    ]
-}
-
 /// Call a built-in function by name
 pub fn call_builtin(name: &str, args: &[Value]) -> Result<Value, RuntimeError> {
     match name {
         "print" => builtin_print(args),
         "println" => builtin_println(args),
+        "random_random" => builtin_random_random(args),
+        "random_seed" => builtin_random_seed(args),
         "json_parse" => builtin_json_parse(args),
         "json_generate" => builtin_json_generate(args),
         "toml_parse" => builtin_toml_parse(args),

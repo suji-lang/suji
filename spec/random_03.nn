@@ -1,0 +1,6 @@
+import std:println
+import std:random
+
+random:seed(42)
+
+println(random:pick(["a", "b", "c", "d"]))  # c

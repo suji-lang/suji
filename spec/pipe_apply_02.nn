@@ -1,0 +1,6 @@
+import std:println
+
+inc = |x| x + 1
+double = |x| x * 2
+
+println(3 |> inc |> double) # 8

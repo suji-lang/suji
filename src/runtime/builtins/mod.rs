@@ -11,7 +11,7 @@ pub mod yaml;
 pub use functions::{
     Builtin, BuiltinFunction, builtin_json_generate, builtin_json_parse, builtin_print,
     builtin_println, builtin_toml_generate, builtin_toml_parse, builtin_yaml_generate,
-    builtin_yaml_parse, call_builtin, get_builtins,
+    builtin_yaml_parse, call_builtin,
 };
 pub use modules::{create_json_module, create_std_module, create_toml_module, create_yaml_module};
 

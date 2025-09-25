@@ -52,14 +52,3 @@ pub mod blocks;
 pub mod control_flow;
 pub mod expressions;
 pub mod imports;
-
-#[cfg(test)]
-mod tests {
-    use crate::parser::parse_statement;
-
-    #[test]
-    fn test_parse_simple_statement() {
-        let result = parse_statement("return 42");
-        assert!(result.is_ok());
-    }
-}

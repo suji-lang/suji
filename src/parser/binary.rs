@@ -224,12 +224,12 @@ impl Parser {
         Ok(expr)
     }
 
-    /// Parse pipe expressions (|)
-    pub(super) fn pipe(&mut self) -> ParseResult<Expr> {
+    /// Parse forward apply pipelines (|>) - left-associative
+    pub(super) fn pipe_apply_forward(&mut self) -> ParseResult<Expr> {
         let mut expr = self.logical_or()?;
 
-        while self.match_token(Token::Pipe) {
-            let op = crate::ast::BinaryOp::Pipe;
+        while self.match_token(Token::PipeForward) {
+            let op = crate::ast::BinaryOp::PipeApplyFwd;
             let span = self.previous().span.clone();
             let right = self.logical_or()?;
             expr = Expr::Binary {
@@ -243,9 +243,47 @@ impl Parser {
         Ok(expr)
     }
 
+    /// Parse backward apply pipelines (<|) - right-associative
+    pub(super) fn pipe_apply_backward(&mut self) -> ParseResult<Expr> {
+        let mut expr = self.pipe_apply_forward()?;
+
+        if self.match_token(Token::PipeBackward) {
+            let op = crate::ast::BinaryOp::PipeApplyBwd;
+            let span = self.previous().span.clone();
+            let right = self.pipe_apply_backward()?; // right-associative
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                op,
+                right: Box::new(right),
+                span,
+            };
+        }
+
+        Ok(expr)
+    }
+
+    /// Parse stream pipe (|) built over apply-pipe layers - left-associative
+    pub(super) fn pipe_stream(&mut self) -> ParseResult<Expr> {
+        let mut expr = self.pipe_apply_backward()?;
+
+        while self.match_token(Token::Pipe) {
+            let op = crate::ast::BinaryOp::Pipe;
+            let span = self.previous().span.clone();
+            let right = self.pipe_apply_backward()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                op,
+                right: Box::new(right),
+                span,
+            };
+        }
+
+        Ok(expr)
+    }
+
     /// Parse assignment expressions (right-associative)
     pub(super) fn assignment(&mut self) -> ParseResult<Expr> {
-        let expr = self.pipe()?;
+        let expr = self.pipe_stream()?;
 
         if self.match_token(Token::Assign) {
             let span = self.previous().span.clone();
@@ -317,7 +355,7 @@ impl Parser {
     }
 
     /// Parse an expression
-    pub(super) fn expression(&mut self) -> ParseResult<Expr> {
+    pub fn expression(&mut self) -> ParseResult<Expr> {
         self.assignment()
     }
 

@@ -22,6 +22,8 @@ A dynamically and strongly typed language with familiar syntax, higher-order fun
   - [Relational](#relational)
   - [Logical](#logical)
   - [Matching](#matching)
+  - [Pipe](#pipe)
+  - [Pipe Apply](#pipe-apply)
 - [Control Flow](#control-flow)
   - [Loops](#loops)
   - [Match Expressions](#match-expressions)
@@ -34,10 +36,13 @@ A dynamically and strongly typed language with familiar syntax, higher-order fun
   - [Optional Braces](#optional-braces)
 - [Standard Library](#standard-library)
   - [env](#env)
+    - [Environment variables](#environment-variables)
+    - [Command-line arguments](#command-line-arguments)
   - [io (Process Streams)](#io-process-streams)
   - [JSON Module](#json-module)
   - [YAML Module](#yaml-module)
   - [TOML Module](#toml-module)
+  - [Random Module](#random-module)
   - [print and println](#print-and-println)
 - [Examples](#examples)
   - [Fibonacci Sequence](#fibonacci-sequence)
@@ -270,6 +275,12 @@ chunk = io:stdin::read()
 all   = io:stdin::read_all()
 lines = io:stdin::read_lines()
 
+# Read a single line (newline not included)
+line = io:stdin::read_line()
+
+# Check if stdin is a terminal (TTY)
+interactive = io:stdin::is_terminal()
+
 # Write to stdout/stderr
 io:stdout::write("Hello, world!\n")
 io:stderr::write("Warning: something happened\n")
@@ -352,6 +363,86 @@ pattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 matches = text ~ pattern    # true
 no_match = text !~ pattern  # false
 ```
+
+### Pipe
+
+Connect the stdout of a source closure to the stdin of a destination closure.
+
+```nn
+import std:println
+import std:io
+
+destination = || {
+    loop through io:stdin::read_lines() with line {
+        match {
+            line ~ /test/: return "output received"
+        }
+    }
+}
+
+source = || {
+    println("test")
+}
+
+out = source | destination
+println(out)  # output received
+```
+
+### Pipe Apply
+
+Value-to-function application pipelines (v0.1.8):
+
+```nn
+# Forward apply (left-to-right): x |> f  ==  f(x)
+inc = |x| x + 1
+double = |x| x * 2
+
+result = 3 |> inc |> double
+println(result)  # 8
+
+# Backward apply (right-to-left): f <| x  ==  f(x)
+result2 = double <| inc <| 3
+println(result2)  # 8
+
+# Mixing with stream pipe: stream pipe `|` operates on closures/backticks,
+# while `|>`/`<|` operate on values and functions. Precedence groups so that
+# `a |> g | h` parses as `(a |> g) | h`.
+```
+
+Notes:
+- `|>` is left-associative; `<|` is right-associative.
+- `|>` requires a function on the right; `<|` requires a function on the left.
+
+Backtick commands can participate in pipelines as sources, middles, or sinks (v0.1.8):
+
+```nn
+import std:println
+import std:io
+
+# Backtick as source → closure sink
+sink = || {
+    line = io:stdin::read_line()
+    return line
+}
+
+out = `echo test` | sink
+println(out)  # test
+
+# Closure → backtick as middle → closure
+producer = || { println("alpha\nbeta\n") }
+consumer = || {
+    lines = io:stdin::read_lines()
+    return lines::join(",")
+}
+
+out = producer | `grep beta` | consumer
+println(out)  # beta
+
+# Note: When a backtick command is last in a pipeline, its stdout is returned
+# as a string without trimming trailing newlines.
+```
+
+Associativity and precedence: `|` remains left-associative and sits between assignment and logical-or. Backticks outside of a pipeline behave as before (trimmed output when not piped).
 
 ## Control Flow
 
@@ -607,7 +698,33 @@ config = { name: "Bob", active: true }
 toml_output = toml:generate(config)
 ```
 
+### Random Module
+
+```nn
+import std:random
+import std:println
+
+# Seed RNG for determinism (optional)
+random:seed(42)
+
+# Uniform in [0,1)
+x = random:random()
+
+# Integer in [a,b)
+i = random:integer(10, 20)
+
+# List helpers
+items = ["a", "b", "c", "d"]
+pick_one = random:pick(items)
+shuffled = random:shuffle(items)
+sampled = random:sample(items, 2)
+
+println(i)
+```
+
 ### env
+
+#### Environment variables
 
 Environment variables exposed as a map under the standard library at `std:env:var`. Changing `var` affects the process environment (and child processes).
 
@@ -625,6 +742,31 @@ editor = env:var::get("EDITOR", "vi")
 println("Editor: ${editor}")
 ```
 
+#### Command-line arguments
+
+Command-line arguments are exposed as maps under `std:env:args`.
+
+```nn
+# Access first argument (after program name)
+import std:env:args
+
+first = args::get("1", nil)
+if (first != nil) {
+  println("First arg: ${first}")
+}
+```
+
+```nn
+# Iterate all arguments by index key
+import std:env:argv
+import std:println
+
+loop through argv::keys() with k {
+  v = argv[k]
+  println("arg[${k}] = ${v}")
+}
+```
+
 ### io (Process Streams)
 
 Access standard streams as `stream` values. Operations may block.
@@ -637,6 +779,12 @@ input = io:stdin::read()
 println("Read: ${input}")
 io:stdout::write("ok\n")
 io:stderr::write("err\n")
+
+# Read a single line
+line = io:stdin::read_line()
+
+# Detect if output is a terminal
+is_tty = io:stdout::is_terminal()
 ```
 
 ### print and println
@@ -783,3 +931,5 @@ cargo test
 - **v0.1.4**: YAML and TOML modules, deep nesting fixes
 - **v0.1.5**: Comprehensive method library, multiline strings
 - **v0.1.6**: ENV map, stream type, FD streams, print/println rewrite, list average, first/last defaults
+- **v0.1.7**: Rename FD->std:io and ENV->std:env:var, add stream::read_line and ::is_terminal, add std:env:args/argv, introduce pipe operator
+ - **v0.1.8**: Backticks in `|` pipelines (source/middle/sink), pipe-apply operators `|>` and `<|`, add `std:random` module

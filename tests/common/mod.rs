@@ -2,7 +2,9 @@
 
 //! Common test utilities for NN Language tests.
 
-use nnlang::parser::{parse_expression, parse_program};
+use nnlang::ast::{Expr, Stmt};
+use nnlang::lexer::Lexer;
+use nnlang::parser::{ParseResult, Parser, parse_program};
 use nnlang::runtime::builtins::setup_global_env;
 use nnlang::runtime::env::Env;
 use nnlang::runtime::eval::{
@@ -11,6 +13,20 @@ use nnlang::runtime::eval::{
 use nnlang::runtime::module::ModuleRegistry;
 use nnlang::runtime::value::Value;
 use std::rc::Rc;
+
+/// Parse a single expression from source code (test utility)
+pub fn parse_expression(input: &str) -> ParseResult<Expr> {
+    let tokens = Lexer::lex(input)?;
+    let mut parser = Parser::new(tokens);
+    parser.expression()
+}
+
+/// Parse a single statement (test utility)
+pub fn parse_statement(input: &str) -> ParseResult<Stmt> {
+    let tokens = Lexer::lex(input)?;
+    let mut parser = Parser::new(tokens);
+    parser.statement()
+}
 
 /// Helper to create a test environment with built-ins
 pub fn create_test_env() -> Rc<Env> {

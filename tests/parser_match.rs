@@ -1,5 +1,6 @@
 use nnlang::ast::{Expr, Literal, Pattern, Stmt, StringPart, ValueLike};
-use nnlang::parser::{parse_expression, parse_statement};
+mod common;
+use common::{parse_expression, parse_statement};
 
 #[test]
 fn test_parse_match_single_expression() {

@@ -27,7 +27,9 @@ pub enum BinaryOp {
     Or,  // ||
 
     // Pipe
-    Pipe, // |
+    Pipe,         // |
+    PipeApplyFwd, // |>
+    PipeApplyBwd, // <|
 
     // Range
     Range, // ..
@@ -45,17 +47,4 @@ pub enum CompoundOp {
     MultiplyAssign, // *=
     DivideAssign,   // /=
     ModuloAssign,   // %=
-}
-
-impl CompoundOp {
-    pub fn from_token(token: &crate::token::Token) -> Option<Self> {
-        match token {
-            crate::token::Token::PlusAssign => Some(CompoundOp::PlusAssign),
-            crate::token::Token::MinusAssign => Some(CompoundOp::MinusAssign),
-            crate::token::Token::MultiplyAssign => Some(CompoundOp::MultiplyAssign),
-            crate::token::Token::DivideAssign => Some(CompoundOp::DivideAssign),
-            crate::token::Token::ModuloAssign => Some(CompoundOp::ModuloAssign),
-            _ => None,
-        }
-    }
 }

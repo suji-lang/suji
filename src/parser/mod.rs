@@ -5,7 +5,7 @@ pub mod precedence;
 pub mod statements;
 pub mod utils;
 
-use crate::ast::{Expr, Stmt};
+use crate::ast::Stmt;
 use crate::lexer::{LexError, Lexer};
 use crate::token::{Span, Token, TokenWithSpan};
 use thiserror::Error;
@@ -198,20 +198,6 @@ pub fn parse_program(input: &str) -> ParseResult<Vec<Stmt>> {
     let tokens = Lexer::lex(input)?;
     let mut parser = Parser::new(tokens);
     parser.parse()
-}
-
-/// Parse a single expression from source code
-pub fn parse_expression(input: &str) -> ParseResult<Expr> {
-    let tokens = Lexer::lex(input)?;
-    let mut parser = Parser::new(tokens);
-    parser.expression()
-}
-
-/// Parse a single statement
-pub fn parse_statement(input: &str) -> ParseResult<Stmt> {
-    let tokens = Lexer::lex(input)?;
-    let mut parser = Parser::new(tokens);
-    parser.statement()
 }
 
 #[cfg(test)]

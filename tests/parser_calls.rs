@@ -1,4 +1,5 @@
-use nnlang::parser::parse_expression;
+mod common;
+use common::parse_expression;
 
 #[test]
 fn test_function_and_method_calls() {

@@ -1,5 +1,6 @@
 use nnlang::ast::{BinaryOp, Expr, Literal, Stmt};
-use nnlang::parser::parse_expression;
+mod common;
+use common::parse_expression;
 
 #[test]
 fn test_parse_function_single_expression() {

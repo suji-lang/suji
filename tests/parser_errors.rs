@@ -1,4 +1,5 @@
-use nnlang::parser::{parse_expression, parse_statement};
+mod common;
+use common::{parse_expression, parse_statement};
 
 #[test]
 fn test_error_handling() {

@@ -1,5 +1,6 @@
 use nnlang::ast::{CompoundOp, Expr, Literal};
-use nnlang::parser::parse_expression;
+mod common;
+use common::parse_expression;
 
 #[test]
 fn test_parse_compound_assignment_operators() {

@@ -1,6 +1,9 @@
 //! Standard library module creation.
 
-use super::{json::create_json_module, toml::create_toml_module, yaml::create_yaml_module};
+use super::{
+    json::create_json_module, random::create_random_module, toml::create_toml_module,
+    yaml::create_yaml_module,
+};
 use crate::runtime::builtins::nn_loader::{load_print, load_println};
 use crate::runtime::env_overlay::EnvProxy;
 use crate::runtime::value::{MapKey, StreamHandle, Value};
@@ -87,6 +90,9 @@ pub fn create_std_module() -> Value {
     // Build io module (renamed from FD) and attach
     std_map.insert(MapKey::String("io".to_string()), create_fd_module());
 
+    // Add random module to std module
+    std_map.insert(MapKey::String("random".to_string()), create_random_module());
+
     // Build env module with `var` (renamed from ENV) and attach
     let mut env_map = IndexMap::new();
     env_map.insert(MapKey::String("var".to_string()), create_env_module());
@@ -103,23 +109,24 @@ pub fn create_std_module() -> Value {
             if a.starts_with('-') {
                 continue;
             } else {
-                // First non-option is the script filename; include it as args["0"]
+                // First non-option is script path; include as "0" and mark seen
+                args_map.insert(MapKey::String("0".to_string()), Value::String(a));
                 script_seen = true;
-                let idx = args_map.len(); // should be 0
-                args_map.insert(MapKey::String(idx.to_string()), Value::String(a));
+                continue;
             }
-        } else {
-            // After script filename, remaining items are script arguments
-            let idx = args_map.len();
-            args_map.insert(MapKey::String(idx.to_string()), Value::String(a));
         }
+        // Subsequent args are positional starting from "1"
+        let idx = args_map.len().saturating_sub(1); // exclude "0"
+        args_map.insert(MapKey::String(idx.to_string()), Value::String(a));
     }
-    // Insert args and argv (alias with identical contents at construction time)
+
+    // Attach env submodules
     env_map.insert(
         MapKey::String("args".to_string()),
         Value::Map(args_map.clone()),
     );
     env_map.insert(MapKey::String("argv".to_string()), Value::Map(args_map));
+
     std_map.insert(MapKey::String("env".to_string()), Value::Map(env_map));
 
     Value::Map(std_map)

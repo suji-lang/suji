@@ -1,9 +1,8 @@
-use super::{EvalResult, eval_assignment, eval_expr};
+use super::{EvalResult, eval_assignment, eval_expr, eval_pipe_expression};
 use crate::ast::{BinaryOp, CompoundOp, Expr, Literal};
 use crate::runtime::env::Env;
-use crate::runtime::module::ModuleRegistry;
 use crate::runtime::range::expand_range_values;
-use crate::runtime::value::{FunctionValue, RuntimeError, Value};
+use crate::runtime::value::{RuntimeError, Value};
 use crate::token::Span;
 use std::rc::Rc;
 
@@ -44,150 +43,28 @@ pub fn eval_binary_expr(
                 }
             }
         }
-        BinaryOp::Pipe => {
-            // Evaluate and execute a pipeline of closures left-to-right
-            let mut stages: Vec<FunctionValue> = Vec::new();
-
-            // Helper to collect function stages from an expression
-            fn collect_stage(
-                expr: &Expr,
-                env: Rc<Env>,
-                out: &mut Vec<FunctionValue>,
-            ) -> Result<(), RuntimeError> {
-                match expr {
-                    Expr::Binary {
-                        left,
-                        op: BinaryOp::Pipe,
-                        right,
-                        ..
-                    } => {
-                        collect_stage(left, env.clone(), out)?;
-                        collect_stage(right, env, out)?;
-                        Ok(())
-                    }
-                    _ => {
-                        let v = eval_expr(expr, env)?;
-                        match v {
-                            Value::Function(f) => {
-                                out.push(f);
-                                Ok(())
-                            }
-                            _ => Err(RuntimeError::TypeError {
-                                message: "Pipe operator requires function values on both sides"
-                                    .to_string(),
-                            }),
-                        }
-                    }
+        BinaryOp::Pipe => eval_pipe_expression(left, right, env.clone()),
+        BinaryOp::PipeApplyFwd => {
+            // left |> right  => right(left)
+            let value = eval_expr(left, env.clone())?;
+            let func_val = eval_expr(right, env.clone())?;
+            match func_val {
+                Value::Function(f) => {
+                    crate::runtime::eval::call_function(&f, vec![value], Some(env))
                 }
+                _ => Err(RuntimeError::PipeApplyRightTypeError),
             }
-
-            collect_stage(left, env.clone(), &mut stages)?;
-            collect_stage(right, env.clone(), &mut stages)?;
-
-            if stages.is_empty() {
-                return Err(RuntimeError::InvalidOperation {
-                    message: "Empty pipe expression".to_string(),
-                });
+        }
+        BinaryOp::PipeApplyBwd => {
+            // left <| right  => left(right)
+            let func_val = eval_expr(left, env.clone())?;
+            let value = eval_expr(right, env.clone())?;
+            match func_val {
+                Value::Function(f) => {
+                    crate::runtime::eval::call_function(&f, vec![value], Some(env))
+                }
+                _ => Err(RuntimeError::PipeApplyLeftTypeError),
             }
-
-            // Base std module
-            let base_std = match stages.first() {
-                Some(f) => f.env.get("std").unwrap_or(Value::Nil),
-                None => Value::Nil,
-            };
-
-            // Helper to extract std map or create fresh
-            fn get_std_map(
-                value: Value,
-            ) -> indexmap::IndexMap<crate::runtime::value::MapKey, Value> {
-                if let Value::Map(m) = value {
-                    m
-                } else if let Value::Map(m) = crate::runtime::builtins::create_std_module() {
-                    m
-                } else {
-                    indexmap::IndexMap::new()
-                }
-            }
-
-            let mut current_input: Option<Vec<u8>> = None;
-            let last_index = stages.len() - 1;
-            let mut last_result: Option<Value> = None;
-
-            for (i, func) in stages.into_iter().enumerate() {
-                // Start from a std map snapshot
-                let mut std_map = get_std_map(base_std.clone());
-
-                // Get io submodule map
-                let io_key = crate::runtime::value::MapKey::String("io".to_string());
-                let mut io_map = match std_map.get(&io_key) {
-                    Some(Value::Map(m)) => m.clone(),
-                    _ => match crate::runtime::builtins::create_std_module() {
-                        Value::Map(std_m) => match std_m.get(&io_key) {
-                            Some(Value::Map(m)) => m.clone(),
-                            _ => indexmap::IndexMap::new(),
-                        },
-                        _ => indexmap::IndexMap::new(),
-                    },
-                };
-
-                // Replace stdin if there is input
-                if let Some(bytes) = current_input.take() {
-                    let stdin_key = crate::runtime::value::MapKey::String("stdin".to_string());
-                    let stdin_stream = Rc::new(
-                        crate::runtime::value::StreamHandle::new_memory_readable(bytes),
-                    );
-                    io_map.insert(stdin_key, Value::Stream(stdin_stream));
-                }
-
-                // Replace stdout for non-last stages to capture output
-                let mut capture_stdout = None;
-                if i != last_index {
-                    let stdout_key = crate::runtime::value::MapKey::String("stdout".to_string());
-                    let stdout_handle =
-                        Rc::new(crate::runtime::value::StreamHandle::new_memory_writable());
-                    capture_stdout = Some(stdout_handle.clone());
-                    io_map.insert(stdout_key, Value::Stream(stdout_handle));
-                }
-
-                // Put io back into std (keep a clone for env override)
-                let io_map_clone = io_map.clone();
-                std_map.insert(io_key.clone(), Value::Map(io_map));
-
-                // Build overridden std value and module registry
-                let overridden_std = Value::Map(std_map.clone());
-                let registry = ModuleRegistry::new().with_custom_std(overridden_std);
-
-                // Also inject overridden std and io directly into the call environment to ensure
-                // both module-path imports and pre-bound names resolve to these instances
-                let env_overrides = Some(vec![
-                    ("std".to_string(), Value::Map(std_map)),
-                    ("io".to_string(), Value::Map(io_map_clone)),
-                ]);
-
-                // Call function with no args; allow default params
-                match crate::runtime::eval::call_function_with_modules(
-                    &func,
-                    Vec::new(),
-                    Some(env.clone()),
-                    &registry,
-                    env_overrides,
-                ) {
-                    Ok(val) => {
-                        last_result = Some(val);
-                        // If not last stage, capture stdout bytes for next stage
-                        if let Some(stdout_handle) = capture_stdout {
-                            current_input = stdout_handle.take_memory_output();
-                        }
-                    }
-                    Err(e) => {
-                        return Err(RuntimeError::InvalidOperation {
-                            message: format!("Failed to execute closure in pipe: {}", e),
-                        });
-                    }
-                }
-            }
-
-            Ok(last_result.unwrap_or(Value::Nil))
         }
         _ => {
             // Evaluate both sides for other operations
@@ -203,6 +80,9 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
     match op {
         // Pipe handled at higher level in eval_binary_expr
         BinaryOp::Pipe => unreachable!("Pipe op is evaluated in eval_binary_expr"),
+        BinaryOp::PipeApplyFwd | BinaryOp::PipeApplyBwd => {
+            unreachable!("Pipe apply ops are evaluated in eval_binary_expr")
+        }
         // Arithmetic operations
         BinaryOp::Add => match (&left, &right) {
             (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a + b)),

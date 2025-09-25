@@ -1,5 +1,8 @@
 use nnlang::ast::{Expr, Literal, Stmt};
-use nnlang::parser::{parse_program, parse_statement};
+use nnlang::parser::parse_program;
+
+mod common;
+use common::parse_statement;
 
 #[test]
 fn test_parse_return_statement() {

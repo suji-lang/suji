@@ -1,0 +1,19 @@
+import std:println
+import std:io
+
+source = || {
+    println("alpha")
+    println("beta")
+    println("gamma")
+}
+
+sink = || {
+    loop through io:stdin::read_lines() with line {
+        match {
+            line ~ /beta/: return "beta received"
+        }
+    }
+}
+
+out = source | `grep beta` | sink
+println(out)  # beta received

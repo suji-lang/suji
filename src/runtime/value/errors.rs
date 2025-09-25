@@ -104,4 +104,20 @@ pub enum RuntimeError {
 
     #[error("Serialization error: {message}")]
     SerializationError { message: String },
+
+    // Pipe-related errors (structured variants)
+    #[error("Pipe error: {message}")]
+    PipeStageTypeError { message: String },
+
+    #[error("Pipe error: {message}")]
+    EmptyPipeExpression { message: String },
+
+    #[error("Pipe execution error ({stage}): {message}")]
+    PipeExecutionError { stage: String, message: String },
+
+    #[error("Pipe apply (|>) requires a function on the right-hand side")]
+    PipeApplyRightTypeError,
+
+    #[error("Pipe apply (<|) requires a function on the left-hand side")]
+    PipeApplyLeftTypeError,
 }

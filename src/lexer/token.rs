@@ -173,6 +173,10 @@ pub enum Token {
     DoubleColon,
     #[token("|")]
     Pipe,
+    #[token("|>")]
+    PipeForward,
+    #[token("<|")]
+    PipeBackward,
     #[token(";")]
     Semicolon,
 

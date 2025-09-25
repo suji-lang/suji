@@ -1,0 +1,6 @@
+import std:println
+
+inc = |x| x + 1
+result = 3 |> inc
+
+println(result)  # 4

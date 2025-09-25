@@ -1,0 +1,13 @@
+import std:println
+import std:io
+
+sink = || {
+    line = io:stdin::read_line()
+    match line {
+        nil: "none"
+        _: line
+    }
+}
+
+out = `printf 'only-one\n'` | sink
+println(out::replace("\n", "\\n"))  # only-one

@@ -1,0 +1,4 @@
+import std:println
+
+out = `printf 'line1\nline2\n'` | `grep line2`
+println(out::replace("\n", "\\n"))  # line2\n

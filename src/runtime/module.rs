@@ -165,15 +165,6 @@ impl ModuleRegistry {
     pub fn register_file_module(&mut self, name: String, module: Value) {
         self.file_modules.insert(name, module);
     }
-
-    /// Get all available module names
-    #[allow(dead_code)]
-    pub fn available_modules(&self) -> Vec<String> {
-        let mut modules: Vec<String> = self.builtins.keys().cloned().collect();
-        modules.extend(self.file_modules.keys().cloned());
-        modules.sort();
-        modules
-    }
 }
 
 impl Default for ModuleRegistry {
@@ -237,13 +228,6 @@ mod tests {
                 .to_string()
                 .contains("Item 'nonexistent' not found")
         );
-    }
-
-    #[test]
-    fn test_available_modules() {
-        let registry = ModuleRegistry::new();
-        let modules = registry.available_modules();
-        assert!(modules.contains(&"std".to_string()));
     }
 
     #[test]

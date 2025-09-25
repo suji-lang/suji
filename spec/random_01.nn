@@ -1,0 +1,9 @@
+import std:println
+import std:random
+
+random:seed(42)
+
+a = random:random()
+b = random:random()
+
+println([a, b])  # [0.5265574090027738, 0.5427252099031439]

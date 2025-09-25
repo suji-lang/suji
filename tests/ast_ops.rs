@@ -60,38 +60,3 @@ fn test_compound_op_variants() {
         let _ = op == CompoundOp::PlusAssign;
     }
 }
-
-#[test]
-fn test_compound_op_from_token() {
-    use nnlang::token::Token;
-
-    // Test valid token conversions
-    assert_eq!(
-        CompoundOp::from_token(&Token::PlusAssign),
-        Some(CompoundOp::PlusAssign)
-    );
-    assert_eq!(
-        CompoundOp::from_token(&Token::MinusAssign),
-        Some(CompoundOp::MinusAssign)
-    );
-    assert_eq!(
-        CompoundOp::from_token(&Token::MultiplyAssign),
-        Some(CompoundOp::MultiplyAssign)
-    );
-    assert_eq!(
-        CompoundOp::from_token(&Token::DivideAssign),
-        Some(CompoundOp::DivideAssign)
-    );
-    assert_eq!(
-        CompoundOp::from_token(&Token::ModuloAssign),
-        Some(CompoundOp::ModuloAssign)
-    );
-
-    // Test invalid token conversions
-    assert_eq!(CompoundOp::from_token(&Token::Assign), None);
-    assert_eq!(CompoundOp::from_token(&Token::Plus), None);
-    assert_eq!(
-        CompoundOp::from_token(&Token::Identifier("test".to_string())),
-        None
-    );
-}

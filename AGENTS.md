@@ -47,6 +47,25 @@ make lint
 - **Spec files (`spec/*.nn`)**: these are single-spec programs checked by the scripts above. Convention: one expectation per file with a single `println` of the result at the end (project convention) [[Spec tests: one println per file]].
 - **When adding features**: add/adjust both a Rust test and a spec file (when applicable). Prefer minimal, readable inputs that isolate the behavior.
 
+#### Spec file conventions (`spec/`)
+- **One assertion per file**: keep each file laser‑focused on a single example/expectation; end the file with exactly one `println(...)`.
+- **Expected output annotation**: place the expected output in a trailing comment on the final `println` line. The spec runner extracts the text after `#` on the last line and compares it to the program output.
+  - Example: `println(3 |> inc) # 4`
+  - This must be on the same, final line (the runner uses `tail -n 1`).
+- **Import printing**: explicitly import `std:println` in each file that prints.
+  - Example: `import std:println`
+- **Naming**: name files by feature area with a numeric suffix: `feature_area_XX.nn`.
+  - Use 2‑digit, zero‑padded counters for sequences (e.g., `pipe_apply_01.nn`, `pipe_apply_02.nn`).
+  - Keep names short, descriptive, and consistent with existing files (e.g., `list_methods_07.nn`, `operator_precedence_03.nn`).
+- **Content**: prefer minimal, readable inputs that isolate the behavior under test; avoid unrelated constructs.
+- **Determinism**: specs must be deterministic. If a feature depends on environment or IO, stub/minimize it so the output is stable.
+
+##### Style
+- Add an empty line after all import statements.
+- Add an empty line before the final `println(...)` statement.
+- Add two spaces before the expected output comment in the final println statement. ("println(result) # expected_output")
+- See `spec/pipe_apply_01.nn` for an example layout.
+
 ### Coding Standards (Rust)
 - **Clarity over cleverness**: favor explicit control flow and readable names.
 - **Naming**: functions are verbs; variables are descriptive nouns; avoid abbreviations.

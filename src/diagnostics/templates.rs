@@ -274,14 +274,6 @@ pub mod predefined {
             .with_suggestion("Example: map::contains(\"key\") or map::contains(42)")
     }
 
-    pub fn conditional_match_error(message: &str) -> ErrorTemplate {
-        ErrorTemplate::new(26, "Conditional match error", "Conditional match error")
-            .with_suggestion(message)
-            .with_suggestion("Conditional match syntax: match { condition: body, ... }")
-            .with_suggestion("Each condition must evaluate to a boolean value")
-            .with_suggestion("Example: match { x > 0: \"positive\", _: \"non-positive\" }")
-    }
-
     pub fn json_parse_error(message: &str) -> ErrorTemplate {
         ErrorTemplate::new(27, "JSON parse error", "JSON parse error")
             .with_suggestion(message)
@@ -296,22 +288,6 @@ pub mod predefined {
             .with_suggestion(&format!("Cannot convert {} to JSON", value_type))
             .with_suggestion("JSON supports: maps, lists, numbers, strings, booleans, nil")
             .with_suggestion("Functions and regex values cannot be converted to JSON")
-    }
-
-    pub fn yaml_parse_error(message: &str) -> ErrorTemplate {
-        ErrorTemplate::new(29, "YAML parse error", "YAML parse error")
-            .with_suggestion(message)
-            .with_suggestion("YAML syntax: use colons for key-value pairs, dashes for lists")
-            .with_suggestion("Example: yaml:parse('name: Alice\\nage: 30')")
-            .with_suggestion("Check for proper indentation and syntax")
-    }
-
-    pub fn yaml_generate_error(message: &str, value_type: &str) -> ErrorTemplate {
-        ErrorTemplate::new(30, "YAML generation error", "YAML generation error")
-            .with_suggestion(message)
-            .with_suggestion(&format!("Cannot convert {} to YAML", value_type))
-            .with_suggestion("YAML supports: maps, lists, numbers, strings, booleans, nil")
-            .with_suggestion("Functions and regex values cannot be converted to YAML")
     }
 
     pub fn map_method_error(method: &str, message: &str) -> ErrorTemplate {
@@ -331,30 +307,6 @@ pub mod predefined {
             .with_suggestion(message)
             .with_suggestion(&format!("Map method '{}' usage:", method))
             .with_suggestion(method_help)
-    }
-
-    pub fn toml_parse_error(message: &str) -> ErrorTemplate {
-        ErrorTemplate::new(31, "TOML parse error", "TOML parse error")
-            .with_suggestion(message)
-            .with_suggestion("TOML syntax: use equals for key-value pairs, brackets for tables")
-            .with_suggestion("Example: toml:parse('name = \"Alice\"\\nage = 30')")
-            .with_suggestion("Check for proper TOML syntax and formatting")
-    }
-
-    pub fn toml_generate_error(message: &str) -> ErrorTemplate {
-        ErrorTemplate::new(32, "TOML generation error", "TOML generation error")
-            .with_suggestion(message)
-            .with_suggestion("TOML supports: maps, lists, numbers, strings, booleans")
-            .with_suggestion("TOML does not support nil values")
-            .with_suggestion("Functions and regex values cannot be converted to TOML")
-    }
-
-    pub fn toml_conversion_error(message: &str) -> ErrorTemplate {
-        ErrorTemplate::new(33, "TOML conversion error", "TOML conversion error")
-            .with_suggestion(message)
-            .with_suggestion("TOML keys must be strings")
-            .with_suggestion("TOML does not support nil values")
-            .with_suggestion("Check the data types being converted")
     }
 
     pub fn string_method_error(method: &str, message: &str) -> ErrorTemplate {
@@ -429,98 +381,5 @@ pub mod predefined {
             .with_suggestion(message)
             .with_suggestion(&format!("Tuple method '{}' usage:", method))
             .with_suggestion(method_help)
-    }
-
-    // Multiline string lexer errors (0.1.5)
-    pub fn expected_end_of_multiline_string() -> ErrorTemplate {
-        ErrorTemplate::new(
-            1,
-            "Expected end of multiline string literal",
-            "Expected end of multiline string literal",
-        )
-        .with_suggestion("Close the multiline string with triple quotes: \"\"\" or '''")
-    }
-
-    pub fn expected_multiline_content_or_interpolation() -> ErrorTemplate {
-        ErrorTemplate::new(
-            1,
-            "Expected multiline string content or interpolation",
-            "Expected multiline string content or interpolation",
-        )
-        .with_suggestion("Provide text content or an interpolation: ${ expression }")
-    }
-
-    pub fn stream_error(message: &str) -> ErrorTemplate {
-        ErrorTemplate::new(38, "Stream error", "Stream I/O error")
-            .with_suggestion(message)
-            .with_suggestion("Stream operations may block while waiting for I/O")
-    }
-
-    pub fn stream_closed_error() -> ErrorTemplate {
-        ErrorTemplate::new(39, "Stream closed", "Operation on closed stream")
-            .with_suggestion("Cannot perform operations on a closed stream")
-            .with_suggestion("Check if the stream was closed with stream::close()")
-    }
-
-    pub fn stream_read_write_error(stream_name: &str, operation: &str) -> ErrorTemplate {
-        let suggestion = match operation {
-            "read" => format!(
-                "Stream '{}' is write-only. Use stdout/stderr streams for writing",
-                stream_name
-            ),
-            "write" => format!(
-                "Stream '{}' is read-only. Use stdin stream for reading",
-                stream_name
-            ),
-            _ => format!(
-                "Stream '{}' does not support '{}' operation",
-                stream_name, operation
-            ),
-        };
-
-        ErrorTemplate::new(40, "Invalid stream operation", "Invalid stream operation")
-            .with_suggestion(&suggestion)
-            .with_suggestion(
-                "Check stream capabilities: stdin (read-only), stdout/stderr (write-only)",
-            )
-    }
-
-    pub fn stream_utf8_error() -> ErrorTemplate {
-        ErrorTemplate::new(41, "Invalid UTF-8", "Stream read produced invalid UTF-8")
-            .with_suggestion("The stream contains invalid UTF-8 byte sequences")
-            .with_suggestion("Ensure the input source produces valid UTF-8 text")
-    }
-
-    pub fn stream_method_error(method: &str, message: &str) -> ErrorTemplate {
-        let method_help = match method {
-            "read" => "stream::read(chunk_kb=8) - read next chunk (may block)",
-            "write" => "stream::write(text) - write text and return bytes written",
-            "read_all" => "stream::read_all() - read until EOF (may block)",
-            "read_lines" => "stream::read_lines() - read all lines as list (may block)",
-            "read_line" => "stream::read_line() - read one line (may block)",
-            "is_terminal" => "stream::is_terminal() - true if attached to TTY",
-            "close" => "stream::close() - close the stream",
-            "to_string" => "stream::to_string() - get stream description",
-            _ => "Check the method name and arguments",
-        };
-
-        ErrorTemplate::new(42, "Stream method error", "Stream method error")
-            .with_suggestion(message)
-            .with_suggestion(&format!("Stream method '{}' usage:", method))
-            .with_suggestion(method_help)
-    }
-
-    pub fn serialization_error(message: &str) -> ErrorTemplate {
-        ErrorTemplate::new(43, "Serialization error", "Value cannot be serialized")
-            .with_suggestion(message)
-            .with_suggestion("Some values like streams, functions, and regex cannot be serialized to JSON/YAML/TOML")
-    }
-
-    pub fn list_average_error(message: &str) -> ErrorTemplate {
-        ErrorTemplate::new(44, "List average error", "List average error")
-            .with_suggestion(message)
-            .with_suggestion("list::average() requires all elements to be numbers")
-            .with_suggestion("Empty lists return nil")
-            .with_suggestion("Example: [1, 2, 3, 4, 5]::average() returns 3.0")
     }
 }

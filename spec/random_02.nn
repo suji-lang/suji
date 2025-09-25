@@ -1,0 +1,12 @@
+import std:println
+import std:random
+
+random:seed(42)
+
+xs = [
+  random:integer(10, 20),
+  random:integer(10, 20),
+  random:integer(10, 20)
+]
+
+println(xs)  # [15, 15, 16]

@@ -151,6 +151,8 @@ impl NormalScanner {
             '<' => {
                 if context.match_char('=') {
                     Token::LessEqual
+                } else if context.match_char('|') {
+                    Token::PipeBackward
                 } else {
                     Token::Less
                 }
@@ -176,6 +178,8 @@ impl NormalScanner {
             '|' => {
                 if context.match_char('|') {
                     Token::Or
+                } else if context.match_char('>') {
+                    Token::PipeForward
                 } else {
                     Token::Pipe
                 }

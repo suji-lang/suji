@@ -3,6 +3,7 @@ mod binary;
 mod function_calls;
 mod literals;
 mod method_calls;
+pub mod pipe;
 mod unary;
 
 // Re-export the main expression evaluation functions
@@ -10,6 +11,7 @@ pub use binary::*;
 pub use function_calls::*;
 pub use literals::*;
 pub use method_calls::*;
+pub use pipe::eval_pipe_expression;
 pub use unary::*;
 
 use super::super::env::Env;

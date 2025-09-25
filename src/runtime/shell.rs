@@ -1,6 +1,7 @@
 use super::env_overlay::apply_env_overlay_to_command;
 use super::value::{RuntimeError, Value};
-use std::process::Command;
+use std::io::Write;
+use std::process::{Command, Stdio};
 
 /// Execute a shell command and return stdout as UTF-8 (trims trailing newline)
 pub fn run_shell(command: &str) -> Result<String, RuntimeError> {
@@ -53,19 +54,67 @@ pub fn execute_shell_template(command: &str) -> Result<Value, RuntimeError> {
     Ok(Value::String(output))
 }
 
-/// Basic safety check for commands (non-empty)
-pub fn is_safe_command(command: &str) -> bool {
-    // Reject empty commands
-    if command.trim().is_empty() {
-        return false;
+/// Execute a shell command, optionally writing provided bytes to stdin, and return raw stdout bytes
+/// - Does NOT trim trailing newlines (unlike run_shell)
+/// - Applies the environment overlay to the spawned command
+pub fn run_shell_bytes_with_input(
+    command: &str,
+    input: Option<Vec<u8>>,
+) -> Result<Vec<u8>, RuntimeError> {
+    // Determine shell to use
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+
+    // Spawn the shell with piped stdin/stdout
+    let mut cmd = Command::new(&shell);
+    cmd.stdin(Stdio::piped());
+    cmd.stdout(Stdio::piped());
+    apply_env_overlay_to_command(&mut cmd)?;
+
+    let mut child = cmd
+        .arg("-c")
+        .arg(command)
+        .spawn()
+        .map_err(|err| RuntimeError::ShellError {
+            message: format!("Failed to execute shell command '{}': {}", command, err),
+        })?;
+
+    // If we have input, write it to child's stdin then drop the handle
+    if let Some(bytes) = input {
+        if let Some(stdin) = child.stdin.as_mut() {
+            stdin
+                .write_all(&bytes)
+                .map_err(|err| RuntimeError::ShellError {
+                    message: format!(
+                        "Failed to write to stdin of shell command '{}': {}",
+                        command, err
+                    ),
+                })?;
+        }
+        // Explicitly drop stdin to signal EOF
+        drop(child.stdin.take());
     }
 
-    // For now, we allow all non-empty commands
-    // In production, you might want to:
-    // - Blacklist dangerous commands (rm -rf, etc.)
-    // - Whitelist only specific commands
-    // - Sandbox execution
-    true
+    // Wait for the child and collect output
+    let output = child
+        .wait_with_output()
+        .map_err(|err| RuntimeError::ShellError {
+            message: format!("Failed to wait for shell command '{}': {}", command, err),
+        })?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let exit_code = output.status.code().unwrap_or(-1);
+        return Err(RuntimeError::ShellError {
+            message: format!(
+                "Shell command '{}' failed with exit code {}: {}",
+                command,
+                exit_code,
+                stderr.trim()
+            ),
+        });
+    }
+
+    Ok(output.stdout)
 }
 
 #[cfg(test)]
@@ -139,14 +188,6 @@ mod tests {
         let result = run_shell(r#"echo "quoted string""#);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "quoted string");
-    }
-
-    #[test]
-    fn test_is_safe_command() {
-        assert!(is_safe_command("echo hello"));
-        assert!(is_safe_command("ls -la"));
-        assert!(!is_safe_command(""));
-        assert!(!is_safe_command("   "));
     }
 
     #[test]

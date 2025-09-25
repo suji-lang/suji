@@ -1,6 +1,6 @@
 [package]
 name = "nnlang"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2024"
 
 [dependencies]
@@ -16,3 +16,4 @@ serde_yaml2 = "0.1"
 thiserror = "2.0.16"
 toml = "0.8"
 yaml-rust2 = "0.10.3"
+rand = "0.8"

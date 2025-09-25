@@ -114,6 +114,11 @@ pub fn error_code_for_variant(error: &RuntimeError) -> u32 {
         RuntimeError::MapMethodError { .. } => 124,
         RuntimeError::StreamError { .. } => 125,
         RuntimeError::SerializationError { .. } => 126,
+        RuntimeError::PipeStageTypeError { .. } => 127,
+        RuntimeError::EmptyPipeExpression { .. } => 128,
+        RuntimeError::PipeExecutionError { .. } => 129,
+        RuntimeError::PipeApplyRightTypeError => 130,
+        RuntimeError::PipeApplyLeftTypeError => 131,
     }
 }
 
@@ -214,25 +219,57 @@ impl RuntimeError {
             },
 
             RuntimeError::InvalidOperation { message } => {
-                let mut ctx = ErrorContext::new(
+                ErrorContext::new(
                     ErrorCategory::Type,
                     error_code,
                     "Invalid operation",
                     message.clone(),
-                ).with_suggestions(generate_category_suggestions(ErrorCategory::Type, self));
+                ).with_suggestions(generate_category_suggestions(ErrorCategory::Type, self))
+            },
+            // Pipe-related structured errors
+            RuntimeError::PipeStageTypeError { message } => {
+                ErrorContext::new(
+                    ErrorCategory::Execution,
+                    error_code,
+                    "Pipe stage type error",
+                    message.clone(),
+                )
+            },
 
-                // Pipe operator guidance
-                if message.starts_with("Pipe operator")
-                    || message.starts_with("Failed to execute source closure in pipe")
-                    || message.starts_with("Failed to execute destination closure in pipe")
-                {
-                    ctx = ctx
-                        .with_suggestion("Both sides must be closures (functions)".to_string())
-                        .with_suggestion("Example: out = (|| { println(\"x\") }) | (|| { return io:stdin::read_lines() })".to_string())
-                        .with_suggestion("Destination reads from io:stdin; source writes to io:stdout".to_string());
-                }
+            RuntimeError::EmptyPipeExpression { message } => {
+                ErrorContext::new(
+                    ErrorCategory::Execution,
+                    error_code,
+                    "Empty pipe expression",
+                    message.clone(),
+                )
+            },
 
-                ctx
+            RuntimeError::PipeExecutionError { stage, message } => {
+                ErrorContext::new(
+                    ErrorCategory::Execution,
+                    error_code,
+                    "Pipe execution error",
+                    format!("{}: {}", stage, message),
+                )
+            },
+
+            RuntimeError::PipeApplyRightTypeError => {
+                ErrorContext::new(
+                    ErrorCategory::Type,
+                    error_code,
+                    "Pipe apply type error",
+                    "Pipe apply (|>) requires a function on the right-hand side".to_string(),
+                )
+            },
+
+            RuntimeError::PipeApplyLeftTypeError => {
+                ErrorContext::new(
+                    ErrorCategory::Type,
+                    error_code,
+                    "Pipe apply type error",
+                    "Pipe apply (<|) requires a function on the left-hand side".to_string(),
+                )
             },
 
             RuntimeError::InvalidNumberConversion { message } => {

@@ -1,0 +1,13 @@
+import std:println
+import std:io
+
+sink = || {
+    line = io:stdin::read_line()
+    match line {
+        nil: "empty"
+        _: line
+    }
+}
+
+out = `printf ''` | sink
+println(out)  # empty
