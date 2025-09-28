@@ -1,5 +1,5 @@
 use super::errors::RuntimeError;
-use super::types::{MapKey, OrderedFloat, ParamSpec, Value};
+use super::types::{DecimalNumber, MapKey, OrderedDecimal, ParamSpec, Value};
 use crate::ast::Param;
 
 impl Value {
@@ -28,7 +28,7 @@ impl Value {
     /// Try to convert this value to a MapKey
     pub fn try_into_map_key(self) -> Result<MapKey, RuntimeError> {
         match self {
-            Value::Number(n) => Ok(MapKey::Number(OrderedFloat(n))),
+            Value::Number(n) => Ok(MapKey::Number(OrderedDecimal::new(n.0))),
             Value::Boolean(b) => Ok(MapKey::Boolean(b)),
             Value::String(s) => Ok(MapKey::String(s)),
             Value::Tuple(items) => {
@@ -49,7 +49,7 @@ impl MapKey {
     /// Convert MapKey back to a Value
     pub fn to_value(&self) -> Value {
         match self {
-            MapKey::Number(OrderedFloat(n)) => Value::Number(*n),
+            MapKey::Number(ordered_decimal) => Value::Number(DecimalNumber(ordered_decimal.0)),
             MapKey::Boolean(b) => Value::Boolean(*b),
             MapKey::String(s) => Value::String(s.clone()),
             MapKey::Tuple(items) => Value::Tuple(items.iter().map(|k| k.to_value()).collect()),
@@ -79,7 +79,10 @@ mod tests {
 
     #[test]
     fn test_type_name() {
-        assert_eq!(Value::Number(42.0).type_name(), "number");
+        assert_eq!(
+            Value::Number(DecimalNumber::from_i64(42)).type_name(),
+            "number"
+        );
         assert_eq!(Value::Boolean(true).type_name(), "boolean");
         assert_eq!(Value::String("hello".to_string()).type_name(), "string");
         assert_eq!(Value::List(vec![]).type_name(), "list");
@@ -95,12 +98,12 @@ mod tests {
 
         // Everything else is falsy
         assert!(!Value::Boolean(false).is_truthy());
-        assert!(!Value::Number(42.0).is_truthy());
-        assert!(!Value::Number(0.0).is_truthy());
+        assert!(!Value::Number(DecimalNumber::from_i64(42)).is_truthy());
+        assert!(!Value::Number(DecimalNumber::from_i64(0)).is_truthy());
         assert!(!Value::String("hello".to_string()).is_truthy());
         assert!(!Value::String("".to_string()).is_truthy());
         assert!(!Value::List(vec![]).is_truthy());
-        assert!(!Value::List(vec![Value::Number(1.0)]).is_truthy());
+        assert!(!Value::List(vec![Value::Number(DecimalNumber::from_i64(1))]).is_truthy());
         assert!(!Value::Map(indexmap::IndexMap::new()).is_truthy());
         assert!(!Value::Tuple(vec![]).is_truthy());
         assert!(!Value::Nil.is_truthy());
@@ -109,8 +112,10 @@ mod tests {
     #[test]
     fn test_try_into_map_key_success() {
         // Number
-        let key = Value::Number(42.0).try_into_map_key().unwrap();
-        assert!(matches!(key, MapKey::Number(OrderedFloat(42.0))));
+        let key = Value::Number(DecimalNumber::from_i64(42))
+            .try_into_map_key()
+            .unwrap();
+        assert!(matches!(key, MapKey::Number(_)));
 
         // Boolean
         let key = Value::Boolean(true).try_into_map_key().unwrap();
@@ -124,7 +129,7 @@ mod tests {
 
         // Tuple
         let tuple = Value::Tuple(vec![
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
             Value::String("test".to_string()),
             Value::Boolean(false),
         ]);
@@ -135,7 +140,8 @@ mod tests {
     #[test]
     fn test_try_into_map_key_failure() {
         // List cannot be used as map key
-        let result = Value::List(vec![Value::Number(1.0)]).try_into_map_key();
+        let result =
+            Value::List(vec![Value::Number(DecimalNumber::from_i64(1))]).try_into_map_key();
         assert!(matches!(result, Err(RuntimeError::InvalidKeyType { .. })));
 
         // Map cannot be used as map key
@@ -150,9 +156,9 @@ mod tests {
     #[test]
     fn test_map_key_to_value() {
         // Number
-        let key = MapKey::Number(OrderedFloat(42.0));
+        let key = MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(42)));
         let value = key.to_value();
-        assert_eq!(value, Value::Number(42.0));
+        assert_eq!(value, Value::Number(DecimalNumber::from_i64(42)));
 
         // Boolean
         let key = MapKey::Boolean(true);
@@ -166,13 +172,16 @@ mod tests {
 
         // Tuple
         let key = MapKey::Tuple(vec![
-            MapKey::Number(OrderedFloat(1.0)),
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(1))),
             MapKey::String("test".to_string()),
         ]);
         let value = key.to_value();
         assert_eq!(
             value,
-            Value::Tuple(vec![Value::Number(1.0), Value::String("test".to_string()),])
+            Value::Tuple(vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::String("test".to_string()),
+            ])
         );
     }
 
@@ -180,7 +189,10 @@ mod tests {
     fn test_param_to_param_spec() {
         let param = Param {
             name: "test_param".to_string(),
-            default: Some(Expr::Literal(Literal::Number(42.0, Span::default()))),
+            default: Some(Expr::Literal(Literal::Number(
+                "42".to_string(),
+                Span::default(),
+            ))),
             span: Span::default(),
         };
 

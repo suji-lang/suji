@@ -15,8 +15,8 @@ fn test_parse_arithmetic_expression() {
         if let (Expr::Literal(Literal::Number(l, _)), Expr::Literal(Literal::Number(r, _))) =
             (left.as_ref(), right.as_ref())
         {
-            assert_eq!(*l, 3.0);
-            assert_eq!(*r, 4.0);
+            assert_eq!(*l, "3".to_string());
+            assert_eq!(*r, "4".to_string());
             assert_eq!(op, BinaryOp::Add);
         } else {
             panic!("Expected number operands");
@@ -65,7 +65,7 @@ fn test_parse_multiplication_precedence() {
         assert_eq!(op, BinaryOp::Add);
 
         if let Expr::Literal(Literal::Number(l, _)) = left.as_ref() {
-            assert_eq!(*l, 2.0);
+            assert_eq!(*l, "2".to_string());
         } else {
             panic!("Expected left operand to be 2");
         }
@@ -81,8 +81,8 @@ fn test_parse_multiplication_precedence() {
             if let (Expr::Literal(Literal::Number(l, _)), Expr::Literal(Literal::Number(r, _))) =
                 (inner_left.as_ref(), inner_right.as_ref())
             {
-                assert_eq!(*l, 3.0);
-                assert_eq!(*r, 4.0);
+                assert_eq!(*l, "3".to_string());
+                assert_eq!(*r, "4".to_string());
             } else {
                 panic!("Expected multiplication operands");
             }
@@ -102,7 +102,7 @@ fn test_parse_unary_expression() {
     if let Ok(Expr::Unary { op, expr, .. }) = result {
         assert_eq!(op, UnaryOp::Negate);
         if let Expr::Literal(Literal::Number(n, _)) = expr.as_ref() {
-            assert_eq!(*n, 42.0);
+            assert_eq!(*n, "42".to_string());
         } else {
             panic!("Expected number operand");
         }
@@ -137,8 +137,8 @@ fn test_parse_grouping() {
                     Expr::Literal(Literal::Number(r, _)),
                 ) = (inner_left.as_ref(), inner_right.as_ref())
                 {
-                    assert_eq!(*l, 3.0);
-                    assert_eq!(*r, 4.0);
+                    assert_eq!(*l, "3".to_string());
+                    assert_eq!(*r, "4".to_string());
                 } else {
                     panic!("Expected addition operands");
                 }

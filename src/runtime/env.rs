@@ -120,6 +120,7 @@ impl Default for Env {
 
 #[cfg(test)]
 mod tests {
+    use super::super::value::DecimalNumber;
     use super::*;
 
     #[test]
@@ -127,14 +128,20 @@ mod tests {
         let env = Env::new();
 
         // Define a variable
-        env.define_or_set("x", Value::Number(42.0));
+        env.define_or_set("x", Value::Number(DecimalNumber::from_i64(42)));
 
         // Get the variable
-        assert_eq!(env.get("x").unwrap(), Value::Number(42.0));
+        assert_eq!(
+            env.get("x").unwrap(),
+            Value::Number(DecimalNumber::from_i64(42))
+        );
 
         // Update the variable
-        env.define_or_set("x", Value::Number(100.0));
-        assert_eq!(env.get("x").unwrap(), Value::Number(100.0));
+        env.define_or_set("x", Value::Number(DecimalNumber::from_i64(100)));
+        assert_eq!(
+            env.get("x").unwrap(),
+            Value::Number(DecimalNumber::from_i64(100))
+        );
 
         // Try to get undefined variable
         assert!(matches!(
@@ -146,24 +153,36 @@ mod tests {
     #[test]
     fn test_nested_scopes() {
         let parent_env = Rc::new(Env::new());
-        parent_env.define_or_set("x", Value::Number(1.0));
-        parent_env.define_or_set("y", Value::Number(2.0));
+        parent_env.define_or_set("x", Value::Number(DecimalNumber::from_i64(1)));
+        parent_env.define_or_set("y", Value::Number(DecimalNumber::from_i64(2)));
 
         let child_env = Env::new_child(parent_env.clone());
-        child_env.define_or_set("y", Value::Number(20.0)); // Shadow parent's y
-        child_env.define_or_set("z", Value::Number(3.0));
+        child_env.define_or_set("y", Value::Number(DecimalNumber::from_i64(20))); // Shadow parent's y
+        child_env.define_or_set("z", Value::Number(DecimalNumber::from_i64(3)));
 
         // Child can access parent's x
-        assert_eq!(child_env.get("x").unwrap(), Value::Number(1.0));
+        assert_eq!(
+            child_env.get("x").unwrap(),
+            Value::Number(DecimalNumber::from_i64(1))
+        );
 
         // Child's y shadows parent's y
-        assert_eq!(child_env.get("y").unwrap(), Value::Number(20.0));
+        assert_eq!(
+            child_env.get("y").unwrap(),
+            Value::Number(DecimalNumber::from_i64(20))
+        );
 
         // Child has its own z
-        assert_eq!(child_env.get("z").unwrap(), Value::Number(3.0));
+        assert_eq!(
+            child_env.get("z").unwrap(),
+            Value::Number(DecimalNumber::from_i64(3))
+        );
 
         // Parent still has original y
-        assert_eq!(parent_env.get("y").unwrap(), Value::Number(2.0));
+        assert_eq!(
+            parent_env.get("y").unwrap(),
+            Value::Number(DecimalNumber::from_i64(2))
+        );
 
         // Parent doesn't have z
         assert!(matches!(
@@ -175,17 +194,27 @@ mod tests {
     #[test]
     fn test_set_existing() {
         let parent_env = Rc::new(Env::new());
-        parent_env.define_or_set("x", Value::Number(1.0));
+        parent_env.define_or_set("x", Value::Number(DecimalNumber::from_i64(1)));
 
         let child_env = Env::new_child(parent_env.clone());
 
         // Set existing variable in parent from child
-        child_env.set_existing("x", Value::Number(100.0)).unwrap();
-        assert_eq!(parent_env.get("x").unwrap(), Value::Number(100.0));
+        child_env
+            .set_existing("x", Value::Number(DecimalNumber::from_i64(100)))
+            .unwrap();
+        assert_eq!(
+            parent_env.get("x").unwrap(),
+            Value::Number(DecimalNumber::from_i64(100))
+        );
 
         // Set non-existing variable creates it in current scope
-        child_env.set_existing("y", Value::Number(2.0)).unwrap();
-        assert_eq!(child_env.get("y").unwrap(), Value::Number(2.0));
+        child_env
+            .set_existing("y", Value::Number(DecimalNumber::from_i64(2)))
+            .unwrap();
+        assert_eq!(
+            child_env.get("y").unwrap(),
+            Value::Number(DecimalNumber::from_i64(2))
+        );
         assert!(matches!(
             parent_env.get("y"),
             Err(RuntimeError::UndefinedVariable { .. })

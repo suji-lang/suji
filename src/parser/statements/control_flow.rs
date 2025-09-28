@@ -6,12 +6,32 @@ impl Parser {
     /// Parse return statement: return expr?
     pub(super) fn parse_return_statement(&mut self) -> ParseResult<Stmt> {
         let span = self.previous().span.clone();
-        let value = if self.check(Token::Newline) || self.is_at_end() {
-            None
-        } else {
-            Some(self.expression()?)
-        };
-        Ok(Stmt::Return { value, span })
+
+        // If the next token ends the statement, this is a bare `return`
+        if self.check(Token::Newline) || self.check(Token::Semicolon) || self.is_at_end() {
+            return Ok(Stmt::Return {
+                values: Vec::new(),
+                span,
+            });
+        }
+
+        // Parse comma-separated expressions until newline/semicolon/end
+        let mut values = Vec::new();
+        loop {
+            values.push(self.expression()?);
+
+            if !self.match_token(Token::Comma) {
+                break;
+            }
+
+            if self.check(Token::Newline) || self.check(Token::Semicolon) || self.is_at_end() {
+                return Err(ParseError::Generic {
+                    message: "Trailing comma not allowed in return".to_string(),
+                });
+            }
+        }
+
+        Ok(Stmt::Return { values, span })
     }
 
     /// Parse break statement: break label?

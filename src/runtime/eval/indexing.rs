@@ -13,12 +13,14 @@ pub fn eval_index(target: &Expr, index: &Expr, env: Rc<Env>) -> EvalResult<Value
         Value::List(ref items) => {
             let idx = match index_value {
                 Value::Number(n) => {
-                    if n.fract() != 0.0 {
+                    if !n.is_integer() {
                         return Err(RuntimeError::TypeError {
                             message: "List index must be an integer".to_string(),
                         });
                     }
-                    n as i64
+                    n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                        message: "Index out of range".to_string(),
+                    })?
                 }
                 _ => {
                     return Err(RuntimeError::TypeError {
@@ -55,13 +57,15 @@ pub fn eval_index(target: &Expr, index: &Expr, env: Rc<Env>) -> EvalResult<Value
 
             match index_value {
                 Value::Number(n) => {
-                    if n.fract() != 0.0 {
+                    if !n.is_integer() {
                         return Err(RuntimeError::TypeError {
                             message: "String index must be an integer".to_string(),
                         });
                     }
 
-                    let idx = n as i64;
+                    let idx = n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                        message: "Index out of range".to_string(),
+                    })?;
                     let normalized_idx = if idx < 0 { len + idx } else { idx };
 
                     if normalized_idx < 0 || normalized_idx >= len {
@@ -130,12 +134,14 @@ pub fn eval_slice(
                     let val = eval_expr(expr, env.clone())?;
                     match val {
                         Value::Number(n) => {
-                            if n.fract() != 0.0 {
+                            if !n.is_integer() {
                                 return Err(RuntimeError::TypeError {
                                     message: "Slice start must be an integer".to_string(),
                                 });
                             }
-                            n as i64
+                            n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                                message: "Index out of range".to_string(),
+                            })?
                         }
                         _ => {
                             return Err(RuntimeError::TypeError {
@@ -153,12 +159,14 @@ pub fn eval_slice(
                     let val = eval_expr(expr, env)?;
                     match val {
                         Value::Number(n) => {
-                            if n.fract() != 0.0 {
+                            if !n.is_integer() {
                                 return Err(RuntimeError::TypeError {
                                     message: "Slice end must be an integer".to_string(),
                                 });
                             }
-                            n as i64
+                            n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                                message: "Index out of range".to_string(),
+                            })?
                         }
                         _ => {
                             return Err(RuntimeError::TypeError {
@@ -199,12 +207,14 @@ pub fn eval_slice(
                     let val = eval_expr(expr, env.clone())?;
                     match val {
                         Value::Number(n) => {
-                            if n.fract() != 0.0 {
+                            if !n.is_integer() {
                                 return Err(RuntimeError::TypeError {
                                     message: "String slice start must be an integer".to_string(),
                                 });
                             }
-                            n as i64
+                            n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                                message: "Index out of range".to_string(),
+                            })?
                         }
                         _ => {
                             return Err(RuntimeError::TypeError {
@@ -222,12 +232,14 @@ pub fn eval_slice(
                     let val = eval_expr(expr, env)?;
                     match val {
                         Value::Number(n) => {
-                            if n.fract() != 0.0 {
+                            if !n.is_integer() {
                                 return Err(RuntimeError::TypeError {
                                     message: "String slice end must be an integer".to_string(),
                                 });
                             }
-                            n as i64
+                            n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                                message: "Index out of range".to_string(),
+                            })?
                         }
                         _ => {
                             return Err(RuntimeError::TypeError {
@@ -300,6 +312,7 @@ mod tests {
     use super::*;
     use crate::ast::{Expr, Literal};
     use crate::runtime::env::Env;
+    use crate::runtime::value::DecimalNumber;
     use crate::token::Span;
 
     fn create_test_env() -> Rc<Env> {
@@ -314,17 +327,17 @@ mod tests {
 
         // Create a list [1, 2, 3]
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         env.define_or_set("my_list", list);
 
         let target = Expr::Literal(Literal::Identifier("my_list".to_string(), Span::default()));
-        let index = Expr::Literal(Literal::Number(1.0, Span::default()));
+        let index = Expr::Literal(Literal::Number("1".to_string(), Span::default()));
 
         let result = eval_index(&target, &index, env).unwrap();
-        assert_eq!(result, Value::Number(2.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
     }
 
     #[test]
@@ -332,17 +345,17 @@ mod tests {
         let env = create_test_env();
 
         let list = Value::List(vec![
-            Value::Number(10.0),
-            Value::Number(20.0),
-            Value::Number(30.0),
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(20)),
+            Value::Number(DecimalNumber::from_i64(30)),
         ]);
         env.define_or_set("my_list", list);
 
         let target = Expr::Literal(Literal::Identifier("my_list".to_string(), Span::default()));
-        let index = Expr::Literal(Literal::Number(-1.0, Span::default()));
+        let index = Expr::Literal(Literal::Number("-1".to_string(), Span::default()));
 
         let result = eval_index(&target, &index, env).unwrap();
-        assert_eq!(result, Value::Number(30.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(30)));
     }
 
     #[test]
@@ -350,25 +363,25 @@ mod tests {
         let env = create_test_env();
 
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
-            Value::Number(4.0),
-            Value::Number(5.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
+            Value::Number(DecimalNumber::from_i64(4)),
+            Value::Number(DecimalNumber::from_i64(5)),
         ]);
         env.define_or_set("my_list", list);
 
         let target = Expr::Literal(Literal::Identifier("my_list".to_string(), Span::default()));
-        let start = Expr::Literal(Literal::Number(1.0, Span::default()));
-        let end = Expr::Literal(Literal::Number(4.0, Span::default()));
+        let start = Expr::Literal(Literal::Number("1".to_string(), Span::default()));
+        let end = Expr::Literal(Literal::Number("4".to_string(), Span::default()));
 
         let result = eval_slice(&target, Some(&start), Some(&end), env).unwrap();
 
         if let Value::List(items) = result {
             assert_eq!(items.len(), 3);
-            assert_eq!(items[0], Value::Number(2.0));
-            assert_eq!(items[1], Value::Number(3.0));
-            assert_eq!(items[2], Value::Number(4.0));
+            assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(2)));
+            assert_eq!(items[1], Value::Number(DecimalNumber::from_i64(3)));
+            assert_eq!(items[2], Value::Number(DecimalNumber::from_i64(4)));
         } else {
             panic!("Expected list");
         }
@@ -383,7 +396,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
 
         env.define_or_set("person", Value::Map(map));
 
@@ -404,20 +420,20 @@ mod tests {
             "my_string".to_string(),
             Span::default(),
         ));
-        let start = Expr::Literal(Literal::Number(1.0, Span::default()));
-        let end = Expr::Literal(Literal::Number(3.0, Span::default()));
+        let start = Expr::Literal(Literal::Number("1".to_string(), Span::default()));
+        let end = Expr::Literal(Literal::Number("3".to_string(), Span::default()));
 
         let result = eval_slice(&target, Some(&start), Some(&end), env.clone()).unwrap();
         assert_eq!(result, Value::String("el".to_string()));
 
         // Test negative indices
-        let start_neg = Expr::Literal(Literal::Number(-2.0, Span::default()));
+        let start_neg = Expr::Literal(Literal::Number("-2".to_string(), Span::default()));
         let result2 = eval_slice(&target, Some(&start_neg), None, env.clone()).unwrap();
         assert_eq!(result2, Value::String("lo".to_string()));
 
         // Test empty slice
-        let start_empty = Expr::Literal(Literal::Number(3.0, Span::default()));
-        let end_empty = Expr::Literal(Literal::Number(1.0, Span::default()));
+        let start_empty = Expr::Literal(Literal::Number("3".to_string(), Span::default()));
+        let end_empty = Expr::Literal(Literal::Number("1".to_string(), Span::default()));
         let result3 = eval_slice(&target, Some(&start_empty), Some(&end_empty), env).unwrap();
         assert_eq!(result3, Value::String("".to_string()));
     }
@@ -435,12 +451,12 @@ mod tests {
         ));
 
         // Test [:2] (first two characters)
-        let end = Expr::Literal(Literal::Number(2.0, Span::default()));
+        let end = Expr::Literal(Literal::Number("2".to_string(), Span::default()));
         let result = eval_slice(&target, None, Some(&end), env.clone()).unwrap();
         assert_eq!(result, Value::String("he".to_string()));
 
         // Test [2:] (from third character to end)
-        let start = Expr::Literal(Literal::Number(2.0, Span::default()));
+        let start = Expr::Literal(Literal::Number("2".to_string(), Span::default()));
         let result2 = eval_slice(&target, Some(&start), None, env).unwrap();
         assert_eq!(result2, Value::String("llo".to_string()));
     }
@@ -458,15 +474,15 @@ mod tests {
         ));
 
         // Test positive indexing
-        let index0 = Expr::Literal(Literal::Number(0.0, Span::default()));
+        let index0 = Expr::Literal(Literal::Number("0".to_string(), Span::default()));
         let result0 = eval_index(&target, &index0, env.clone()).unwrap();
         assert_eq!(result0, Value::String("h".to_string()));
 
-        let index1 = Expr::Literal(Literal::Number(1.0, Span::default()));
+        let index1 = Expr::Literal(Literal::Number("1".to_string(), Span::default()));
         let result1 = eval_index(&target, &index1, env.clone()).unwrap();
         assert_eq!(result1, Value::String("e".to_string()));
 
-        let index4 = Expr::Literal(Literal::Number(4.0, Span::default()));
+        let index4 = Expr::Literal(Literal::Number("4".to_string(), Span::default()));
         let result4 = eval_index(&target, &index4, env).unwrap();
         assert_eq!(result4, Value::String("o".to_string()));
     }
@@ -484,15 +500,15 @@ mod tests {
         ));
 
         // Test negative indexing
-        let index_neg1 = Expr::Literal(Literal::Number(-1.0, Span::default()));
+        let index_neg1 = Expr::Literal(Literal::Number("-1".to_string(), Span::default()));
         let result_neg1 = eval_index(&target, &index_neg1, env.clone()).unwrap();
         assert_eq!(result_neg1, Value::String("o".to_string()));
 
-        let index_neg2 = Expr::Literal(Literal::Number(-2.0, Span::default()));
+        let index_neg2 = Expr::Literal(Literal::Number("-2".to_string(), Span::default()));
         let result_neg2 = eval_index(&target, &index_neg2, env.clone()).unwrap();
         assert_eq!(result_neg2, Value::String("l".to_string()));
 
-        let index_neg5 = Expr::Literal(Literal::Number(-5.0, Span::default()));
+        let index_neg5 = Expr::Literal(Literal::Number("-5".to_string(), Span::default()));
         let result_neg5 = eval_index(&target, &index_neg5, env).unwrap();
         assert_eq!(result_neg5, Value::String("h".to_string()));
     }
@@ -510,7 +526,7 @@ mod tests {
         ));
 
         // Test Unicode character indexing
-        let index3 = Expr::Literal(Literal::Number(3.0, Span::default()));
+        let index3 = Expr::Literal(Literal::Number("3".to_string(), Span::default()));
         let result3 = eval_index(&target, &index3, env).unwrap();
         assert_eq!(result3, Value::String("é".to_string()));
     }
@@ -528,7 +544,7 @@ mod tests {
         ));
 
         // Test out of bounds positive index
-        let index5 = Expr::Literal(Literal::Number(5.0, Span::default()));
+        let index5 = Expr::Literal(Literal::Number("5".to_string(), Span::default()));
         let result = eval_index(&target, &index5, env.clone());
         assert!(result.is_err());
         if let Err(RuntimeError::IndexOutOfBounds { message }) = result {
@@ -538,7 +554,7 @@ mod tests {
         }
 
         // Test out of bounds negative index
-        let index_neg6 = Expr::Literal(Literal::Number(-6.0, Span::default()));
+        let index_neg6 = Expr::Literal(Literal::Number("-6".to_string(), Span::default()));
         let result2 = eval_index(&target, &index_neg6, env);
         assert!(result2.is_err());
         if let Err(RuntimeError::IndexOutOfBounds { message }) = result2 {
@@ -561,7 +577,7 @@ mod tests {
         ));
 
         // Test indexing empty string
-        let index0 = Expr::Literal(Literal::Number(0.0, Span::default()));
+        let index0 = Expr::Literal(Literal::Number("0".to_string(), Span::default()));
         let result = eval_index(&target, &index0, env);
         assert!(result.is_err());
         if let Err(RuntimeError::IndexOutOfBounds { message }) = result {
@@ -584,7 +600,7 @@ mod tests {
         ));
 
         // Test non-integer number index
-        let index_float = Expr::Literal(Literal::Number(1.5, Span::default()));
+        let index_float = Expr::Literal(Literal::Number("1.5".to_string(), Span::default()));
         let result = eval_index(&target, &index_float, env.clone());
         assert!(result.is_err());
         if let Err(RuntimeError::TypeError { message }) = result {

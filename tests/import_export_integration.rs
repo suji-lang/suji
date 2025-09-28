@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::{assert_import_works, eval_program_with_modules};
@@ -30,7 +31,7 @@ fn test_complex_import_export_flow() {
             map.get(&nnlang::runtime::value::MapKey::String(
                 "answer".to_string()
             )),
-            Some(&Value::Number(42.0))
+            Some(&Value::Number(DecimalNumber::from_i64(42)))
         );
         assert!(matches!(
             map.get(&nnlang::runtime::value::MapKey::String(

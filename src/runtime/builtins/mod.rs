@@ -28,6 +28,7 @@ pub fn setup_global_env(env: &Env) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::value::DecimalNumber;
 
     #[test]
     fn test_call_builtin() {
@@ -35,18 +36,18 @@ mod tests {
         // print returns number of bytes written
         assert_eq!(
             call_builtin("print", &args).unwrap(),
-            crate::runtime::value::Value::Number(4.0)
+            crate::runtime::value::Value::Number(DecimalNumber::from_i64(4))
         );
         // println returns number of bytes including newline
         assert_eq!(
             call_builtin("println", &args).unwrap(),
-            crate::runtime::value::Value::Number(5.0)
+            crate::runtime::value::Value::Number(DecimalNumber::from_i64(5))
         );
 
         // Test println with no arguments (should print just newline)
         assert_eq!(
             call_builtin("println", &[]).unwrap(),
-            crate::runtime::value::Value::Number(1.0)
+            crate::runtime::value::Value::Number(DecimalNumber::from_i64(1))
         );
 
         assert!(call_builtin("invalid", &args).is_err());

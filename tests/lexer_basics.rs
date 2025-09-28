@@ -75,11 +75,11 @@ fn test_numbers() {
     let tokens = Lexer::lex(input).unwrap();
 
     let expected = vec![
-        Token::Number(42.0),
-        Token::Number(2.5),
-        Token::Number(0.0),
-        Token::Number(999.999),
-        Token::Number(0.5),
+        Token::Number("42".to_string()),
+        Token::Number("2.5".to_string()),
+        Token::Number("0".to_string()),
+        Token::Number("999.999".to_string()),
+        Token::Number("0.5".to_string()),
         Token::Eof,
     ];
 

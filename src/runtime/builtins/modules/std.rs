@@ -32,31 +32,37 @@ fn create_builtin_function_value(name: &str) -> Value {
     })
 }
 
-/// Create the FD module with `stdin`, `stdout`, and `stderr` streams.
-pub fn create_fd_module() -> Value {
-    let mut fd_map = IndexMap::new();
+/// Create the io module with stdio streams + open function
+pub fn create_io_module() -> Value {
+    let mut io_map = IndexMap::new();
 
     // Create shared stream handles - these will be the same instances
-    // referenced by all imports of FD
+    // referenced by all imports of the module
     let stdin_stream = Rc::new(StreamHandle::new_stdin());
     let stdout_stream = Rc::new(StreamHandle::new_stdout());
     let stderr_stream = Rc::new(StreamHandle::new_stderr());
 
     // Insert into FD map
-    fd_map.insert(
+    io_map.insert(
         MapKey::String("stdin".to_string()),
         Value::Stream(stdin_stream),
     );
-    fd_map.insert(
+    io_map.insert(
         MapKey::String("stdout".to_string()),
         Value::Stream(stdout_stream),
     );
-    fd_map.insert(
+    io_map.insert(
         MapKey::String("stderr".to_string()),
         Value::Stream(stderr_stream),
     );
 
-    Value::Map(fd_map)
+    // File opening function
+    io_map.insert(
+        MapKey::String("open".to_string()),
+        create_builtin_function_value("io_open"),
+    );
+
+    Value::Map(io_map)
 }
 
 /// Create the ENV module exposing process environment via overlay proxy.
@@ -88,7 +94,7 @@ pub fn create_std_module() -> Value {
     std_map.insert(MapKey::String("toml".to_string()), create_toml_module());
 
     // Build io module (renamed from FD) and attach
-    std_map.insert(MapKey::String("io".to_string()), create_fd_module());
+    std_map.insert(MapKey::String("io".to_string()), create_io_module());
 
     // Add random module to std module
     std_map.insert(MapKey::String("random".to_string()), create_random_module());
@@ -138,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_io_module_creation() {
-        let io_module = create_fd_module();
+        let io_module = create_io_module();
 
         if let Value::Map(map) = io_module {
             // Check all three streams exist
@@ -247,7 +253,7 @@ mod tests {
 
     #[test]
     fn test_io_stream_properties() {
-        let io_module = create_fd_module();
+        let io_module = create_io_module();
 
         if let Value::Map(io_map) = io_module {
             let stdin = io_map.get(&MapKey::String("stdin".to_string())).unwrap();

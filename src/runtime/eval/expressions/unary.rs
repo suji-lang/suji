@@ -26,8 +26,15 @@ mod tests {
 
     #[test]
     fn test_unary_operations() {
-        let result = eval_unary_op(&UnaryOp::Negate, Value::Number(42.0)).unwrap();
-        assert_eq!(result, Value::Number(-42.0));
+        let result = eval_unary_op(
+            &UnaryOp::Negate,
+            Value::Number(crate::runtime::value::DecimalNumber::from_i64(42)),
+        )
+        .unwrap();
+        assert_eq!(
+            result,
+            Value::Number(crate::runtime::value::DecimalNumber::from_i64(-42))
+        );
 
         let result = eval_unary_op(&UnaryOp::Not, Value::Boolean(true)).unwrap();
         assert_eq!(result, Value::Boolean(false));

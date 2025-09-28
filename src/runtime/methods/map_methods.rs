@@ -1,4 +1,4 @@
-use super::super::value::{RuntimeError, Value};
+use super::super::value::{DecimalNumber, RuntimeError, Value};
 use super::common::ValueRef;
 
 /// Map methods: delete(key), contains(key), keys(), values(), to_list(), length(), get(key, default=nil), merge(other_map)
@@ -91,7 +91,7 @@ pub fn call_map_method(
                 });
             }
             if let Value::Map(map_data) = receiver.get() {
-                Ok(Value::Number(map_data.len() as f64))
+                Ok(Value::Number(DecimalNumber::from_usize(map_data.len())))
             } else {
                 unreachable!()
             }
@@ -162,7 +162,7 @@ pub fn call_map_method(
 
 #[cfg(test)]
 mod tests {
-    use super::super::super::value::{MapKey, OrderedFloat};
+    use super::super::super::value::{DecimalNumber, MapKey, OrderedDecimal};
     use super::super::common::ValueRef;
     use super::*;
     use indexmap::IndexMap;
@@ -170,8 +170,14 @@ mod tests {
     #[test]
     fn test_map_delete() {
         let mut map_data = IndexMap::new();
-        map_data.insert(MapKey::String("a".to_string()), Value::Number(1.0));
-        map_data.insert(MapKey::String("b".to_string()), Value::Number(2.0));
+        map_data.insert(
+            MapKey::String("a".to_string()),
+            Value::Number(DecimalNumber::from_i64(1)),
+        );
+        map_data.insert(
+            MapKey::String("b".to_string()),
+            Value::Number(DecimalNumber::from_i64(2)),
+        );
 
         let mut map = Value::Map(map_data);
         let receiver = ValueRef::Mutable(&mut map);
@@ -202,7 +208,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
         map_data.insert(
             MapKey::String("city".to_string()),
             Value::String("New York".to_string()),
@@ -243,20 +252,39 @@ mod tests {
     #[test]
     fn test_map_contains_numeric_keys() {
         let mut map_data = IndexMap::new();
-        map_data.insert(MapKey::Number(OrderedFloat(1.0)), Value::Number(100.0));
-        map_data.insert(MapKey::Number(OrderedFloat(2.0)), Value::Number(85.0));
-        map_data.insert(MapKey::Number(OrderedFloat(3.0)), Value::Number(92.0));
+        map_data.insert(
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(1))),
+            Value::Number(DecimalNumber::from_i64(100)),
+        );
+        map_data.insert(
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(2))),
+            Value::Number(DecimalNumber::from_i64(85)),
+        );
+        map_data.insert(
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(3))),
+            Value::Number(DecimalNumber::from_i64(92)),
+        );
 
         let map = Value::Map(map_data);
         let receiver = ValueRef::Immutable(&map);
 
         // Test existing numeric key
-        let result1 = call_map_method(receiver, "contains", vec![Value::Number(2.0)]).unwrap();
+        let result1 = call_map_method(
+            receiver,
+            "contains",
+            vec![Value::Number(DecimalNumber::from_i64(2))],
+        )
+        .unwrap();
         assert_eq!(result1, Value::Boolean(true));
 
         // Test non-existing numeric key
         let receiver2 = ValueRef::Immutable(&map);
-        let result2 = call_map_method(receiver2, "contains", vec![Value::Number(4.0)]).unwrap();
+        let result2 = call_map_method(
+            receiver2,
+            "contains",
+            vec![Value::Number(DecimalNumber::from_i64(4))],
+        )
+        .unwrap();
         assert_eq!(result2, Value::Boolean(false));
     }
 
@@ -284,11 +312,11 @@ mod tests {
         let mut map_data = IndexMap::new();
         let key1 = MapKey::Tuple(vec![
             MapKey::String("user".to_string()),
-            MapKey::Number(OrderedFloat(1.0)),
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(1))),
         ]);
         let key2 = MapKey::Tuple(vec![
             MapKey::String("admin".to_string()),
-            MapKey::Number(OrderedFloat(2.0)),
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(2))),
         ]);
 
         map_data.insert(key1, Value::String("regular user".to_string()));
@@ -298,13 +326,19 @@ mod tests {
         let receiver = ValueRef::Immutable(&map);
 
         // Test existing tuple key
-        let tuple_key = Value::Tuple(vec![Value::String("user".to_string()), Value::Number(1.0)]);
+        let tuple_key = Value::Tuple(vec![
+            Value::String("user".to_string()),
+            Value::Number(DecimalNumber::from_i64(1)),
+        ]);
         let result1 = call_map_method(receiver, "contains", vec![tuple_key]).unwrap();
         assert_eq!(result1, Value::Boolean(true));
 
         // Test non-existing tuple key
         let receiver2 = ValueRef::Immutable(&map);
-        let tuple_key2 = Value::Tuple(vec![Value::String("guest".to_string()), Value::Number(3.0)]);
+        let tuple_key2 = Value::Tuple(vec![
+            Value::String("guest".to_string()),
+            Value::Number(DecimalNumber::from_i64(3)),
+        ]);
         let result2 = call_map_method(receiver2, "contains", vec![tuple_key2]).unwrap();
         assert_eq!(result2, Value::Boolean(false));
     }
@@ -350,7 +384,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
         map_data.insert(
             MapKey::String("city".to_string()),
             Value::String("New York".to_string()),
@@ -378,7 +415,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
         map_data.insert(MapKey::String("active".to_string()), Value::Boolean(true));
 
         let map = Value::Map(map_data);
@@ -389,7 +429,7 @@ mod tests {
             assert_eq!(values.len(), 3);
             // Order is preserved by IndexMap
             assert_eq!(values[0], Value::String("Alice".to_string()));
-            assert_eq!(values[1], Value::Number(30.0));
+            assert_eq!(values[1], Value::Number(DecimalNumber::from_i64(30)));
             assert_eq!(values[2], Value::Boolean(true));
         } else {
             panic!("Expected list");
@@ -403,7 +443,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
 
         let map = Value::Map(map_data);
         let receiver = ValueRef::Immutable(&map);
@@ -421,7 +464,7 @@ mod tests {
             // Check second pair
             if let Value::Tuple(second_pair) = &pairs[1] {
                 assert_eq!(second_pair[0], Value::String("age".to_string()));
-                assert_eq!(second_pair[1], Value::Number(30.0));
+                assert_eq!(second_pair[1], Value::Number(DecimalNumber::from_i64(30)));
             } else {
                 panic!("Expected tuple");
             }
@@ -433,14 +476,23 @@ mod tests {
     #[test]
     fn test_map_length_method() {
         let mut map_data = IndexMap::new();
-        map_data.insert(MapKey::String("a".to_string()), Value::Number(1.0));
-        map_data.insert(MapKey::String("b".to_string()), Value::Number(2.0));
-        map_data.insert(MapKey::String("c".to_string()), Value::Number(3.0));
+        map_data.insert(
+            MapKey::String("a".to_string()),
+            Value::Number(DecimalNumber::from_i64(1)),
+        );
+        map_data.insert(
+            MapKey::String("b".to_string()),
+            Value::Number(DecimalNumber::from_i64(2)),
+        );
+        map_data.insert(
+            MapKey::String("c".to_string()),
+            Value::Number(DecimalNumber::from_i64(3)),
+        );
 
         let map = Value::Map(map_data);
         let receiver = ValueRef::Immutable(&map);
         let result = call_map_method(receiver, "length", vec![]).unwrap();
-        assert_eq!(result, Value::Number(3.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
     }
 
     #[test]
@@ -477,7 +529,7 @@ mod tests {
         // Test length() on empty map
         let receiver4 = ValueRef::Immutable(&empty_map);
         let length_result = call_map_method(receiver4, "length", vec![]).unwrap();
-        assert_eq!(length_result, Value::Number(0.0));
+        assert_eq!(length_result, Value::Number(DecimalNumber::from_i64(0)));
     }
 
     #[test]
@@ -529,7 +581,7 @@ mod tests {
             Value::String("Alice".to_string()),
         );
         map_data.insert(
-            MapKey::Number(OrderedFloat(1.0)),
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(1))),
             Value::String("first".to_string()),
         );
         map_data.insert(MapKey::Boolean(true), Value::String("yes".to_string()));
@@ -541,7 +593,7 @@ mod tests {
         if let Value::List(keys) = result {
             assert_eq!(keys.len(), 3);
             assert_eq!(keys[0], Value::String("name".to_string()));
-            assert_eq!(keys[1], Value::Number(1.0));
+            assert_eq!(keys[1], Value::Number(DecimalNumber::from_i64(1)));
             assert_eq!(keys[2], Value::Boolean(true));
         } else {
             panic!("Expected list");
@@ -555,7 +607,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::Number(OrderedFloat(42.0)), Value::Number(100.0));
+        map_data.insert(
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(42))),
+            Value::Number(DecimalNumber::from_i64(100)),
+        );
 
         let map = Value::Map(map_data);
         let receiver = ValueRef::Immutable(&map);
@@ -572,8 +627,8 @@ mod tests {
             }
             // Check second pair
             if let Value::Tuple(second_pair) = &pairs[1] {
-                assert_eq!(second_pair[0], Value::Number(42.0));
-                assert_eq!(second_pair[1], Value::Number(100.0));
+                assert_eq!(second_pair[0], Value::Number(DecimalNumber::from_i64(42)));
+                assert_eq!(second_pair[1], Value::Number(DecimalNumber::from_i64(100)));
             } else {
                 panic!("Expected tuple");
             }
@@ -590,7 +645,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
         map_data.insert(MapKey::String("active".to_string()), Value::Boolean(true));
 
         let map = Value::Map(map_data);
@@ -604,7 +662,7 @@ mod tests {
         let receiver2 = ValueRef::Immutable(&map);
         let age =
             call_map_method(receiver2, "get", vec![Value::String("age".to_string())]).unwrap();
-        assert_eq!(age, Value::Number(30.0));
+        assert_eq!(age, Value::Number(DecimalNumber::from_i64(30)));
 
         let receiver3 = ValueRef::Immutable(&map);
         let active =
@@ -668,8 +726,14 @@ mod tests {
     #[test]
     fn test_map_get_with_different_key_types() {
         let mut map_data = IndexMap::new();
-        map_data.insert(MapKey::Number(OrderedFloat(1.0)), Value::Number(100.0));
-        map_data.insert(MapKey::Number(OrderedFloat(2.0)), Value::Number(85.0));
+        map_data.insert(
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(1))),
+            Value::Number(DecimalNumber::from_i64(100)),
+        );
+        map_data.insert(
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(2))),
+            Value::Number(DecimalNumber::from_i64(85)),
+        );
         map_data.insert(MapKey::Boolean(true), Value::String("yes".to_string()));
 
         let map = Value::Map(map_data);
@@ -679,19 +743,25 @@ mod tests {
         let score1 = call_map_method(
             receiver,
             "get",
-            vec![Value::Number(1.0), Value::Number(0.0)],
+            vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::Number(DecimalNumber::from_i64(0)),
+            ],
         )
         .unwrap();
-        assert_eq!(score1, Value::Number(100.0));
+        assert_eq!(score1, Value::Number(DecimalNumber::from_i64(100)));
 
         let receiver2 = ValueRef::Immutable(&map);
         let score4 = call_map_method(
             receiver2,
             "get",
-            vec![Value::Number(4.0), Value::Number(0.0)],
+            vec![
+                Value::Number(DecimalNumber::from_i64(4)),
+                Value::Number(DecimalNumber::from_i64(0)),
+            ],
         )
         .unwrap();
-        assert_eq!(score4, Value::Number(0.0));
+        assert_eq!(score4, Value::Number(DecimalNumber::from_i64(0)));
 
         // Get with boolean key
         let receiver3 = ValueRef::Immutable(&map);
@@ -747,7 +817,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Bob".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(25.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(25)),
+        );
 
         let mut map = Value::Map(map_data);
         let receiver = ValueRef::Mutable(&mut map);
@@ -777,7 +850,7 @@ mod tests {
             );
             assert_eq!(
                 map_data.get(&MapKey::String("age".to_string())),
-                Some(&Value::Number(25.0))
+                Some(&Value::Number(DecimalNumber::from_i64(25)))
             );
             assert_eq!(
                 map_data.get(&MapKey::String("city".to_string())),
@@ -799,13 +872,19 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Bob".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(25.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(25)),
+        );
 
         let mut map = Value::Map(map_data);
         let receiver = ValueRef::Mutable(&mut map);
 
         let mut overlay_data = IndexMap::new();
-        overlay_data.insert(MapKey::String("age".to_string()), Value::Number(26.0));
+        overlay_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(26)),
+        );
         overlay_data.insert(
             MapKey::String("city".to_string()),
             Value::String("Boston".to_string()),
@@ -822,7 +901,7 @@ mod tests {
             assert_eq!(map_data.len(), 3);
             assert_eq!(
                 map_data.get(&MapKey::String("age".to_string())),
-                Some(&Value::Number(26.0))
+                Some(&Value::Number(DecimalNumber::from_i64(26)))
             );
             assert_eq!(
                 map_data.get(&MapKey::String("city".to_string())),
@@ -872,7 +951,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Charlie".to_string()),
         );
-        data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
 
         let data_map = Value::Map(data);
 
@@ -889,7 +971,7 @@ mod tests {
             );
             assert_eq!(
                 map_data.get(&MapKey::String("age".to_string())),
-                Some(&Value::Number(30.0))
+                Some(&Value::Number(DecimalNumber::from_i64(30)))
             );
         } else {
             panic!("Expected map");
@@ -952,7 +1034,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
 
         let map = Value::Map(map_data);
         let receiver = ValueRef::Immutable(&map);
@@ -980,7 +1065,11 @@ mod tests {
         let map = Value::Map(map_data);
         let receiver = ValueRef::Immutable(&map);
 
-        let result = call_map_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        let result = call_map_method(
+            receiver,
+            "to_string",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 }

@@ -20,6 +20,11 @@ impl Parser {
             return Ok(Expr::Literal(Literal::Nil(span)));
         }
 
+        if self.match_token(Token::Underscore) {
+            let span = self.previous().span.clone();
+            return Ok(Expr::Literal(Literal::Identifier("_".to_string(), span)));
+        }
+
         if let Token::Number(n) = self.peek().token {
             self.advance();
             let span = self.previous().span.clone();

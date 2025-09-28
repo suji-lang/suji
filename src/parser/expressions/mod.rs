@@ -1,3 +1,4 @@
+pub mod assignments;
 pub mod collections;
 pub mod functions;
 pub mod literals;
@@ -6,6 +7,7 @@ pub mod shell_cmd;
 
 use super::{ParseError, ParseResult, Parser};
 use crate::ast::Expr;
+use crate::token::Token;
 
 impl Parser {
     /// Parse a primary expression - main dispatcher
@@ -13,6 +15,11 @@ impl Parser {
         // Try parsing literals first
         if let Ok(expr) = self.parse_literals() {
             return Ok(expr);
+        }
+
+        // Allow tuple/grouping to appear in primary contexts (e.g., destructuring)
+        if self.match_token(Token::LeftParen) {
+            return self.parse_tuple_or_grouping();
         }
 
         // Try parsing collections

@@ -31,7 +31,7 @@ fn test_parse_match_single_expression() {
             Stmt::Expr(Expr::Literal(Literal::StringTemplate(parts, _))),
         ) = (&arms[0].pattern, &arms[0].body)
         {
-            assert_eq!(*n, 1.0);
+            assert_eq!(*n, "1".to_string());
             if let [StringPart::Text(s)] = parts.as_slice() {
                 assert_eq!(s, "one");
             } else {
@@ -49,7 +49,7 @@ fn test_parse_match_single_expression() {
             Stmt::Expr(Expr::Literal(Literal::StringTemplate(parts, _))),
         ) = (&arms[1].pattern, &arms[1].body)
         {
-            assert_eq!(*n, 2.0);
+            assert_eq!(*n, "2".to_string());
             if let [StringPart::Text(s)] = parts.as_slice() {
                 assert_eq!(s, "two");
             } else {
@@ -106,13 +106,10 @@ fn test_parse_match_block() {
             Stmt::Block { statements, .. },
         ) = (&arms[0].pattern, &arms[0].body)
         {
-            assert_eq!(*n, 1.0);
+            assert_eq!(*n, "1".to_string());
             assert_eq!(statements.len(), 1);
-            if let Stmt::Return {
-                value: Some(expr), ..
-            } = &statements[0]
-            {
-                if let Expr::Literal(Literal::StringTemplate(parts, _)) = expr {
+            if let Stmt::Return { values, .. } = &statements[0] {
+                if let [Expr::Literal(Literal::StringTemplate(parts, _))] = values.as_slice() {
                     if let [StringPart::Text(s)] = parts.as_slice() {
                         assert_eq!(s, "one");
                     } else {

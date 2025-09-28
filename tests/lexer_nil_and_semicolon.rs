@@ -29,15 +29,15 @@ fn test_semicolon_token() {
     let expected = vec![
         Token::Identifier("x".to_string()),
         Token::Assign,
-        Token::Number(1.0),
+        Token::Number("1".to_string()),
         Token::Semicolon,
         Token::Identifier("y".to_string()),
         Token::Assign,
-        Token::Number(2.0),
+        Token::Number("2".to_string()),
         Token::Semicolon,
         Token::Identifier("z".to_string()),
         Token::Assign,
-        Token::Number(3.0),
+        Token::Number("3".to_string()),
         Token::Eof,
     ];
 

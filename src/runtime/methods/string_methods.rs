@@ -1,5 +1,6 @@
-use super::super::value::{RuntimeError, Value};
+use super::super::value::{DecimalNumber, RuntimeError, Value};
 use super::common::ValueRef;
+use rust_decimal::Decimal;
 
 /// String methods: length(), split(separator=" "), to_number(), to_list(), index_of(), to_string()
 pub fn call_string_method(
@@ -15,7 +16,7 @@ pub fn call_string_method(
                         message: "length() takes no arguments".to_string(),
                     });
                 }
-                Ok(Value::Number(s.chars().count() as f64))
+                Ok(Value::Number(DecimalNumber::from_usize(s.chars().count())))
             }
             "split" => {
                 let separator = if args.is_empty() {
@@ -47,9 +48,9 @@ pub fn call_string_method(
                         message: "to_number() takes no arguments".to_string(),
                     });
                 }
-                s.parse::<f64>().map(Value::Number).map_err(|_| {
+                DecimalNumber::parse(s).map(Value::Number).map_err(|err| {
                     RuntimeError::InvalidNumberConversion {
-                        message: format!("Cannot convert '{}' to number", s),
+                        message: format!("Cannot convert '{}' to number: {}", s, err),
                     }
                 })
             }
@@ -70,7 +71,10 @@ pub fn call_string_method(
                 }
                 match &args[0] {
                     Value::String(substring) => {
-                        let index = s.find(substring).map(|i| i as f64).unwrap_or(-1.0);
+                        let index = s
+                            .find(substring)
+                            .map(DecimalNumber::from_usize)
+                            .unwrap_or_else(|| DecimalNumber::from_i64(-1));
                         Ok(Value::Number(index))
                     }
                     _ => Err(RuntimeError::TypeError {
@@ -172,13 +176,30 @@ pub fn call_string_method(
                 }
                 match &args[0] {
                     Value::Number(count) => {
-                        if *count < 0.0 || !count.is_finite() {
+                        if count.inner() < Decimal::ZERO {
                             return Err(RuntimeError::TypeError {
-                                message: "repeat() count must be a non-negative finite number"
-                                    .to_string(),
+                                message: "repeat() count must be non-negative".to_string(),
                             });
                         }
-                        let count = *count as usize;
+                        let rounded = count.round();
+                        if !rounded.is_integer() {
+                            return Err(RuntimeError::TypeError {
+                                message: "repeat() count must be an integer".to_string(),
+                            });
+                        }
+                        let count_i64 =
+                            rounded
+                                .to_i64_checked()
+                                .ok_or_else(|| RuntimeError::TypeError {
+                                    message: "repeat() count must be a finite integer".to_string(),
+                                })?;
+                        const MAX_REPEAT_COUNT: i64 = 100_000;
+                        if count_i64 > MAX_REPEAT_COUNT {
+                            return Err(RuntimeError::TypeError {
+                                message: "repeat() count is too large".to_string(),
+                            });
+                        }
+                        let count = count_i64 as usize;
                         Ok(Value::String(s.repeat(count)))
                     }
                     _ => Err(RuntimeError::TypeError {
@@ -212,7 +233,7 @@ mod tests {
         let s = Value::String("hello".to_string());
         let receiver = ValueRef::Immutable(&s);
         let result = call_string_method(receiver, "length", vec![]).unwrap();
-        assert_eq!(result, Value::Number(5.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
     }
 
     #[test]
@@ -250,12 +271,15 @@ mod tests {
         let s = Value::String("123".to_string());
         let receiver = ValueRef::Immutable(&s);
         let result = call_string_method(receiver, "to_number", vec![]).unwrap();
-        assert_eq!(result, Value::Number(123.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(123)));
 
         let s2 = Value::String("123.45".to_string());
         let receiver2 = ValueRef::Immutable(&s2);
         let result2 = call_string_method(receiver2, "to_number", vec![]).unwrap();
-        assert_eq!(result2, Value::Number(123.45));
+        assert_eq!(
+            result2,
+            Value::Number(DecimalNumber::parse("123.45").expect("valid number"))
+        );
 
         let s3 = Value::String("invalid".to_string());
         let receiver3 = ValueRef::Immutable(&s3);
@@ -295,7 +319,7 @@ mod tests {
             vec![Value::String("world".to_string())],
         )
         .unwrap();
-        assert_eq!(result, Value::Number(6.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(6)));
 
         let receiver2 = ValueRef::Immutable(&s);
         let result2 = call_string_method(
@@ -304,7 +328,7 @@ mod tests {
             vec![Value::String("xyz".to_string())],
         )
         .unwrap();
-        assert_eq!(result2, Value::Number(-1.0));
+        assert_eq!(result2, Value::Number(DecimalNumber::from_i64(-1)));
     }
 
     #[test]
@@ -333,7 +357,11 @@ mod tests {
 
         // Test error case - wrong argument type
         let receiver3 = ValueRef::Immutable(&s);
-        let result3 = call_string_method(receiver3, "contains", vec![Value::Number(42.0)]);
+        let result3 = call_string_method(
+            receiver3,
+            "contains",
+            vec![Value::Number(DecimalNumber::from_i64(42))],
+        );
         assert!(matches!(result3, Err(RuntimeError::TypeError { .. })));
 
         // Test error case - wrong number of arguments
@@ -368,7 +396,11 @@ mod tests {
 
         // Test error case - wrong argument type
         let receiver3 = ValueRef::Immutable(&s);
-        let result3 = call_string_method(receiver3, "starts_with", vec![Value::Number(42.0)]);
+        let result3 = call_string_method(
+            receiver3,
+            "starts_with",
+            vec![Value::Number(DecimalNumber::from_i64(42))],
+        );
         assert!(matches!(result3, Err(RuntimeError::TypeError { .. })));
     }
 
@@ -398,7 +430,11 @@ mod tests {
 
         // Test error case - wrong argument type
         let receiver3 = ValueRef::Immutable(&s);
-        let result3 = call_string_method(receiver3, "ends_with", vec![Value::Number(42.0)]);
+        let result3 = call_string_method(
+            receiver3,
+            "ends_with",
+            vec![Value::Number(DecimalNumber::from_i64(42))],
+        );
         assert!(matches!(result3, Err(RuntimeError::TypeError { .. })));
     }
 
@@ -438,7 +474,10 @@ mod tests {
         let result3 = call_string_method(
             receiver3,
             "replace",
-            vec![Value::Number(42.0), Value::String("test".to_string())],
+            vec![
+                Value::Number(DecimalNumber::from_i64(42)),
+                Value::String("test".to_string()),
+            ],
         );
         assert!(matches!(result3, Err(RuntimeError::TypeError { .. })));
 
@@ -565,27 +604,52 @@ mod tests {
         let receiver = ValueRef::Immutable(&s);
 
         // Test repeat with positive count
-        let result = call_string_method(receiver, "repeat", vec![Value::Number(3.0)]).unwrap();
+        let result = call_string_method(
+            receiver,
+            "repeat",
+            vec![Value::Number(DecimalNumber::from_i64(3))],
+        )
+        .unwrap();
         assert_eq!(result, Value::String("hahaha".to_string()));
 
         // Test repeat with zero count
         let receiver2 = ValueRef::Immutable(&s);
-        let result2 = call_string_method(receiver2, "repeat", vec![Value::Number(0.0)]).unwrap();
+        let result2 = call_string_method(
+            receiver2,
+            "repeat",
+            vec![Value::Number(DecimalNumber::from_i64(0))],
+        )
+        .unwrap();
         assert_eq!(result2, Value::String("".to_string()));
 
         // Test repeat with one count
         let receiver3 = ValueRef::Immutable(&s);
-        let result3 = call_string_method(receiver3, "repeat", vec![Value::Number(1.0)]).unwrap();
+        let result3 = call_string_method(
+            receiver3,
+            "repeat",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        )
+        .unwrap();
         assert_eq!(result3, Value::String("ha".to_string()));
 
         // Test error case - negative count
         let receiver4 = ValueRef::Immutable(&s);
-        let result4 = call_string_method(receiver4, "repeat", vec![Value::Number(-1.0)]);
+        let result4 = call_string_method(
+            receiver4,
+            "repeat",
+            vec![Value::Number(DecimalNumber::from_i64(-1))],
+        );
         assert!(matches!(result4, Err(RuntimeError::TypeError { .. })));
 
         // Test error case - non-finite count
         let receiver5 = ValueRef::Immutable(&s);
-        let result5 = call_string_method(receiver5, "repeat", vec![Value::Number(f64::INFINITY)]);
+        let result5 = call_string_method(
+            receiver5,
+            "repeat",
+            vec![Value::Number(
+                DecimalNumber::parse("999999999").expect("valid number"),
+            )],
+        );
         assert!(matches!(result5, Err(RuntimeError::TypeError { .. })));
 
         // Test error case - wrong argument type
@@ -623,7 +687,11 @@ mod tests {
     fn test_string_to_string_arity_mismatch() {
         let s = Value::String("test".to_string());
         let receiver = ValueRef::Immutable(&s);
-        let result = call_string_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        let result = call_string_method(
+            receiver,
+            "to_string",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 }

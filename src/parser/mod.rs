@@ -91,7 +91,7 @@ impl Parser {
 
         // Literal pattern - parse simple literals directly to avoid `:` conflicts
         if let Token::Number(n) = &self.peek().token {
-            let n = *n;
+            let n = n.clone();
             let span = self.advance().span.clone();
             return Ok(crate::ast::Pattern::Literal {
                 value: crate::ast::ValueLike::Number(n),

@@ -1,0 +1,14 @@
+import std:println
+import std:io
+
+path = `mktemp`
+
+f = io:open(path)
+f::write("a\nb\n\nlast")
+f::close()
+
+f = io:open(path)
+lines = f::read_lines()
+f::close()
+
+println(lines::join(","))  # a,b,,last

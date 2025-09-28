@@ -597,6 +597,7 @@ mod tests {
     use super::*;
     use crate::ast::{Expr, Literal, Stmt};
     use crate::runtime::env::Env;
+    use crate::runtime::value::DecimalNumber;
     use crate::token::Span;
 
     fn create_test_env() -> Rc<Env> {
@@ -609,9 +610,9 @@ mod tests {
     fn test_list_iteration() {
         let env = create_test_env();
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         env.define_or_set("items", list);
 

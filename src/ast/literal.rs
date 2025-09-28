@@ -5,7 +5,7 @@ use crate::token::Span;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     /// Numeric literal: 42, 3.14
-    Number(f64, Span),
+    Number(String, Span),
 
     /// Boolean literal: true, false
     Boolean(bool, Span),

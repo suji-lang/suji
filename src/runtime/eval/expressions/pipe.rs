@@ -13,6 +13,18 @@ enum PipeStage {
     ShellTemplate(Vec<crate::ast::StringPart>),
 }
 
+const PIPE_INVOCATION_MESSAGE: &str =
+    "Pipe requires function invocations; write a(x) | b(y) instead of a | b";
+
+fn is_invocation_expr(expr: &Expr) -> bool {
+    match expr {
+        Expr::Call { .. } => true,
+        Expr::MethodCall { .. } => true,
+        Expr::Grouping { expr, .. } => is_invocation_expr(expr),
+        _ => false,
+    }
+}
+
 fn collect_pipe_stages(
     expr: &Expr,
     env: Rc<Env>,
@@ -34,9 +46,15 @@ fn collect_pipe_stages(
             Ok(())
         }
         _ => {
+            let is_invocation = is_invocation_expr(expr);
             let v = eval_expr(expr, env)?;
             match v {
                 Value::Function(f) => {
+                    if !is_invocation {
+                        return Err(RuntimeError::PipeStageTypeError {
+                            message: PIPE_INVOCATION_MESSAGE.to_string(),
+                        });
+                    }
                     out.push(PipeStage::Function(Box::new(f)));
                     Ok(())
                 }

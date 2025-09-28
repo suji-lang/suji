@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::eval_program;
@@ -37,7 +38,7 @@ nums = yaml:parse(nums_yaml)
 result = nums[1]
 "#;
     let result3 = eval_program(program3).unwrap();
-    assert_eq!(result3, Value::Number(2.0));
+    assert_eq!(result3, Value::Number(DecimalNumber::from_i64(2)));
 }
 
 #[test]
@@ -74,7 +75,7 @@ vals = cfg:values
 result = vals[2]
 "#;
     let result3 = eval_program(program3).unwrap();
-    assert_eq!(result3, Value::Number(3.0));
+    assert_eq!(result3, Value::Number(DecimalNumber::from_i64(3)));
 }
 
 #[test]
@@ -110,5 +111,5 @@ arr = json:parse("[1, 2, 3, 4]")
 result = arr[2]
 "#;
     let result3 = eval_program(program3).unwrap();
-    assert_eq!(result3, Value::Number(3.0));
+    assert_eq!(result3, Value::Number(DecimalNumber::from_i64(3)));
 }

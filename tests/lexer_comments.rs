@@ -11,7 +11,7 @@ fn test_comments() {
         Token::Newline,
         Token::Identifier("x".to_string()),
         Token::Assign,
-        Token::Number(1.0),
+        Token::Number("1".to_string()),
         Token::Comment("# Another comment".to_string()),
         Token::Eof,
     ];

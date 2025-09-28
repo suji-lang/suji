@@ -11,7 +11,7 @@ fn test_pattern_is_exhaustive() {
 
     // Literal is not exhaustive
     let literal = Pattern::Literal {
-        value: ValueLike::Number(42.0),
+        value: ValueLike::Number("42".to_string()),
         span: span.clone(),
     };
     assert!(!literal.is_exhaustive());
@@ -40,16 +40,16 @@ fn test_pattern_can_match_value() {
 
     // Wildcard matches everything
     let wildcard = Pattern::Wildcard { span: span.clone() };
-    assert!(wildcard.can_match_value(&ValueLike::Number(42.0)));
+    assert!(wildcard.can_match_value(&ValueLike::Number("42".to_string())));
     assert!(wildcard.can_match_value(&ValueLike::Boolean(true)));
     assert!(wildcard.can_match_value(&ValueLike::String("test".to_string())));
 
     // Literal number pattern matches number values
     let number_pattern = Pattern::Literal {
-        value: ValueLike::Number(42.0),
+        value: ValueLike::Number("42".to_string()),
         span: span.clone(),
     };
-    assert!(number_pattern.can_match_value(&ValueLike::Number(100.0)));
+    assert!(number_pattern.can_match_value(&ValueLike::Number("100".to_string())));
     assert!(!number_pattern.can_match_value(&ValueLike::Boolean(true)));
 
     // Tuple pattern matches tuple values with same length
@@ -57,7 +57,7 @@ fn test_pattern_can_match_value() {
         patterns: vec![
             Pattern::Wildcard { span: span.clone() },
             Pattern::Literal {
-                value: ValueLike::Number(0.0),
+                value: ValueLike::Number("0".to_string()),
                 span: span.clone(),
             },
         ],
@@ -65,7 +65,7 @@ fn test_pattern_can_match_value() {
     };
     let tuple_value = ValueLike::Tuple(vec![
         ValueLike::String("test".to_string()),
-        ValueLike::Number(123.0),
+        ValueLike::Number("123".to_string()),
     ]);
     assert!(tuple_pattern.can_match_value(&tuple_value));
 
@@ -75,5 +75,5 @@ fn test_pattern_can_match_value() {
         span,
     };
     assert!(regex_pattern.can_match_value(&ValueLike::String("123".to_string())));
-    assert!(!regex_pattern.can_match_value(&ValueLike::Number(123.0)));
+    assert!(!regex_pattern.can_match_value(&ValueLike::Number("123".to_string())));
 }

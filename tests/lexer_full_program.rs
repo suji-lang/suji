@@ -31,7 +31,7 @@ plus = "${a} plus ${b} does indeed equal ${c}"
     // Check for presence of key tokens
     assert!(actual.contains(&Token::Identifier("a".to_string())));
     assert!(actual.contains(&Token::Assign));
-    assert!(actual.contains(&Token::Number(1.0)));
+    assert!(actual.contains(&Token::Number("1".to_string())));
     assert!(actual.contains(&Token::Pipe));
     assert!(actual.contains(&Token::Return));
     assert!(actual.contains(&Token::Loop));

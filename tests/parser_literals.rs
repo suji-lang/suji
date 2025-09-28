@@ -8,7 +8,7 @@ fn test_parse_number_literal() {
     assert!(result.is_ok());
 
     if let Ok(Expr::Literal(Literal::Number(n, _))) = result {
-        assert_eq!(n, 42.0);
+        assert_eq!(n, "42".to_string());
     } else {
         panic!("Expected number literal");
     }

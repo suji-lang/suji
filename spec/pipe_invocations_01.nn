@@ -1,0 +1,23 @@
+import std:println
+import std:io
+
+make_producer = |left, right| {
+    return || {
+        println("${left},${right}")
+    }
+}
+
+make_consumer = |pattern| {
+    return || {
+        loop through io:stdin::read_lines() with line {
+            match {
+                line ~ pattern: return "match:" + line
+            }
+        }
+        return "no-match"
+    }
+}
+
+out = make_producer("foo", "bar") | make_consumer(/bar/)
+
+println(out)  # match:foo,bar

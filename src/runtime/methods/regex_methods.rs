@@ -29,6 +29,7 @@ pub fn call_regex_method(
 mod tests {
     use super::super::common::ValueRef;
     use super::*;
+    use crate::runtime::value::DecimalNumber;
     use regex::Regex;
 
     #[test]
@@ -54,7 +55,11 @@ mod tests {
         let regex = Regex::new("test").unwrap();
         let regex_val = Value::Regex(regex);
         let receiver = ValueRef::Immutable(&regex_val);
-        let result = call_regex_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        let result = call_regex_method(
+            receiver,
+            "to_string",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 

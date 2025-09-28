@@ -18,13 +18,7 @@ impl fmt::Debug for FunctionValue {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Value::Number(n) => {
-                if n.fract() == 0.0 {
-                    write!(f, "{}", *n as i64)
-                } else {
-                    write!(f, "{}", n)
-                }
-            }
+            Value::Number(n) => write!(f, "{}", n),
             Value::Boolean(b) => write!(f, "{}", b),
             Value::String(s) => write!(f, "{}", s),
             Value::List(items) => {
@@ -61,7 +55,7 @@ impl fmt::Display for MapKey {
 
 #[cfg(test)]
 mod tests {
-    use super::super::types::{MapKey, OrderedFloat};
+    use super::super::types::{DecimalNumber, MapKey, OrderedDecimal};
     use super::*;
     use crate::ast::{Expr, Literal, Stmt};
     use crate::token::Span;
@@ -72,8 +66,14 @@ mod tests {
     #[test]
     fn test_value_display() {
         // Numbers - integers should display without decimal
-        assert_eq!(format!("{}", Value::Number(42.0)), "42");
-        assert_eq!(format!("{}", Value::Number(42.5)), "42.5");
+        assert_eq!(
+            format!("{}", Value::Number(DecimalNumber::from_i64(42))),
+            "42"
+        );
+        assert_eq!(
+            format!("{}", Value::Number(DecimalNumber::parse("42.5").unwrap())),
+            "42.5"
+        );
 
         // Booleans
         assert_eq!(format!("{}", Value::Boolean(true)), "true");
@@ -87,26 +87,38 @@ mod tests {
         assert_eq!(
             format!(
                 "{}",
-                Value::List(vec![Value::Number(1.0), Value::Number(2.0)])
+                Value::List(vec![
+                    Value::Number(DecimalNumber::from_i64(1)),
+                    Value::Number(DecimalNumber::from_i64(2))
+                ])
             ),
             "[1, 2]"
         );
 
         // Maps
         let mut map = IndexMap::new();
-        map.insert(MapKey::String("key".to_string()), Value::Number(42.0));
+        map.insert(
+            MapKey::String("key".to_string()),
+            Value::Number(DecimalNumber::from_i64(42)),
+        );
         assert_eq!(format!("{}", Value::Map(map)), "{key: 42}");
 
         // Tuples
         assert_eq!(format!("{}", Value::Tuple(vec![])), "()");
         assert_eq!(
-            format!("{}", Value::Tuple(vec![Value::Number(1.0)])),
+            format!(
+                "{}",
+                Value::Tuple(vec![Value::Number(DecimalNumber::from_i64(1))])
+            ),
             "(1,)"
         );
         assert_eq!(
             format!(
                 "{}",
-                Value::Tuple(vec![Value::Number(1.0), Value::Number(2.0)])
+                Value::Tuple(vec![
+                    Value::Number(DecimalNumber::from_i64(1)),
+                    Value::Number(DecimalNumber::from_i64(2))
+                ])
             ),
             "(1, 2)"
         );
@@ -122,7 +134,7 @@ mod tests {
                 Value::Function(FunctionValue {
                     params: vec![],
                     body: Stmt::Return {
-                        value: None,
+                        values: Vec::new(),
                         span: Span::default()
                     },
                     env: Rc::new(crate::runtime::env::Env::new()),
@@ -137,12 +149,18 @@ mod tests {
 
     #[test]
     fn test_map_key_display() {
-        assert_eq!(format!("{}", MapKey::Number(OrderedFloat(42.0))), "42");
+        assert_eq!(
+            format!(
+                "{}",
+                MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(42)))
+            ),
+            "42"
+        );
         assert_eq!(format!("{}", MapKey::Boolean(true)), "true");
         assert_eq!(format!("{}", MapKey::String("hello".to_string())), "hello");
 
         let tuple_key = MapKey::Tuple(vec![
-            MapKey::Number(OrderedFloat(1.0)),
+            MapKey::Number(OrderedDecimal::new(rust_decimal::Decimal::from(1))),
             MapKey::String("test".to_string()),
         ]);
         assert_eq!(format!("{}", tuple_key), "(1, test)");
@@ -159,7 +177,10 @@ mod tests {
             default: None,
         }];
         let body = Stmt::Return {
-            value: Some(Expr::Literal(Literal::Number(42.0, Span::default()))),
+            values: vec![Expr::Literal(Literal::Number(
+                "42".to_string(),
+                Span::default(),
+            ))],
             span: Span::default(),
         };
 

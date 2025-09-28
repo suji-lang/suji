@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::{eval_program, eval_string_expr};
@@ -7,57 +8,72 @@ use nnlang::runtime::value::Value;
 fn test_list_indexing_and_slicing() {
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][0]").unwrap(),
-        Value::Number(10.0)
+        Value::Number(DecimalNumber::from_i64(10))
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][1]").unwrap(),
-        Value::Number(20.0)
+        Value::Number(DecimalNumber::from_i64(20))
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][3]").unwrap(),
-        Value::Number(40.0)
+        Value::Number(DecimalNumber::from_i64(40))
     );
 
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][-1]").unwrap(),
-        Value::Number(40.0)
+        Value::Number(DecimalNumber::from_i64(40))
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][-2]").unwrap(),
-        Value::Number(30.0)
+        Value::Number(DecimalNumber::from_i64(30))
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][-4]").unwrap(),
-        Value::Number(10.0)
+        Value::Number(DecimalNumber::from_i64(10))
     );
 
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][1:3]").unwrap(),
-        Value::List(vec![Value::Number(20.0), Value::Number(30.0)])
+        Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(20)),
+            Value::Number(DecimalNumber::from_i64(30))
+        ])
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][:2]").unwrap(),
-        Value::List(vec![Value::Number(10.0), Value::Number(20.0)])
+        Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(20))
+        ])
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][2:]").unwrap(),
-        Value::List(vec![Value::Number(30.0), Value::Number(40.0)])
+        Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(30)),
+            Value::Number(DecimalNumber::from_i64(40))
+        ])
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][-2:]").unwrap(),
-        Value::List(vec![Value::Number(30.0), Value::Number(40.0)])
+        Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(30)),
+            Value::Number(DecimalNumber::from_i64(40))
+        ])
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][:-2]").unwrap(),
-        Value::List(vec![Value::Number(10.0), Value::Number(20.0)])
+        Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(20))
+        ])
     );
     assert_eq!(
         eval_string_expr("[10, 20, 30, 40][:]").unwrap(),
         Value::List(vec![
-            Value::Number(10.0),
-            Value::Number(20.0),
-            Value::Number(30.0),
-            Value::Number(40.0),
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(20)),
+            Value::Number(DecimalNumber::from_i64(30)),
+            Value::Number(DecimalNumber::from_i64(40)),
         ])
     );
     assert_eq!(
@@ -69,10 +85,10 @@ fn test_list_indexing_and_slicing() {
 #[test]
 fn test_list_assignment() {
     let result = eval_program("xs = [10, 20, 30]\nxs[1] = 99\nresult = xs[1]").unwrap();
-    assert_eq!(result, Value::Number(99.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(99)));
 
     let result = eval_program("xs = [10, 20, 30]\nxs[-1] = 0\nresult = xs[2]").unwrap();
-    assert_eq!(result, Value::Number(0.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(0)));
 
     let result = eval_program("xs = [1, 2, 3]\nxs[0] = \"hello\"\nresult = xs[0]").unwrap();
     assert_eq!(result, Value::String("hello".to_string()));
@@ -82,9 +98,9 @@ fn test_list_assignment() {
     assert_eq!(
         result,
         Value::List(vec![
-            Value::Number(10.0),
-            Value::Number(20.0),
-            Value::Number(30.0)
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(20)),
+            Value::Number(DecimalNumber::from_i64(30))
         ])
     );
 }
@@ -94,11 +110,11 @@ fn test_map_access_and_assignment() {
     let result = eval_program("m = { name: \"Ada\", age: 37 }\nresult = m:name").unwrap();
     assert_eq!(result, Value::String("Ada".to_string()));
     let result = eval_program("m = { name: \"Ada\", age: 37 }\nresult = m:age").unwrap();
-    assert_eq!(result, Value::Number(37.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(37)));
     let result = eval_program("m = { name: \"Ada\", age: 37 }\nresult = m[\"name\"]").unwrap();
     assert_eq!(result, Value::String("Ada".to_string()));
     let result = eval_program("m = { name: \"Ada\", age: 37 }\nresult = m[\"age\"]").unwrap();
-    assert_eq!(result, Value::Number(37.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(37)));
     let result =
         eval_program("m = { name: \"Ada\", age: 37 }\nk = \"name\"\nresult = m[k]").unwrap();
     assert_eq!(result, Value::String("Ada".to_string()));
@@ -108,7 +124,7 @@ fn test_map_access_and_assignment() {
     let result =
         eval_program("m = { 1: \"one\", \"two\": 2, true: \"boolean\" }\nresult = m[\"two\"]")
             .unwrap();
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
     let result =
         eval_program("m = { 1: \"one\", \"two\": 2, true: \"boolean\" }\nresult = m[true]")
             .unwrap();
@@ -119,7 +135,7 @@ fn test_map_access_and_assignment() {
     assert_eq!(result, Value::String("Lovelace".to_string()));
     let result =
         eval_program("m = { name: \"Ada\" }\nm[\"age\"] = 37\nresult = m[\"age\"]").unwrap();
-    assert_eq!(result, Value::Number(37.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(37)));
     let result = eval_program(
         "m = { name: \"Ada\" }\nk = \"country\"\nm[k] = \"UK\"\nresult = m[\"country\"]",
     )
@@ -153,10 +169,10 @@ fn test_list_concatenation_and_map_iteration_contains() {
     assert_eq!(
         eval_string_expr("[1, 2] + [3, 4]").unwrap(),
         Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
-            Value::Number(4.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
+            Value::Number(DecimalNumber::from_i64(4)),
         ])
     );
 
@@ -164,7 +180,10 @@ fn test_list_concatenation_and_map_iteration_contains() {
     let result = eval_program("a = [1,2]\nb = [3,4]\nc = a + b\nresult = a").unwrap();
     assert_eq!(
         result,
-        Value::List(vec![Value::Number(1.0), Value::Number(2.0)])
+        Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2))
+        ])
     );
 
     // Map iteration with key/value
@@ -189,14 +208,14 @@ fn test_deep_and_mixed_nested_access_and_assignment() {
     let result =
         eval_program("matrix = [[1, 2], [3, 4]]\nmatrix[0][1] = 99\nresult = matrix[0][1]")
             .unwrap();
-    assert_eq!(result, Value::Number(99.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(99)));
 
     // Deep map nesting access and assignment
     let result = eval_program(
         "config = { user: { profile: { settings: { display: { theme: \"dark\", layout: { columns: 3, rows: 2 } } } } } }\nconfig:user:profile:settings:display:layout:columns = 4\nresult = config:user:profile:settings:display:layout:columns",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(4.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(4)));
 
     // Mixed nested structures
     let result = eval_program(
@@ -210,13 +229,13 @@ fn test_deep_and_mixed_nested_access_and_assignment() {
 fn test_list_first_last_defaults_and_average() {
     // first/last with defaults
     let result = eval_program("xs = []\nresult = xs::first(42)").unwrap();
-    assert_eq!(result, Value::Number(42.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(42)));
     let result = eval_program("ys = []\nresult = ys::last(\"n/a\")").unwrap();
     assert_eq!(result, Value::String("n/a".to_string()));
     let result = eval_program("zs = [1,2,3]\nresult = zs::first(0)").unwrap();
-    assert_eq!(result, Value::Number(1.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(1)));
 
     // average
     let result = eval_program("nums = [1,2,3,4]\nresult = nums::average()").unwrap();
-    assert_eq!(result, Value::Number(2.5));
+    assert_eq!(result, Value::Number(DecimalNumber::parse("2.5").unwrap()));
 }

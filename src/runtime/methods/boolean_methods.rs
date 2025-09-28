@@ -29,6 +29,7 @@ pub fn call_boolean_method(
 mod tests {
     use super::super::common::ValueRef;
     use super::*;
+    use crate::runtime::value::DecimalNumber;
 
     #[test]
     fn test_boolean_to_string() {
@@ -47,7 +48,11 @@ mod tests {
     fn test_boolean_to_string_arity_mismatch() {
         let bool_val = Value::Boolean(true);
         let receiver = ValueRef::Immutable(&bool_val);
-        let result = call_boolean_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        let result = call_boolean_method(
+            receiver,
+            "to_string",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 

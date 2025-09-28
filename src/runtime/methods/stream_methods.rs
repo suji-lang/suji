@@ -1,4 +1,4 @@
-use super::super::value::{RuntimeError, StreamBackend, StreamHandle, Value};
+use super::super::value::{DecimalNumber, RuntimeError, StreamBackend, StreamHandle, Value};
 use super::common::ValueRef;
 use std::io::IsTerminal;
 use std::io::{BufRead, Read, Write};
@@ -22,8 +22,8 @@ pub fn call_stream_method(
                 "read" => {
                     // Optional arg: chunk_kb (default 8)
                     let chunk_kb = match args.as_slice() {
-                        [] => 8.0,
-                        [Value::Number(n)] => *n,
+                        [] => DecimalNumber::from_i64(8),
+                        [Value::Number(n)] => n.clone(),
                         _ => {
                             return Err(RuntimeError::ArityMismatch {
                                 message: "stream::read(chunk_kb=8) takes 0 or 1 numeric argument"
@@ -32,9 +32,10 @@ pub fn call_stream_method(
                         }
                     };
 
-                    if !chunk_kb.is_finite() || chunk_kb <= 0.0 {
+                    let zero = DecimalNumber::from_i64(0);
+                    if chunk_kb <= zero {
                         return Err(RuntimeError::StreamError {
-                            message: "chunk_kb must be a positive finite number".to_string(),
+                            message: "chunk_kb must be a positive number".to_string(),
                         });
                     }
 
@@ -48,7 +49,16 @@ pub fn call_stream_method(
                         });
                     }
 
-                    stream_read_chunk(stream_handle, (chunk_kb * 1024.0) as usize)
+                    // Convert chunk_kb to bytes (multiply by 1024)
+                    let kb_1024 = DecimalNumber::from_i64(1024);
+                    let chunk_bytes = chunk_kb.mul(&kb_1024);
+                    let chunk_bytes_i64 =
+                        chunk_bytes
+                            .to_i64_checked()
+                            .ok_or_else(|| RuntimeError::StreamError {
+                                message: "chunk size too large".to_string(),
+                            })?;
+                    stream_read_chunk(stream_handle, chunk_bytes_i64 as usize)
                 }
                 "read_line" => {
                     if !args.is_empty() {
@@ -206,6 +216,26 @@ fn stream_read_chunk(
                 }),
             }
         }
+        StreamBackend::File(file_ref) => {
+            let mut file = file_ref.borrow_mut();
+            let mut buffer = vec![0u8; chunk_size];
+
+            match file.read(&mut buffer) {
+                Ok(0) => Ok(Value::Nil),
+                Ok(bytes_read) => {
+                    buffer.truncate(bytes_read);
+                    match String::from_utf8(buffer) {
+                        Ok(text) => Ok(Value::String(text)),
+                        Err(_) => Err(RuntimeError::StreamError {
+                            message: "Stream read produced invalid UTF-8".to_string(),
+                        }),
+                    }
+                }
+                Err(e) => Err(RuntimeError::StreamError {
+                    message: format!("Failed to read from stream: {}", e),
+                }),
+            }
+        }
         StreamBackend::MemoryReadable(cursor_ref) => {
             let mut cursor = cursor_ref.borrow_mut();
             let mut buffer = vec![0u8; chunk_size];
@@ -275,6 +305,48 @@ fn stream_read_line(stream_handle: &StreamHandle) -> Result<Value, RuntimeError>
                 }),
             }
         }
+        StreamBackend::File(file_ref) => {
+            let mut file = file_ref.borrow_mut();
+            let mut buffer = Vec::new();
+            let mut byte = [0u8; 1];
+
+            loop {
+                match file.read(&mut byte) {
+                    Ok(0) => {
+                        if buffer.is_empty() {
+                            return Ok(Value::Nil);
+                        } else {
+                            break;
+                        }
+                    }
+                    Ok(_) => {
+                        buffer.push(byte[0]);
+                        if byte[0] == b'\n' {
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        return Err(RuntimeError::StreamError {
+                            message: format!("Failed to read line from stream: {}", e),
+                        });
+                    }
+                }
+            }
+
+            if buffer.last().is_some_and(|last| *last == b'\n') {
+                buffer.pop();
+                if buffer.last().is_some_and(|carriage| *carriage == b'\r') {
+                    buffer.pop();
+                }
+            }
+
+            match String::from_utf8(buffer) {
+                Ok(line) => Ok(Value::String(line)),
+                Err(_) => Err(RuntimeError::StreamError {
+                    message: "Stream read produced invalid UTF-8".to_string(),
+                }),
+            }
+        }
         StreamBackend::MemoryReadable(cursor_ref) => {
             let mut cursor = cursor_ref.borrow_mut();
             let mut line = String::new();
@@ -330,7 +402,7 @@ fn stream_write(stream_handle: &StreamHandle, text: &str) -> Result<Value, Runti
             match stdout.write_all(bytes) {
                 Ok(()) => {
                     stdout.flush().ok(); // Best effort flush
-                    Ok(Value::Number(bytes.len() as f64))
+                    Ok(Value::Number(DecimalNumber::from_usize(bytes.len())))
                 }
                 Err(e) => Err(RuntimeError::StreamError {
                     message: format!("Failed to write to stdout: {}", e),
@@ -342,23 +414,35 @@ fn stream_write(stream_handle: &StreamHandle, text: &str) -> Result<Value, Runti
             match stderr.write_all(bytes) {
                 Ok(()) => {
                     stderr.flush().ok(); // Best effort flush
-                    Ok(Value::Number(bytes.len() as f64))
+                    Ok(Value::Number(DecimalNumber::from_usize(bytes.len())))
                 }
                 Err(e) => Err(RuntimeError::StreamError {
                     message: format!("Failed to write to stderr: {}", e),
                 }),
             }
         }
+        StreamBackend::File(file_ref) => {
+            let mut file = file_ref.borrow_mut();
+            match file.write_all(bytes) {
+                Ok(()) => {
+                    file.flush().ok();
+                    Ok(Value::Number(DecimalNumber::from_usize(bytes.len())))
+                }
+                Err(e) => Err(RuntimeError::StreamError {
+                    message: format!("Failed to write to stream: {}", e),
+                }),
+            }
+        }
         StreamBackend::MemoryWritable(buffer_ref) => {
             let mut buffer = buffer_ref.borrow_mut();
             buffer.extend_from_slice(bytes);
-            Ok(Value::Number(bytes.len() as f64))
+            Ok(Value::Number(DecimalNumber::from_usize(bytes.len())))
         }
         #[cfg(test)]
         StreamBackend::TestWritable(buffer_ref) => {
             let mut buffer = buffer_ref.borrow_mut();
             buffer.extend_from_slice(bytes);
-            Ok(Value::Number(bytes.len() as f64))
+            Ok(Value::Number(DecimalNumber::from_usize(bytes.len())))
         }
         _ => Err(RuntimeError::StreamError {
             message: format!("Cannot write to stream: {}", stream_handle.name),
@@ -374,6 +458,17 @@ fn stream_read_all(stream_handle: &StreamHandle) -> Result<Value, RuntimeError> 
             let mut content = String::new();
 
             match reader.read_to_string(&mut content) {
+                Ok(_) => Ok(Value::String(content)),
+                Err(e) => Err(RuntimeError::StreamError {
+                    message: format!("Failed to read from stream: {}", e),
+                }),
+            }
+        }
+        StreamBackend::File(file_ref) => {
+            let mut file = file_ref.borrow_mut();
+            let mut content = String::new();
+
+            match file.read_to_string(&mut content) {
                 Ok(_) => Ok(Value::String(content)),
                 Err(e) => Err(RuntimeError::StreamError {
                     message: format!("Failed to read from stream: {}", e),
@@ -433,6 +528,23 @@ fn stream_read_lines(stream_handle: &StreamHandle) -> Result<Value, RuntimeError
                     Err(e) => {
                         return Err(RuntimeError::StreamError {
                             message: format!("Failed to read line from stream: {}", e),
+                        });
+                    }
+                }
+            }
+
+            Ok(Value::List(lines))
+        }
+        StreamBackend::File(_) => {
+            let mut lines = Vec::new();
+
+            loop {
+                match stream_read_line(stream_handle)? {
+                    Value::Nil => break,
+                    Value::String(line) => lines.push(Value::String(line)),
+                    _ => {
+                        return Err(RuntimeError::StreamError {
+                            message: "Unexpected value while reading lines".to_string(),
                         });
                     }
                 }
@@ -529,7 +641,7 @@ mod tests {
         let result =
             call_stream_method(receiver, "write", vec![Value::String("hello".to_string())])
                 .unwrap();
-        assert_eq!(result, Value::Number(5.0)); // 5 bytes written
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(5))); // 5 bytes written
 
         // Check the output
         assert_eq!(stream.get_test_output(), Some("hello".to_string()));
@@ -613,7 +725,11 @@ mod tests {
         let stream_value = Value::Stream(stream);
         let receiver = ValueRef::Immutable(&stream_value);
 
-        let result = call_stream_method(receiver, "read_line", vec![Value::Number(1.0)]);
+        let result = call_stream_method(
+            receiver,
+            "read_line",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 
@@ -689,7 +805,10 @@ mod tests {
         let result = call_stream_method(
             receiver,
             "read",
-            vec![Value::Number(1.0), Value::Number(2.0)],
+            vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::Number(DecimalNumber::from_i64(2)),
+            ],
         );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
 
@@ -700,7 +819,11 @@ mod tests {
 
         // read_all with args
         let receiver = ValueRef::Immutable(&stream_value);
-        let result = call_stream_method(receiver, "read_all", vec![Value::Number(1.0)]);
+        let result = call_stream_method(
+            receiver,
+            "read_all",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 

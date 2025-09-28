@@ -44,13 +44,14 @@ pub fn builtin_print(args: &[Value]) -> Result<Value, RuntimeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::value::DecimalNumber;
 
     #[test]
     fn test_print_returns_bytes_written_default_stdout() {
         let args = vec![Value::String("Hello".to_string())];
         let result = builtin_print(&args).unwrap();
         // UTF-8 byte length of "Hello"
-        assert_eq!(result, Value::Number(5.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
     }
 
     #[test]
@@ -61,7 +62,7 @@ mod tests {
         ));
         let args = vec![Value::String("abc".to_string()), out.clone()];
         let result = builtin_print(&args).unwrap();
-        assert_eq!(result, Value::Number(3.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
         if let Value::Stream(handle) = out {
             assert_eq!(handle.get_test_output().unwrap(), "abc".to_string());

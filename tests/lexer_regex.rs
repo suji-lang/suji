@@ -25,7 +25,7 @@ fn test_regex_vs_division_after_identifier() {
     let expected = vec![
         Token::Identifier("x".to_string()),
         Token::Divide,
-        Token::Number(2.0),
+        Token::Number("2".to_string()),
         Token::Eof,
     ];
 
@@ -56,9 +56,9 @@ fn test_regex_vs_division_after_number() {
     let tokens = Lexer::lex(input).unwrap();
 
     let expected = vec![
-        Token::Number(42.0),
+        Token::Number("42".to_string()),
         Token::Divide,
-        Token::Number(3.0),
+        Token::Number("3".to_string()),
         Token::Eof,
     ];
 

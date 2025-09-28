@@ -7,4 +7,4 @@ import std:json
 data = { message: "test", value: 42 }
 json_output = json:generate(data)
 
-println(json_output)  # {"message":"test","value":42.0}
+println(json_output)  # {"message":"test","value":42}

@@ -29,9 +29,15 @@ cargo build
 ```bash
 cargo run -- examples/hello.nn
 ```
-- **Test** (Rust tests):
+- **Test (Rust tests only)**:
 ```bash
+make rust_tests
+# or
 cargo test
+```
+- **Test (full suite: Rust + specs + examples)**:
+```bash
+make test
 ```
 - **Verify language specs** (nn spec files):
 ```bash
@@ -64,6 +70,7 @@ make lint
 - Add an empty line after all import statements.
 - Add an empty line before the final `println(...)` statement.
 - Add two spaces before the expected output comment in the final println statement. ("println(result) # expected_output")
+- Don't have any trailing empty lines after the final `println(...)`. The spec harness reads only the last line; an extra blank line makes it think the expected output is empty (you'll see errors like `Expected '', got 'value'` when running `make verify_spec`). Ensure the file ends immediately after the commented `println` line.
 - See `spec/pipe_apply_01.nn` for an example layout.
 
 ### Coding Standards (Rust)
@@ -124,8 +131,6 @@ make lint
 ```bash
 make lint
 make test
-make verify_spec
-make verify_examples
 ```
 
 ### Contact and Ownership

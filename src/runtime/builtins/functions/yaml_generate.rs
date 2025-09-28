@@ -44,6 +44,7 @@ mod tests {
     use super::*;
     use crate::ast::Stmt;
     use crate::runtime::env::Env;
+    use crate::runtime::value::DecimalNumber;
     use crate::runtime::value::{FunctionValue, MapKey};
     use crate::token::Span;
     use indexmap::IndexMap;
@@ -64,7 +65,7 @@ mod tests {
             Value::String("false".to_string())
         );
         assert_eq!(
-            builtin_yaml_generate(&[Value::Number(42.0)]).unwrap(),
+            builtin_yaml_generate(&[Value::Number(DecimalNumber::from_i64(42))]).unwrap(),
             Value::String("42".to_string())
         );
         assert_eq!(
@@ -76,9 +77,9 @@ mod tests {
     #[test]
     fn test_yaml_generate_arrays() {
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         let result = builtin_yaml_generate(&[list]).unwrap();
         assert_eq!(result, Value::String("- 1\n- 2\n- 3".to_string()));
@@ -91,7 +92,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
         let map = Value::Map(map_data);
 
         let result = builtin_yaml_generate(&[map]).unwrap();

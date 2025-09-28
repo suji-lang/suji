@@ -5,10 +5,6 @@ use crate::token::Token;
 impl Parser {
     /// Parse collection literals: tuples, lists, maps, strings, regex
     pub fn parse_collections(&mut self) -> ParseResult<Expr> {
-        if self.match_token(Token::LeftParen) {
-            return self.parse_tuple_or_grouping();
-        }
-
         if self.match_token(Token::LeftBracket) {
             return self.parse_list();
         }
@@ -31,7 +27,7 @@ impl Parser {
     }
 
     /// Parse tuple or grouping expression (disambiguation by comma)
-    fn parse_tuple_or_grouping(&mut self) -> ParseResult<Expr> {
+    pub(crate) fn parse_tuple_or_grouping(&mut self) -> ParseResult<Expr> {
         let start_span = self.previous().span.clone();
 
         // Handle empty tuple ()

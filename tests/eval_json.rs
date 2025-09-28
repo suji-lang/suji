@@ -16,7 +16,7 @@ fn test_json_module_integration() {
     let output = result.unwrap();
     if let Value::String(json_str) = output {
         assert!(json_str.contains("\"name\":\"Alice\""));
-        assert!(json_str.contains("\"age\":30.0"));
+        assert!(json_str.contains("\"age\":30"));
     } else {
         panic!("Expected string output");
     }
@@ -35,7 +35,7 @@ fn test_json_direct_imports() {
     assert!(result.is_ok());
     let output = result.unwrap();
     if let Value::String(json_str) = output {
-        assert!(json_str.contains("\"value\":42.0"));
+        assert!(json_str.contains("\"value\":42"));
     } else {
         panic!("Expected string output");
     }

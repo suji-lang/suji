@@ -62,7 +62,7 @@ fn test_unicode_comments() {
     let expected = vec![
         Token::Comment("# This is a comment with 🚀 emoji and café text".to_string()),
         Token::Newline,
-        Token::Number(42.0),
+        Token::Number("42".to_string()),
         Token::Eof,
     ];
 

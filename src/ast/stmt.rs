@@ -10,8 +10,9 @@ pub enum Stmt {
     /// Block statement: { stmt1; stmt2; ... }
     Block { statements: Vec<Stmt>, span: Span },
 
-    /// Return statement: return expr?
-    Return { value: Option<Expr>, span: Span },
+    /// Return statement: return expr_list?
+    /// Empty list represents `return` with no value
+    Return { values: Vec<Expr>, span: Span },
 
     /// Break statement: break label?
     Break { label: Option<String>, span: Span },

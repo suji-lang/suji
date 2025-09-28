@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::{eval_program, eval_string_expr};
@@ -9,7 +10,7 @@ fn test_map_literals() {
         eval_string_expr(r#"{ "a": 1 }"#).unwrap(),
         Value::Map(indexmap::IndexMap::from([(
             MapKey::String("a".to_string()),
-            Value::Number(1.0)
+            Value::Number(DecimalNumber::from_i64(1))
         )]))
     );
 
@@ -31,14 +32,14 @@ fn test_map_access_comprehensive() {
     assert_eq!(result, Value::String("world".to_string()));
 
     let result = eval_string_expr("{\"a\": 1, \"b\": 2}:b").unwrap();
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 
     // Test map access on variables
     let result = eval_program("data = {\"name\": \"Alice\", \"age\": 30}\ndata:name").unwrap();
     assert_eq!(result, Value::String("Alice".to_string()));
 
     let result = eval_program("data = {\"name\": \"Alice\", \"age\": 30}\ndata:age").unwrap();
-    assert_eq!(result, Value::Number(30.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(30)));
 
     // Test map access on complex expressions
     let result = eval_string_expr("{\"nested\": {\"value\": 42}}:nested").unwrap();

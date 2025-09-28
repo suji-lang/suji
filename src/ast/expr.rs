@@ -99,6 +99,9 @@ pub enum Expr {
         arms: Vec<MatchArm>,
         span: Span,
     },
+
+    /// Destructuring assignment target: (a, _, b)
+    Destructure { elements: Vec<Expr>, span: Span },
 }
 
 // Literal moved to `crate::ast::literal` and re-exported via `mod.rs`
@@ -123,6 +126,7 @@ impl Expr {
             Expr::CompoundAssign { span, .. } => span,
             Expr::MethodCall { span, .. } => span,
             Expr::Match { span, .. } => span,
+            Expr::Destructure { span, .. } => span,
         }
     }
 
@@ -133,6 +137,7 @@ impl Expr {
             Expr::Literal(Literal::Identifier(..))
                 | Expr::Index { .. }
                 | Expr::MapAccessByName { .. }
+                | Expr::Destructure { .. }
         )
     }
 }

@@ -26,6 +26,35 @@ pub fn eval_complex_assignment(target: &Expr, value: Value, env: Rc<Env>) -> Eva
             // Map key assignment: target:key = value
             eval_deep_map_assignment(target, key, value, env)
         }
+        Expr::Destructure { elements, .. } => match value {
+            Value::Tuple(items) => {
+                if items.len() != elements.len() {
+                    return Err(RuntimeError::DestructureArityMismatch {
+                        expected: elements.len(),
+                        actual: items.len(),
+                    });
+                }
+
+                for (element_expr, element_value) in elements.iter().zip(items.iter()) {
+                    match element_expr {
+                        Expr::Literal(Literal::Identifier(name, _)) if name == "_" => {
+                            // discard binding
+                        }
+                        Expr::Literal(Literal::Identifier(name, _)) => {
+                            env.set_existing(name, element_value.clone())?;
+                        }
+                        _ => {
+                            return Err(RuntimeError::DestructureInvalidTarget {
+                                message: "Only identifiers or '_' are allowed".to_string(),
+                            });
+                        }
+                    }
+                }
+
+                Ok(Value::Tuple(items))
+            }
+            _ => Err(RuntimeError::DestructureTypeError),
+        },
         _ => Err(RuntimeError::InvalidOperation {
             message: "Invalid assignment target".to_string(),
         }),
@@ -36,12 +65,14 @@ pub fn eval_complex_assignment(target: &Expr, value: Value, env: Rc<Env>) -> Eva
 fn get_index_value(target: &Value, index: &Value) -> EvalResult<Value> {
     match (target, index) {
         (Value::List(items), Value::Number(n)) => {
-            if n.fract() != 0.0 {
+            if !n.is_integer() {
                 return Err(RuntimeError::TypeError {
                     message: "List index must be an integer".to_string(),
                 });
             }
-            let idx = *n as i64;
+            let idx = n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                message: "Index out of range".to_string(),
+            })?;
             let normalized_idx = if idx < 0 {
                 items.len() as i64 + idx
             } else {
@@ -121,12 +152,14 @@ fn get_map_access_value(target: &Value, key: &str) -> EvalResult<Value> {
 fn update_index_value(target: &Value, index: &Value, value: &Value) -> EvalResult<Value> {
     match (target, index) {
         (Value::List(items), Value::Number(n)) => {
-            if n.fract() != 0.0 {
+            if !n.is_integer() {
                 return Err(RuntimeError::TypeError {
                     message: "List index must be an integer".to_string(),
                 });
             }
-            let idx = *n as i64;
+            let idx = n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                message: "Index out of range".to_string(),
+            })?;
             let normalized_idx = if idx < 0 {
                 items.len() as i64 + idx
             } else {
@@ -385,6 +418,7 @@ mod tests {
     use super::*;
     use crate::ast::{Expr, Literal};
     use crate::runtime::env::Env;
+    use crate::runtime::value::DecimalNumber;
     use crate::token::Span;
 
     fn create_test_env() -> Rc<Env> {
@@ -396,14 +430,17 @@ mod tests {
     #[test]
     fn test_variable_assignment() {
         let env = create_test_env();
-        env.define_or_set("x", Value::Number(10.0));
+        env.define_or_set("x", Value::Number(DecimalNumber::from_i64(10)));
 
         let target = Expr::Literal(Literal::Identifier("x".to_string(), Span::default()));
-        let value = Expr::Literal(Literal::Number(42.0, Span::default()));
+        let value = Expr::Literal(Literal::Number("42".to_string(), Span::default()));
 
         let result = eval_assignment(&target, &value, env.clone()).unwrap();
-        assert_eq!(result, Value::Number(42.0));
-        assert_eq!(env.get("x").unwrap(), Value::Number(42.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(42)));
+        assert_eq!(
+            env.get("x").unwrap(),
+            Value::Number(DecimalNumber::from_i64(42))
+        );
     }
 
     #[test]
@@ -411,9 +448,9 @@ mod tests {
         let env = create_test_env();
 
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         env.define_or_set("my_list", list);
 
@@ -422,18 +459,21 @@ mod tests {
                 "my_list".to_string(),
                 Span::default(),
             ))),
-            index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+            index: Box::new(Expr::Literal(Literal::Number(
+                "1".to_string(),
+                Span::default(),
+            ))),
             span: Span::default(),
         };
-        let value = Expr::Literal(Literal::Number(99.0, Span::default()));
+        let value = Expr::Literal(Literal::Number("99".to_string(), Span::default()));
 
         let result = eval_assignment(&target, &value, env.clone()).unwrap();
-        assert_eq!(result, Value::Number(99.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(99)));
 
         // Check that the list was updated
         let updated_list = env.get("my_list").unwrap();
         if let Value::List(items) = updated_list {
-            assert_eq!(items[1], Value::Number(99.0));
+            assert_eq!(items[1], Value::Number(DecimalNumber::from_i64(99)));
         } else {
             panic!("Expected list");
         }
@@ -458,16 +498,19 @@ mod tests {
             key: "age".to_string(),
             span: Span::default(),
         };
-        let value = Expr::Literal(Literal::Number(30.0, Span::default()));
+        let value = Expr::Literal(Literal::Number("30".to_string(), Span::default()));
 
         let result = eval_assignment(&target, &value, env.clone()).unwrap();
-        assert_eq!(result, Value::Number(30.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(30)));
 
         // Check that the map was updated
         let updated_map = env.get("person").unwrap();
         if let Value::Map(map) = updated_map {
             let age_key = MapKey::String("age".to_string());
-            assert_eq!(map.get(&age_key), Some(&Value::Number(30.0)));
+            assert_eq!(
+                map.get(&age_key),
+                Some(&Value::Number(DecimalNumber::from_i64(30)))
+            );
         } else {
             panic!("Expected map");
         }
@@ -478,22 +521,31 @@ mod tests {
         let env = create_test_env();
 
         // Define variable in parent scope
-        env.define_or_set("x", Value::Number(1.0));
-        assert_eq!(env.get("x").unwrap(), Value::Number(1.0));
+        env.define_or_set("x", Value::Number(DecimalNumber::from_i64(1)));
+        assert_eq!(
+            env.get("x").unwrap(),
+            Value::Number(DecimalNumber::from_i64(1))
+        );
 
         // Create child environment
         let child_env = Rc::new(Env::new_child(env.clone()));
 
         // Assign to x in child scope - should modify parent variable
         let target = Expr::Literal(Literal::Identifier("x".to_string(), Span::default()));
-        let value = Expr::Literal(Literal::Number(2.0, Span::default()));
+        let value = Expr::Literal(Literal::Number("2".to_string(), Span::default()));
 
         let result = eval_assignment(&target, &value, child_env.clone()).unwrap();
-        assert_eq!(result, Value::Number(2.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 
         // Check that parent variable was modified (no shadowing)
-        assert_eq!(env.get("x").unwrap(), Value::Number(2.0));
-        assert_eq!(child_env.get("x").unwrap(), Value::Number(2.0));
+        assert_eq!(
+            env.get("x").unwrap(),
+            Value::Number(DecimalNumber::from_i64(2))
+        );
+        assert_eq!(
+            child_env.get("x").unwrap(),
+            Value::Number(DecimalNumber::from_i64(2))
+        );
 
         // Check that no new variable was created in child scope
         assert_eq!(child_env.local_names().len(), 0);
@@ -505,8 +557,14 @@ mod tests {
 
         // Test nested list assignment: matrix[0][1] = 99
         let matrix = Value::List(vec![
-            Value::List(vec![Value::Number(1.0), Value::Number(2.0)]),
-            Value::List(vec![Value::Number(3.0), Value::Number(4.0)]),
+            Value::List(vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::Number(DecimalNumber::from_i64(2)),
+            ]),
+            Value::List(vec![
+                Value::Number(DecimalNumber::from_i64(3)),
+                Value::Number(DecimalNumber::from_i64(4)),
+            ]),
         ]);
         env.define_or_set("matrix", matrix);
 
@@ -516,22 +574,28 @@ mod tests {
                     "matrix".to_string(),
                     Span::default(),
                 ))),
-                index: Box::new(Expr::Literal(Literal::Number(0.0, Span::default()))),
+                index: Box::new(Expr::Literal(Literal::Number(
+                    "0".to_string(),
+                    Span::default(),
+                ))),
                 span: Span::default(),
             }),
-            index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+            index: Box::new(Expr::Literal(Literal::Number(
+                "1".to_string(),
+                Span::default(),
+            ))),
             span: Span::default(),
         };
-        let value = Expr::Literal(Literal::Number(99.0, Span::default()));
+        let value = Expr::Literal(Literal::Number("99".to_string(), Span::default()));
 
         let result = eval_assignment(&target, &value, env.clone()).unwrap();
-        assert_eq!(result, Value::Number(99.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(99)));
 
         // Check that the nested structure was updated
         let updated_matrix = env.get("matrix").unwrap();
         if let Value::List(rows) = updated_matrix {
             if let Value::List(first_row) = &rows[0] {
-                assert_eq!(first_row[1], Value::Number(99.0));
+                assert_eq!(first_row[1], Value::Number(DecimalNumber::from_i64(99)));
             } else {
                 panic!("Expected list in first row");
             }
@@ -545,7 +609,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        user_map.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        user_map.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(DecimalNumber::from_i64(30)),
+        );
 
         let mut config_map = indexmap::IndexMap::new();
         config_map.insert(MapKey::String("user".to_string()), Value::Map(user_map));
@@ -568,17 +635,17 @@ mod tests {
             key: "age".to_string(),
             span: Span::default(),
         };
-        let value2 = Expr::Literal(Literal::Number(31.0, Span::default()));
+        let value2 = Expr::Literal(Literal::Number("31".to_string(), Span::default()));
 
         let result2 = eval_assignment(&target2, &value2, env.clone()).unwrap();
-        assert_eq!(result2, Value::Number(31.0));
+        assert_eq!(result2, Value::Number(DecimalNumber::from_i64(31)));
 
         // Check that the nested map was updated
         let updated_config = env.get("config").unwrap();
         if let Value::Map(config) = updated_config {
             if let Some(Value::Map(user)) = config.get(&MapKey::String("user".to_string())) {
                 if let Some(Value::Number(age)) = user.get(&MapKey::String("age".to_string())) {
-                    assert_eq!(*age, 31.0);
+                    assert_eq!(*age, DecimalNumber::from_i64(31));
                 } else {
                     panic!("Expected age in user map");
                 }
@@ -611,7 +678,10 @@ mod tests {
                     "data".to_string(),
                     Span::default(),
                 ))),
-                index: Box::new(Expr::Literal(Literal::Number(0.0, Span::default()))),
+                index: Box::new(Expr::Literal(Literal::Number(
+                    "0".to_string(),
+                    Span::default(),
+                ))),
                 span: Span::default(),
             }),
             key: "name".to_string(),
@@ -650,30 +720,30 @@ mod tests {
         let deep_list = Value::List(vec![Value::List(vec![
             Value::List(vec![
                 Value::List(vec![
-                    Value::Number(1.0),
-                    Value::Number(2.0),
-                    Value::Number(3.0),
-                    Value::Number(4.0),
+                    Value::Number(DecimalNumber::from_i64(1)),
+                    Value::Number(DecimalNumber::from_i64(2)),
+                    Value::Number(DecimalNumber::from_i64(3)),
+                    Value::Number(DecimalNumber::from_i64(4)),
                 ]),
                 Value::List(vec![
-                    Value::Number(5.0),
-                    Value::Number(6.0),
-                    Value::Number(7.0),
-                    Value::Number(8.0),
+                    Value::Number(DecimalNumber::from_i64(5)),
+                    Value::Number(DecimalNumber::from_i64(6)),
+                    Value::Number(DecimalNumber::from_i64(7)),
+                    Value::Number(DecimalNumber::from_i64(8)),
                 ]),
             ]),
             Value::List(vec![
                 Value::List(vec![
-                    Value::Number(9.0),
-                    Value::Number(10.0),
-                    Value::Number(11.0),
-                    Value::Number(12.0),
+                    Value::Number(DecimalNumber::from_i64(9)),
+                    Value::Number(DecimalNumber::from_i64(10)),
+                    Value::Number(DecimalNumber::from_i64(11)),
+                    Value::Number(DecimalNumber::from_i64(12)),
                 ]),
                 Value::List(vec![
-                    Value::Number(13.0),
-                    Value::Number(14.0),
-                    Value::Number(15.0),
-                    Value::Number(16.0),
+                    Value::Number(DecimalNumber::from_i64(13)),
+                    Value::Number(DecimalNumber::from_i64(14)),
+                    Value::Number(DecimalNumber::from_i64(15)),
+                    Value::Number(DecimalNumber::from_i64(16)),
                 ]),
             ]),
         ])]);
@@ -688,22 +758,34 @@ mod tests {
                             "matrix".to_string(),
                             Span::default(),
                         ))),
-                        index: Box::new(Expr::Literal(Literal::Number(0.0, Span::default()))),
+                        index: Box::new(Expr::Literal(Literal::Number(
+                            "0".to_string(),
+                            Span::default(),
+                        ))),
                         span: Span::default(),
                     }),
-                    index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+                    index: Box::new(Expr::Literal(Literal::Number(
+                        "1".to_string(),
+                        Span::default(),
+                    ))),
                     span: Span::default(),
                 }),
-                index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+                index: Box::new(Expr::Literal(Literal::Number(
+                    "1".to_string(),
+                    Span::default(),
+                ))),
                 span: Span::default(),
             }),
-            index: Box::new(Expr::Literal(Literal::Number(3.0, Span::default()))),
+            index: Box::new(Expr::Literal(Literal::Number(
+                "3".to_string(),
+                Span::default(),
+            ))),
             span: Span::default(),
         };
-        let value = Expr::Literal(Literal::Number(99.0, Span::default()));
+        let value = Expr::Literal(Literal::Number("99".to_string(), Span::default()));
 
         let result = eval_assignment(&target, &value, env.clone()).unwrap();
-        assert_eq!(result, Value::Number(99.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(99)));
 
         // Verify the deep structure was updated correctly
         let updated_matrix = env.get("matrix").unwrap();
@@ -711,7 +793,7 @@ mod tests {
             if let Value::List(level2) = &level1[0] {
                 if let Value::List(level3) = &level2[1] {
                     if let Value::List(level4) = &level3[1] {
-                        assert_eq!(level4[3], Value::Number(99.0));
+                        assert_eq!(level4[3], Value::Number(DecimalNumber::from_i64(99)));
                     } else {
                         panic!("Expected list at level 4");
                     }
@@ -900,7 +982,10 @@ mod tests {
             MapKey::String("users".to_string()),
             Value::List(vec![Value::Map(user1_map), Value::Map(user2_map)]),
         );
-        users_map.insert(MapKey::String("count".to_string()), Value::Number(2.0));
+        users_map.insert(
+            MapKey::String("count".to_string()),
+            Value::Number(DecimalNumber::from_i64(2)),
+        );
 
         let data = Value::List(vec![Value::Map(users_map)]);
         env.define_or_set("data", data);
@@ -918,7 +1003,7 @@ mod tests {
                                         Span::default(),
                                     ))),
                                     index: Box::new(Expr::Literal(Literal::Number(
-                                        0.0,
+                                        "0".to_string(),
                                         Span::default(),
                                     ))),
                                     span: Span::default(),
@@ -926,7 +1011,10 @@ mod tests {
                                 key: "users".to_string(),
                                 span: Span::default(),
                             }),
-                            index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+                            index: Box::new(Expr::Literal(Literal::Number(
+                                "1".to_string(),
+                                Span::default(),
+                            ))),
                             span: Span::default(),
                         }),
                         key: "config".to_string(),
@@ -996,7 +1084,7 @@ mod tests {
         let env = create_test_env();
 
         // Create a very deep structure (6 levels): deep[0][1][2][3][4][5] = 42
-        let level6 = vec![Value::Number(0.0); 6];
+        let level6 = vec![Value::Number(DecimalNumber::from_i64(0)); 6];
         let level5 = vec![Value::List(level6); 5];
         let level4 = vec![Value::List(level5); 4];
         let level3 = vec![Value::List(level4); 3];
@@ -1017,30 +1105,45 @@ mod tests {
                                     Span::default(),
                                 ))),
                                 index: Box::new(Expr::Literal(Literal::Number(
-                                    0.0,
+                                    "0".to_string(),
                                     Span::default(),
                                 ))),
                                 span: Span::default(),
                             }),
-                            index: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+                            index: Box::new(Expr::Literal(Literal::Number(
+                                "1".to_string(),
+                                Span::default(),
+                            ))),
                             span: Span::default(),
                         }),
-                        index: Box::new(Expr::Literal(Literal::Number(2.0, Span::default()))),
+                        index: Box::new(Expr::Literal(Literal::Number(
+                            "2".to_string(),
+                            Span::default(),
+                        ))),
                         span: Span::default(),
                     }),
-                    index: Box::new(Expr::Literal(Literal::Number(3.0, Span::default()))),
+                    index: Box::new(Expr::Literal(Literal::Number(
+                        "3".to_string(),
+                        Span::default(),
+                    ))),
                     span: Span::default(),
                 }),
-                index: Box::new(Expr::Literal(Literal::Number(4.0, Span::default()))),
+                index: Box::new(Expr::Literal(Literal::Number(
+                    "4".to_string(),
+                    Span::default(),
+                ))),
                 span: Span::default(),
             }),
-            index: Box::new(Expr::Literal(Literal::Number(5.0, Span::default()))),
+            index: Box::new(Expr::Literal(Literal::Number(
+                "5".to_string(),
+                Span::default(),
+            ))),
             span: Span::default(),
         };
-        let value = Expr::Literal(Literal::Number(42.0, Span::default()));
+        let value = Expr::Literal(Literal::Number("42".to_string(), Span::default()));
 
         let result = eval_assignment(&target, &value, env.clone()).unwrap();
-        assert_eq!(result, Value::Number(42.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(42)));
 
         // Verify the very deep structure was updated correctly
         let updated_deep = env.get("deep").unwrap();
@@ -1050,7 +1153,7 @@ mod tests {
                     if let Value::List(l4) = &l3[2] {
                         if let Value::List(l5) = &l4[3] {
                             if let Value::List(l6) = &l5[4] {
-                                assert_eq!(l6[5], Value::Number(42.0));
+                                assert_eq!(l6[5], Value::Number(DecimalNumber::from_i64(42)));
                             } else {
                                 panic!("Expected list at level 6");
                             }

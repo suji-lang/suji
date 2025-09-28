@@ -98,7 +98,7 @@ NN is a dynamically and strongly typed language designed for simplicity and expr
 
 ### Numbers
 
-NN has one number type: 64-bit decimal numbers.
+NN has one number type: 64-bit decimal numbers with precise base‑10 semantics (no IEEE-754 surprises).
 
 ```nn
 x = 42
@@ -114,6 +114,22 @@ modulo = x % 5  # 42 % 5 = 2
 # Increment/decrement
 x++  # x is now 43
 y--  # y is now 2.14159
+```
+
+```nn
+import std:println
+
+# Intuitive equality/ordering
+println(0.1 + 0.2 == 0.3)  # true
+println(1.50 > 1.5)        # false (equal values)
+
+# Deterministic rounding helpers
+println((10 / 3)::floor())  # 3
+println((10 / 3)::ceil())   # 4
+println((10 / 3)::round())  # 3
+
+# Errors instead of NaN/Inf
+# 1 / 0  # runtime error: division by zero
 ```
 
 ### Booleans
@@ -384,7 +400,7 @@ source = || {
     println("test")
 }
 
-out = source | destination
+out = source() | destination()
 println(out)  # output received
 ```
 
@@ -555,6 +571,19 @@ numbers = [1, 2, 3, 4, 5]
 doubled = numbers::map(|x| x * 2)  # [2, 4, 6, 8, 10]
 evens = numbers::filter(|x| x % 2 == 0)  # [2, 4]
 sum = numbers::fold(0, |acc, x| acc + x)  # 15
+```
+
+### Multiple return values and destructuring
+
+```nn
+make_pair = || { return 1, 4 }
+
+left, right = make_pair()
+println(right)  # 4
+
+# Discard with '_'
+first, _, third = || { return 10, 20, 30 }()
+println(third)  # 30
 ```
 
 ## Modules
@@ -787,6 +816,22 @@ line = io:stdin::read_line()
 is_tty = io:stdout::is_terminal()
 ```
 
+Open files are streams as well:
+
+```nn
+import std:io
+
+# Write
+out = io:open("output.txt")
+out::write("Hello, world!\n")
+out::close()
+
+# Read
+f = io:open("output.txt")
+content = f::read_all()
+f::close()
+```
+
 ### print and println
 
 Convenience output functions that write to streams. Default target is `std:io:stdout`.
@@ -933,3 +978,4 @@ cargo test
 - **v0.1.6**: ENV map, stream type, FD streams, print/println rewrite, list average, first/last defaults
 - **v0.1.7**: Rename FD->std:io and ENV->std:env:var, add stream::read_line and ::is_terminal, add std:env:args/argv, introduce pipe operator
  - **v0.1.8**: Backticks in `|` pipelines (source/middle/sink), pipe-apply operators `|>` and `<|`, add `std:random` module
+ - **v0.1.9**: Decimal number semantics; `std:io:open(path)`; multiple return values and destructuring; `|` requires invocations

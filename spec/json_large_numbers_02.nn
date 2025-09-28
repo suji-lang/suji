@@ -5,4 +5,4 @@ import std:json
 data = { big: 1234567890, small: 0.001 }
 json_output = json:generate(data)
 
-println(json_output)  # {"big":1234567890.0,"small":0.001}
+println(json_output)  # {"big":1234567890,"small":0.001}

@@ -1,4 +1,4 @@
-use super::types::{FunctionValue, OrderedFloat, Value};
+use super::types::{FunctionValue, Value};
 
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
@@ -26,14 +26,6 @@ impl PartialEq for FunctionValue {
     }
 }
 
-impl PartialEq for OrderedFloat {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.to_bits() == other.0.to_bits()
-    }
-}
-
-impl Eq for OrderedFloat {}
-
 impl PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
@@ -48,7 +40,7 @@ impl PartialOrd for Value {
 
 #[cfg(test)]
 mod tests {
-    use super::super::types::MapKey;
+    use super::super::types::{DecimalNumber, MapKey};
     use super::*;
     use crate::ast::{Expr, Literal, Stmt};
     use crate::token::Span;
@@ -58,8 +50,14 @@ mod tests {
     #[test]
     fn test_value_equality() {
         // Numbers
-        assert_eq!(Value::Number(42.0), Value::Number(42.0));
-        assert_ne!(Value::Number(42.0), Value::Number(43.0));
+        assert_eq!(
+            Value::Number(DecimalNumber::from_i64(42)),
+            Value::Number(DecimalNumber::from_i64(42))
+        );
+        assert_ne!(
+            Value::Number(DecimalNumber::from_i64(42)),
+            Value::Number(DecimalNumber::from_i64(43))
+        );
 
         // Booleans
         assert_eq!(Value::Boolean(true), Value::Boolean(true));
@@ -77,49 +75,58 @@ mod tests {
 
         // Lists
         assert_eq!(
-            Value::List(vec![Value::Number(1.0), Value::Number(2.0)]),
-            Value::List(vec![Value::Number(1.0), Value::Number(2.0)])
+            Value::List(vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::Number(DecimalNumber::from_i64(2))
+            ]),
+            Value::List(vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::Number(DecimalNumber::from_i64(2))
+            ])
         );
         assert_ne!(
-            Value::List(vec![Value::Number(1.0)]),
-            Value::List(vec![Value::Number(2.0)])
+            Value::List(vec![Value::Number(DecimalNumber::from_i64(1))]),
+            Value::List(vec![Value::Number(DecimalNumber::from_i64(2))])
         );
 
         // Maps
         let mut map1 = IndexMap::new();
-        map1.insert(MapKey::String("key".to_string()), Value::Number(42.0));
+        map1.insert(
+            MapKey::String("key".to_string()),
+            Value::Number(DecimalNumber::from_i64(42)),
+        );
         let mut map2 = IndexMap::new();
-        map2.insert(MapKey::String("key".to_string()), Value::Number(42.0));
+        map2.insert(
+            MapKey::String("key".to_string()),
+            Value::Number(DecimalNumber::from_i64(42)),
+        );
         assert_eq!(Value::Map(map1), Value::Map(map2));
 
         // Tuples
         assert_eq!(
-            Value::Tuple(vec![Value::Number(1.0), Value::String("test".to_string())]),
-            Value::Tuple(vec![Value::Number(1.0), Value::String("test".to_string())])
+            Value::Tuple(vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::String("test".to_string())
+            ]),
+            Value::Tuple(vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::String("test".to_string())
+            ])
         );
 
         // Nil
         assert_eq!(Value::Nil, Value::Nil);
 
         // Cross-type comparisons should be false
-        assert_ne!(Value::Number(42.0), Value::String("42".to_string()));
-        assert_ne!(Value::Boolean(true), Value::Number(1.0));
-        assert_ne!(Value::Nil, Value::Number(0.0));
-    }
-
-    #[test]
-    fn test_ordered_float_equality() {
-        let f1 = OrderedFloat(42.0);
-        let f2 = OrderedFloat(42.0);
-        let f3 = OrderedFloat(43.0);
-
-        assert_eq!(f1, f2);
-        assert_ne!(f1, f3);
-
-        // Test NaN handling
-        let nan1 = OrderedFloat(f64::NAN);
-        let nan2 = OrderedFloat(f64::NAN);
-        assert_eq!(nan1, nan2); // NaN should equal NaN in our implementation
+        assert_ne!(
+            Value::Number(DecimalNumber::from_i64(42)),
+            Value::String("42".to_string())
+        );
+        assert_ne!(
+            Value::Boolean(true),
+            Value::Number(DecimalNumber::from_i64(1))
+        );
+        assert_ne!(Value::Nil, Value::Number(DecimalNumber::from_i64(0)));
     }
 
     #[test]
@@ -136,7 +143,10 @@ mod tests {
         }];
 
         let body = Stmt::Return {
-            value: Some(Expr::Literal(Literal::Number(42.0, Span::default()))),
+            values: vec![Expr::Literal(Literal::Number(
+                "42".to_string(),
+                Span::default(),
+            ))],
             span: Span::default(),
         };
 
@@ -174,15 +184,18 @@ mod tests {
 
         // Numbers
         assert_eq!(
-            Value::Number(1.0).partial_cmp(&Value::Number(2.0)),
+            Value::Number(DecimalNumber::from_i64(1))
+                .partial_cmp(&Value::Number(DecimalNumber::from_i64(2))),
             Some(Ordering::Less)
         );
         assert_eq!(
-            Value::Number(2.0).partial_cmp(&Value::Number(1.0)),
+            Value::Number(DecimalNumber::from_i64(2))
+                .partial_cmp(&Value::Number(DecimalNumber::from_i64(1))),
             Some(Ordering::Greater)
         );
         assert_eq!(
-            Value::Number(1.0).partial_cmp(&Value::Number(1.0)),
+            Value::Number(DecimalNumber::from_i64(1))
+                .partial_cmp(&Value::Number(DecimalNumber::from_i64(1))),
             Some(Ordering::Equal)
         );
 
@@ -216,7 +229,7 @@ mod tests {
 
         // Non-comparable types should return None
         assert_eq!(
-            Value::Number(1.0).partial_cmp(&Value::String("1".to_string())),
+            Value::Number(DecimalNumber::from_i64(1)).partial_cmp(&Value::String("1".to_string())),
             None
         );
         assert_eq!(Value::List(vec![]).partial_cmp(&Value::List(vec![])), None);

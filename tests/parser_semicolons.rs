@@ -15,7 +15,7 @@ fn test_parse_semicolon_statement_separators() {
                 assert_eq!(name, "x");
             }
             if let Expr::Literal(Literal::Number(n, _)) = value.as_ref() {
-                assert_eq!(*n, 1.0);
+                assert_eq!(*n, "1".to_string());
             }
         } else {
             panic!("Expected assignment statement");
@@ -26,7 +26,7 @@ fn test_parse_semicolon_statement_separators() {
                 assert_eq!(name, "y");
             }
             if let Expr::Literal(Literal::Number(n, _)) = value.as_ref() {
-                assert_eq!(*n, 2.0);
+                assert_eq!(*n, "2".to_string());
             }
         } else {
             panic!("Expected assignment statement");
@@ -37,7 +37,7 @@ fn test_parse_semicolon_statement_separators() {
                 assert_eq!(name, "z");
             }
             if let Expr::Literal(Literal::Number(n, _)) = value.as_ref() {
-                assert_eq!(*n, 3.0);
+                assert_eq!(*n, "3".to_string());
             }
         } else {
             panic!("Expected assignment statement");
@@ -76,7 +76,7 @@ fn test_parse_semicolon_with_compound_assignment() {
                 assert_eq!(name, "x");
             }
             if let Expr::Literal(Literal::Number(n, _)) = value.as_ref() {
-                assert_eq!(*n, 5.0);
+                assert_eq!(*n, "5".to_string());
             }
         } else {
             panic!("Expected compound assignment");
@@ -91,7 +91,7 @@ fn test_parse_semicolon_with_compound_assignment() {
                 assert_eq!(name, "y");
             }
             if let Expr::Literal(Literal::Number(n, _)) = value.as_ref() {
-                assert_eq!(*n, 3.0);
+                assert_eq!(*n, "3".to_string());
             }
         } else {
             panic!("Expected compound assignment");
@@ -106,7 +106,7 @@ fn test_parse_semicolon_with_compound_assignment() {
                 assert_eq!(name, "z");
             }
             if let Expr::Literal(Literal::Number(n, _)) = value.as_ref() {
-                assert_eq!(*n, 2.0);
+                assert_eq!(*n, "2".to_string());
             }
         } else {
             panic!("Expected compound assignment");

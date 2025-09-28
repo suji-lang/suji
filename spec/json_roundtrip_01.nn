@@ -6,4 +6,4 @@ original = "{\"name\": \"Alice\", \"age\": 30}"
 parsed = json:parse(original)
 generated = json:generate(parsed)
 
-println(generated)  # {"age":30.0,"name":"Alice"}
+println(generated)  # {"age":30,"name":"Alice"}

@@ -1,6 +1,6 @@
 # Makefile for nnlang project
 
-.PHONY: build release test verify_spec verify_examples clean lint help
+.PHONY: build release test rust_tests verify_spec verify_examples clean lint help
 
 # Default target
 all: build
@@ -15,10 +15,16 @@ release:
 	@echo "Building nnlang release..."
 	cargo build --release
 
-# Run all tests
-test:
-	@echo "Running tests..."
+# Run Rust unit/integration tests only
+rust_tests:
+	@echo "Running Rust tests..."
 	cargo test
+
+# Run full test suite: Rust tests + spec verification + example verification
+test:
+	$(MAKE) rust_tests
+	$(MAKE) verify_spec
+	$(MAKE) verify_examples
 
 # Verify spec tests using shell script
 verify_spec: release
@@ -47,7 +53,8 @@ help:
 	@echo "Available targets:"
 	@echo "  build       - Build the project"
 	@echo "  release     - Build the project in release mode"
-	@echo "  test        - Run all tests"
+	@echo "  rust_tests  - Run Rust unit and integration tests"
+	@echo "  test        - Run rust_tests, verify_spec, and verify_examples"
 	@echo "  verify_spec - Run spec tests using shell script (requires release build)"
 	@echo "  verify_examples - Run example programs to verify they work (requires release build)"
 	@echo "  clean       - Clean build artifacts"

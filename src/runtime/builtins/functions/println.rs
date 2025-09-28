@@ -30,19 +30,20 @@ pub fn builtin_println(args: &[Value]) -> Result<Value, RuntimeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::value::DecimalNumber;
 
     #[test]
     fn test_println_returns_bytes_written_default_stdout() {
         let args = vec![Value::String("Hi".to_string())];
         let result = builtin_println(&args).unwrap();
         // "Hi\n" is 3 bytes
-        assert_eq!(result, Value::Number(3.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
     }
 
     #[test]
     fn test_println_no_args_returns_newline_bytes() {
         let result = builtin_println(&[]).unwrap();
         // "\n" is 1 byte
-        assert_eq!(result, Value::Number(1.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(1)));
     }
 }

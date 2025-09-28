@@ -1,8 +1,9 @@
 //! JSON conversion functions.
 
 use super::types::JsonError;
-use crate::runtime::value::{MapKey, RuntimeError, Value};
+use crate::runtime::value::{DecimalNumber, MapKey, RuntimeError, Value};
 use indexmap::IndexMap;
+use rust_decimal::prelude::ToPrimitive;
 use serde_json::{Map as JsonMap, Value as JsonValue};
 
 /// Convert JSON value to nn value
@@ -11,14 +12,18 @@ pub fn json_to_nn_value(json_value: JsonValue) -> Result<Value, RuntimeError> {
         JsonValue::Null => Ok(Value::Nil),
         JsonValue::Bool(b) => Ok(Value::Boolean(b)),
         JsonValue::Number(n) => {
-            if let Some(f) = n.as_f64() {
-                Ok(Value::Number(f))
-            } else {
-                Err(JsonError::ParseError {
-                    message: "JSON number too large for nn number type".to_string(),
+            // Convert JSON number to string and then parse as decimal
+            let number_str = n.to_string();
+            match DecimalNumber::parse(&number_str) {
+                Ok(decimal) => Ok(Value::Number(decimal)),
+                Err(_) => Err(JsonError::ParseError {
+                    message: format!(
+                        "JSON number '{}' cannot be converted to decimal",
+                        number_str
+                    ),
                     json_input: None,
                 }
-                .into())
+                .into()),
             }
         }
         JsonValue::String(s) => Ok(Value::String(s)),
@@ -46,12 +51,31 @@ pub fn nn_to_json_value(nn_value: &Value) -> Result<JsonValue, RuntimeError> {
     match nn_value {
         Value::Nil => Ok(JsonValue::Null),
         Value::Boolean(b) => Ok(JsonValue::Bool(*b)),
-        Value::Number(n) => Ok(serde_json::Number::from_f64(*n)
-            .ok_or_else(|| JsonError::GenerateError {
-                message: "Number cannot be represented in JSON".to_string(),
-                value_type: "number".to_string(),
-            })?
-            .into()),
+        Value::Number(n) => {
+            if n.is_integer() {
+                n.to_i64_checked()
+                    .map(|int| JsonValue::Number(int.into()))
+                    .ok_or_else(|| {
+                        JsonError::GenerateError {
+                            message: "Integer out of JSON range".to_string(),
+                            value_type: "number".to_string(),
+                        }
+                        .into()
+                    })
+            } else {
+                n.inner()
+                    .to_f64()
+                    .and_then(serde_json::Number::from_f64)
+                    .map(JsonValue::Number)
+                    .ok_or_else(|| {
+                        JsonError::GenerateError {
+                            message: "Decimal cannot be represented in JSON".to_string(),
+                            value_type: "number".to_string(),
+                        }
+                        .into()
+                    })
+            }
+        }
         Value::String(s) => Ok(JsonValue::String(s.clone())),
         Value::List(items) => {
             let mut json_array = Vec::new();

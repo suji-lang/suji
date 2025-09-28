@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::{eval_program, eval_string_expr};
@@ -7,15 +8,15 @@ use nnlang::runtime::value::Value;
 fn test_string_methods() {
     assert_eq!(
         eval_string_expr("\"hello\"::length()").unwrap(),
-        Value::Number(5.0)
+        Value::Number(DecimalNumber::from_i64(5))
     );
     assert_eq!(
         eval_string_expr("\"\"::length()").unwrap(),
-        Value::Number(0.0)
+        Value::Number(DecimalNumber::from_i64(0))
     );
     assert_eq!(
         eval_string_expr("\"hello world\"::length()").unwrap(),
-        Value::Number(11.0)
+        Value::Number(DecimalNumber::from_i64(11))
     );
 
     assert_eq!(
@@ -64,20 +65,20 @@ fn test_string_methods() {
 fn test_list_methods() {
     assert_eq!(
         eval_string_expr("[1, 2, 3]::length()").unwrap(),
-        Value::Number(3.0)
+        Value::Number(DecimalNumber::from_i64(3))
     );
     assert_eq!(
         eval_string_expr("[]::length()").unwrap(),
-        Value::Number(0.0)
+        Value::Number(DecimalNumber::from_i64(0))
     );
 
     let result = eval_program("list = [1, 2]\nlist::push(3)\nresult = list").unwrap();
     assert_eq!(
         result,
         Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0)
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3))
         ])
     );
 
@@ -85,23 +86,26 @@ fn test_list_methods() {
     assert_eq!(
         result,
         Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
             Value::String("hello".to_string())
         ])
     );
 
     let result = eval_program("list = [1, 2, 3]\nlast = list::pop()\nresult = last").unwrap();
-    assert_eq!(result, Value::Number(3.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
     let result = eval_program("list = [1, 2, 3]\nlist::pop()\nresult = list").unwrap();
     assert_eq!(
         result,
-        Value::List(vec![Value::Number(1.0), Value::Number(2.0)])
+        Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2))
+        ])
     );
 
     let result = eval_program("list = [42]\nlast = list::pop()\nresult = last").unwrap();
-    assert_eq!(result, Value::Number(42.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(42)));
 
     assert_eq!(
         eval_string_expr("[\"a\", \"b\", \"c\"]::join()").unwrap(),
@@ -157,18 +161,18 @@ fn test_map_methods_and_requirements() {
     assert_eq!(
         result,
         Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0)
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3))
         ])
     );
     assert_eq!(
         eval_string_expr("[1, 2, 3]::length()").unwrap(),
-        Value::Number(3.0)
+        Value::Number(DecimalNumber::from_i64(3))
     );
     assert_eq!(
         eval_string_expr("\"hello\"::length()").unwrap(),
-        Value::Number(5.0)
+        Value::Number(DecimalNumber::from_i64(5))
     );
     assert!(eval_string_expr("[1, 2]::push(3)").is_err());
     assert!(eval_string_expr("{ a: 1, b: 2 }::delete(\"a\")").is_err());
@@ -183,7 +187,10 @@ fn test_advanced_methods_v0_1_1_and_v0_1_5() {
     .unwrap();
     assert_eq!(
         result,
-        Value::List(vec![Value::Number(2.0), Value::Number(4.0)])
+        Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(4))
+        ])
     );
 
     let result = eval_program(
@@ -193,9 +200,9 @@ fn test_advanced_methods_v0_1_1_and_v0_1_5() {
     assert_eq!(
         result,
         Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(4.0),
-            Value::Number(9.0)
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(4)),
+            Value::Number(DecimalNumber::from_i64(9))
         ])
     );
 
@@ -203,22 +210,22 @@ fn test_advanced_methods_v0_1_1_and_v0_1_5() {
         "numbers = [1,2,3,4,5]\nsum = numbers::fold(0, |acc, x| { return acc + x })\nresult = sum",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(15.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(15)));
 
     let result = eval_program("[1,2,3,4,5]::sum()").unwrap();
-    assert_eq!(result, Value::Number(15.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(15)));
     let result = eval_program("[1,2,3,4]::product()").unwrap();
-    assert_eq!(result, Value::Number(24.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(24)));
 
     // index_of on list and string
     let result = eval_program(
         "fruits = [\"apple\", \"banana\", \"cherry\"]\nresult = fruits::index_of(\"banana\")",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(1.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(1)));
     let result =
         eval_program("text = \"hello world\"\nresult = text::index_of(\"world\")").unwrap();
-    assert_eq!(result, Value::Number(6.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(6)));
 
     // New string methods
     assert_eq!(
@@ -248,7 +255,11 @@ fn test_advanced_methods_v0_1_1_and_v0_1_5() {
         Value::List(xs) => {
             assert_eq!(
                 xs,
-                vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0)]
+                vec![
+                    Value::Number(DecimalNumber::from_i64(1)),
+                    Value::Number(DecimalNumber::from_i64(2)),
+                    Value::Number(DecimalNumber::from_i64(3))
+                ]
             );
         }
         _ => panic!("expected list"),
@@ -256,7 +267,7 @@ fn test_advanced_methods_v0_1_1_and_v0_1_5() {
 
     // Map get and merge
     let result = eval_program("m = { name: \"Alice\" }\nresult = m::get(\"age\", 0)").unwrap();
-    assert_eq!(result, Value::Number(0.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(0)));
     let result =
         eval_program("user = { name: \"Bob\" }\nuser::merge({ city: \"NY\" })\nresult = user:city")
             .unwrap();
@@ -265,17 +276,20 @@ fn test_advanced_methods_v0_1_1_and_v0_1_5() {
     // Number methods
     assert_eq!(
         eval_string_expr("(-5)::abs() ").unwrap(),
-        Value::Number(5.0)
+        Value::Number(DecimalNumber::from_i64(5))
     );
     assert_eq!(
         eval_string_expr("3.6::floor() ").unwrap(),
-        Value::Number(3.0)
+        Value::Number(DecimalNumber::from_i64(3))
     );
-    assert_eq!(eval_string_expr("2::pow(3) ").unwrap(), Value::Number(8.0));
+    assert_eq!(
+        eval_string_expr("2::pow(3) ").unwrap(),
+        Value::Number(DecimalNumber::from_i64(8))
+    );
 
     // Tuple methods
     assert_eq!(
         eval_string_expr("(1,2,3)::length() ").unwrap(),
-        Value::Number(3.0)
+        Value::Number(DecimalNumber::from_i64(3))
     );
 }

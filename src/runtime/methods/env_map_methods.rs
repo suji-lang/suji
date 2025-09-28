@@ -1,6 +1,6 @@
 //! Methods for `EnvMap` (environment variables with overlay support).
 
-use super::super::value::{RuntimeError, Value};
+use super::super::value::{DecimalNumber, RuntimeError, Value};
 use super::common::ValueRef;
 
 /// Methods: contains(key), get(key, default=nil), keys(), values(), to_list(), length(), delete(key), merge(other_map)
@@ -94,7 +94,7 @@ pub fn call_env_map_method(
                         message: "length() takes no arguments".to_string(),
                     });
                 }
-                Ok(Value::Number(env_proxy.length() as f64))
+                Ok(Value::Number(DecimalNumber::from_usize(env_proxy.length())))
             }
             "delete" => {
                 if args.len() != 1 {
@@ -339,13 +339,21 @@ mod tests {
     fn test_env_map_type_errors() {
         with_env_map(|env_map| {
             // Test non-string key for contains
-            let result = call_env_map_method(env_map, "contains", vec![Value::Number(42.0)]);
+            let result = call_env_map_method(
+                env_map,
+                "contains",
+                vec![Value::Number(DecimalNumber::from_i64(42))],
+            );
             assert!(result.is_err());
         });
 
         with_env_map(|env_map| {
             // Test non-string key for get
-            let result = call_env_map_method(env_map, "get", vec![Value::Number(42.0)]);
+            let result = call_env_map_method(
+                env_map,
+                "get",
+                vec![Value::Number(DecimalNumber::from_i64(42))],
+            );
             assert!(result.is_err());
         });
     }

@@ -162,6 +162,7 @@ mod tests {
     use super::*;
     use crate::ast::{Expr, Literal, Param, Stmt};
     use crate::runtime::env::Env;
+    use crate::runtime::value::DecimalNumber;
     use crate::token::Span;
 
     fn create_test_env() -> Rc<Env> {
@@ -180,7 +181,10 @@ mod tests {
             span: Span::default(),
         }];
 
-        let body = Stmt::Expr(Expr::Literal(Literal::Number(42.0, Span::default())));
+        let body = Stmt::Expr(Expr::Literal(Literal::Number(
+            "42".to_string(),
+            Span::default(),
+        )));
 
         let result = eval_function_literal(&params, &body, env).unwrap();
 
@@ -210,7 +214,10 @@ mod tests {
                 Span::default(),
             ))),
             op: crate::ast::BinaryOp::Add,
-            right: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+            right: Box::new(Expr::Literal(Literal::Number(
+                "1".to_string(),
+                Span::default(),
+            ))),
             span: Span::default(),
         });
 
@@ -218,8 +225,11 @@ mod tests {
         let callee = Expr::Literal(Literal::Identifier("func".to_string(), Span::default()));
         env.define_or_set("func", func);
 
-        let args = vec![Expr::Literal(Literal::Number(5.0, Span::default()))];
+        let args = vec![Expr::Literal(Literal::Number(
+            "5".to_string(),
+            Span::default(),
+        ))];
         let result = eval_function_call(&callee, &args, env.clone()).unwrap();
-        assert_eq!(result, Value::Number(6.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(6)));
     }
 }

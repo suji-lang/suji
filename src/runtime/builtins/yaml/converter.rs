@@ -1,7 +1,7 @@
 //! YAML conversion functions.
 
 use super::types::YamlError;
-use crate::runtime::value::{MapKey, RuntimeError, Value};
+use crate::runtime::value::{DecimalNumber, MapKey, RuntimeError, Value};
 use indexmap::IndexMap;
 use yaml_rust2::Yaml;
 
@@ -10,14 +10,15 @@ pub fn yaml_to_nn_value(yaml_value: Yaml) -> Result<Value, RuntimeError> {
     match yaml_value {
         Yaml::Null => Ok(Value::Nil),
         Yaml::Boolean(b) => Ok(Value::Boolean(b)),
-        Yaml::Integer(i) => Ok(Value::Number(i as f64)),
-        Yaml::Real(s) => s.parse::<f64>().map(Value::Number).map_err(|_| {
-            YamlError::ParseError {
+        Yaml::Integer(i) => Ok(Value::Number(DecimalNumber::from_i64(i))),
+        Yaml::Real(s) => match DecimalNumber::parse(&s) {
+            Ok(decimal) => Ok(Value::Number(decimal)),
+            Err(_) => Err(YamlError::ParseError {
                 message: "Invalid YAML number format".to_string(),
                 yaml_input: Some(s),
             }
-            .into()
-        }),
+            .into()),
+        },
         Yaml::String(s) => Ok(Value::String(s)),
         Yaml::Array(seq) => {
             let mut nn_list = Vec::new();
@@ -49,8 +50,12 @@ pub fn nn_to_yaml_value(nn_value: &Value) -> Result<Yaml, RuntimeError> {
         Value::Nil => Ok(Yaml::Null),
         Value::Boolean(b) => Ok(Yaml::Boolean(*b)),
         Value::Number(n) => {
-            if n.fract() == 0.0 {
-                Ok(Yaml::Integer(*n as i64))
+            if n.is_integer() {
+                if let Some(i) = n.to_i64_checked() {
+                    Ok(Yaml::Integer(i))
+                } else {
+                    Ok(Yaml::Real(n.to_string()))
+                }
             } else {
                 Ok(Yaml::Real(n.to_string()))
             }

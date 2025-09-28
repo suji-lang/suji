@@ -5,7 +5,7 @@ use nnlang::token::Span;
 fn test_compound_assign_expression() {
     let span = Span::new(0, 10, 1, 0);
     let target = Expr::Literal(Literal::Identifier("x".to_string(), span.clone()));
-    let value = Expr::Literal(Literal::Number(5.0, span.clone()));
+    let value = Expr::Literal(Literal::Number("5".to_string(), span.clone()));
 
     // Test PlusAssign
     let plus_assign = Expr::CompoundAssign {
@@ -62,7 +62,7 @@ fn test_compound_assign_expression() {
 fn test_compound_assign_is_assignable() {
     let span = Span::new(0, 10, 1, 0);
     let target = Expr::Literal(Literal::Identifier("x".to_string(), span.clone()));
-    let value = Expr::Literal(Literal::Number(5.0, span.clone()));
+    let value = Expr::Literal(Literal::Number("5".to_string(), span.clone()));
 
     let compound_assign = Expr::CompoundAssign {
         target: Box::new(target),
@@ -84,10 +84,13 @@ fn test_compound_assign_with_complex_targets() {
     let list_target = Expr::Literal(Literal::Identifier("list".to_string(), span.clone()));
     let index_target = Expr::Index {
         target: Box::new(list_target),
-        index: Box::new(Expr::Literal(Literal::Number(0.0, span.clone()))),
+        index: Box::new(Expr::Literal(Literal::Number(
+            "0".to_string(),
+            span.clone(),
+        ))),
         span: span.clone(),
     };
-    let value = Expr::Literal(Literal::Number(10.0, span.clone()));
+    let value = Expr::Literal(Literal::Number("10".to_string(), span.clone()));
 
     let compound_assign = Expr::CompoundAssign {
         target: Box::new(index_target),
@@ -110,7 +113,7 @@ fn test_compound_assign_with_map_targets() {
         key: "count".to_string(),
         span: span.clone(),
     };
-    let value = Expr::Literal(Literal::Number(1.0, span.clone()));
+    let value = Expr::Literal(Literal::Number("1".to_string(), span.clone()));
 
     let compound_assign = Expr::CompoundAssign {
         target: Box::new(map_access_target),

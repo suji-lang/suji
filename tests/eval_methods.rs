@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::{eval_program, eval_string_expr};
@@ -7,11 +8,11 @@ use nnlang::runtime::value::Value;
 fn test_method_calls() {
     assert_eq!(
         eval_string_expr("[1, 2, 3]::length()").unwrap(),
-        Value::Number(3.0)
+        Value::Number(DecimalNumber::from_i64(3))
     );
     assert_eq!(
         eval_string_expr(r#""hello"::length()"#).unwrap(),
-        Value::Number(5.0)
+        Value::Number(DecimalNumber::from_i64(5))
     );
     assert_eq!(
         eval_string_expr(r#""hello world"::contains("world")"#).unwrap(),
@@ -51,11 +52,11 @@ fn test_method_calls() {
     );
     assert_eq!(
         eval_program("list = [1, 2, 3, 4]\nlist::length()").unwrap(),
-        Value::Number(4.0)
+        Value::Number(DecimalNumber::from_i64(4))
     );
     assert_eq!(
         eval_string_expr("(1..5)::length()").unwrap(),
-        Value::Number(4.0)
+        Value::Number(DecimalNumber::from_i64(4))
     );
 }
 
@@ -66,19 +67,23 @@ fn test_pipe_single_hop() {
 import std:println
 import std:io
 
-destination = || {
-    lines = io:stdin::read_lines()
-    match lines::length() > 0 {
-        true: { "output received" }
-        false: { "no output" }
+make_destination = || {
+    return || {
+        lines = io:stdin::read_lines()
+        match lines::length() > 0 {
+            true: { "output received" }
+            false: { "no output" }
+        }
     }
 }
 
-source = || {
-    println("test")
+make_source = || {
+    return || {
+        println("test")
+    }
 }
 
-result = source | destination
+result = make_source() | make_destination()
 result
 "#;
 

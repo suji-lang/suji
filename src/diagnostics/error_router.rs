@@ -119,6 +119,9 @@ pub fn error_code_for_variant(error: &RuntimeError) -> u32 {
         RuntimeError::PipeExecutionError { .. } => 129,
         RuntimeError::PipeApplyRightTypeError => 130,
         RuntimeError::PipeApplyLeftTypeError => 131,
+        RuntimeError::DestructureTypeError => 132,
+        RuntimeError::DestructureArityMismatch { .. } => 133,
+        RuntimeError::DestructureInvalidTarget { .. } => 134,
     }
 }
 
@@ -270,6 +273,33 @@ impl RuntimeError {
                     "Pipe apply type error",
                     "Pipe apply (<|) requires a function on the left-hand side".to_string(),
                 )
+            },
+
+            RuntimeError::DestructureTypeError => {
+                ErrorContext::new(
+                    ErrorCategory::Type,
+                    error_code,
+                    "Destructuring type error",
+                    "Destructuring assignment requires a tuple value".to_string(),
+                ).with_suggestions(generate_category_suggestions(ErrorCategory::Type, self))
+            },
+
+            RuntimeError::DestructureArityMismatch { expected, actual } => {
+                ErrorContext::new(
+                    ErrorCategory::Execution,
+                    error_code,
+                    "Destructuring arity mismatch",
+                    format!("Expected {} values but got {}", expected, actual),
+                ).with_suggestions(generate_category_suggestions(ErrorCategory::Execution, self))
+            },
+
+            RuntimeError::DestructureInvalidTarget { message } => {
+                ErrorContext::new(
+                    ErrorCategory::Type,
+                    error_code,
+                    "Invalid destructuring target",
+                    message.clone(),
+                ).with_suggestions(generate_category_suggestions(ErrorCategory::Type, self))
             },
 
             RuntimeError::InvalidNumberConversion { message } => {

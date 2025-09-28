@@ -43,6 +43,7 @@ mod tests {
     use super::*;
     use crate::ast::{Expr, Literal};
     use crate::runtime::env::Env;
+    use crate::runtime::value::DecimalNumber;
     use crate::token::Span;
 
     fn create_test_env() -> Rc<Env> {
@@ -60,16 +61,16 @@ mod tests {
         let args = vec![];
 
         let result = eval_method_call(&target, "length", &args, env).unwrap();
-        assert_eq!(result, Value::Number(11.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(11)));
     }
 
     #[test]
     fn test_list_method_call() {
         let env = create_test_env();
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         env.define_or_set("my_list", list);
 
@@ -77,6 +78,6 @@ mod tests {
         let args = vec![];
 
         let result = eval_method_call(&target, "length", &args, env).unwrap();
-        assert_eq!(result, Value::Number(3.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
     }
 }

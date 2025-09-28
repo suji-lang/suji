@@ -47,8 +47,9 @@ impl LexerUtils {
         }
 
         let literal = &context.input[start_pos..context.position];
+        // Validate that it's a valid number format, but return as string
         match literal.parse::<f64>() {
-            Ok(value) => Ok(Token::Number(value)),
+            Ok(_) => Ok(Token::Number(literal.to_string())),
             Err(_) => Err(LexError::InvalidNumber {
                 literal: literal.to_string(),
                 line: context.line,

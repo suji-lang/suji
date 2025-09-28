@@ -35,6 +35,7 @@ pub fn eval_export(spec: &ExportSpec, env: Rc<Env>) -> Result<ExportResult, Runt
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::value::DecimalNumber;
 
     fn create_test_env() -> Rc<Env> {
         Rc::new(Env::new())
@@ -45,7 +46,7 @@ mod tests {
             items: vec![
                 (
                     "CONSTANT".to_string(),
-                    Expr::Literal(Literal::Number(42.0, Span::default())),
+                    Expr::Literal(Literal::Number("42".to_string(), Span::default())),
                 ),
                 (
                     "message".to_string(),
@@ -76,7 +77,7 @@ mod tests {
             // Check that all exported items are present
             assert_eq!(
                 map.get(&MapKey::String("CONSTANT".to_string())),
-                Some(&Value::Number(42.0))
+                Some(&Value::Number(DecimalNumber::from_i64(42)))
             );
             assert_eq!(
                 map.get(&MapKey::String("message".to_string())),
@@ -96,7 +97,7 @@ mod tests {
         let env = create_test_env();
 
         // Set up some variables in the environment
-        env.define_or_set("x", Value::Number(10.0));
+        env.define_or_set("x", Value::Number(DecimalNumber::from_i64(10)));
         env.define_or_set("name", Value::String("test".to_string()));
 
         let export_spec = ExportSpec {
@@ -120,7 +121,7 @@ mod tests {
         if let Value::Map(map) = export_result.module {
             assert_eq!(
                 map.get(&MapKey::String("value".to_string())),
-                Some(&Value::Number(10.0))
+                Some(&Value::Number(DecimalNumber::from_i64(10)))
             );
             assert_eq!(
                 map.get(&MapKey::String("title".to_string())),

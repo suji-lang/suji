@@ -1,4 +1,5 @@
 use nnlang::runtime::methods::{ValueRef, call_method};
+use nnlang::runtime::value::DecimalNumber;
 use nnlang::runtime::value::Value;
 
 /// Integration tests for the methods module
@@ -7,10 +8,14 @@ use nnlang::runtime::value::Value;
 
 #[test]
 fn test_immutable_mutating_method_error() {
-    let list = Value::List(vec![Value::Number(1.0)]);
+    let list = Value::List(vec![Value::Number(DecimalNumber::from_i64(1))]);
     let receiver = ValueRef::Immutable(&list);
 
-    let result = call_method(receiver, "push", vec![Value::Number(2.0)]);
+    let result = call_method(
+        receiver,
+        "push",
+        vec![Value::Number(DecimalNumber::from_i64(2))],
+    );
     assert!(matches!(
         result,
         Err(nnlang::runtime::value::RuntimeError::MethodError { .. })
@@ -23,19 +28,22 @@ fn test_method_dispatcher_routing() {
     let s = Value::String("hello".to_string());
     let receiver = ValueRef::Immutable(&s);
     let result = call_method(receiver, "length", vec![]).unwrap();
-    assert_eq!(result, Value::Number(5.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
 
     // Test that the dispatcher correctly routes to number methods
-    let n = Value::Number(42.0);
+    let n = Value::Number(DecimalNumber::from_i64(42));
     let receiver = ValueRef::Immutable(&n);
     let result = call_method(receiver, "to_string", vec![]).unwrap();
     assert_eq!(result, Value::String("42".to_string()));
 
     // Test that the dispatcher correctly routes to list methods
-    let list = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+    let list = Value::List(vec![
+        Value::Number(DecimalNumber::from_i64(1)),
+        Value::Number(DecimalNumber::from_i64(2)),
+    ]);
     let receiver = ValueRef::Immutable(&list);
     let result = call_method(receiver, "length", vec![]).unwrap();
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 
     // Test that the dispatcher correctly routes to map methods
     use indexmap::IndexMap;
@@ -48,7 +56,7 @@ fn test_method_dispatcher_routing() {
     let map = Value::Map(map_data);
     let receiver = ValueRef::Immutable(&map);
     let result = call_method(receiver, "length", vec![]).unwrap();
-    assert_eq!(result, Value::Number(1.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(1)));
 }
 
 #[test]

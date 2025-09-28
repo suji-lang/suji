@@ -85,7 +85,7 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
         }
         // Arithmetic operations
         BinaryOp::Add => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a + b)),
+            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a.add(b))),
             (Value::String(a), Value::String(b)) => Ok(Value::String(format!("{}{}", a, b))),
             (Value::List(a), Value::List(b)) => {
                 // List concatenation: pass-by-value semantics
@@ -98,7 +98,7 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
             }),
         },
         BinaryOp::Subtract => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a - b)),
+            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a.sub(b))),
             _ => Err(RuntimeError::TypeError {
                 message: format!(
                     "Cannot subtract {} and {}",
@@ -108,7 +108,7 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
             }),
         },
         BinaryOp::Multiply => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a * b)),
+            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a.mul(b))),
             _ => Err(RuntimeError::TypeError {
                 message: format!(
                     "Cannot multiply {} and {}",
@@ -118,15 +118,12 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
             }),
         },
         BinaryOp::Divide => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => {
-                if *b == 0.0 {
-                    Err(RuntimeError::InvalidOperation {
-                        message: "Division by zero".to_string(),
-                    })
-                } else {
-                    Ok(Value::Number(a / b))
-                }
-            }
+            (Value::Number(a), Value::Number(b)) => match a.div(b) {
+                Ok(result) => Ok(Value::Number(result)),
+                Err(err) => Err(RuntimeError::InvalidOperation {
+                    message: err.to_string(),
+                }),
+            },
             _ => Err(RuntimeError::TypeError {
                 message: format!(
                     "Cannot divide {} and {}",
@@ -136,15 +133,12 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
             }),
         },
         BinaryOp::Modulo => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => {
-                if *b == 0.0 {
-                    Err(RuntimeError::InvalidOperation {
-                        message: "Modulo by zero".to_string(),
-                    })
-                } else {
-                    Ok(Value::Number(a % b))
-                }
-            }
+            (Value::Number(a), Value::Number(b)) => match a.rem(b) {
+                Ok(result) => Ok(Value::Number(result)),
+                Err(err) => Err(RuntimeError::InvalidOperation {
+                    message: err.to_string(),
+                }),
+            },
             _ => Err(RuntimeError::TypeError {
                 message: format!(
                     "Cannot modulo {} and {}",
@@ -154,7 +148,12 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
             }),
         },
         BinaryOp::Power => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a.powf(*b))),
+            (Value::Number(a), Value::Number(b)) => match a.pow(b) {
+                Ok(result) => Ok(Value::Number(result)),
+                Err(err) => Err(RuntimeError::InvalidOperation {
+                    message: err.to_string(),
+                }),
+            },
             _ => Err(RuntimeError::TypeError {
                 message: format!(
                     "Cannot exponentiate {} and {}",
@@ -279,7 +278,7 @@ pub fn eval_compound_assignment(
     // Assign the result back to the target
     // We need to create a temporary expression with the result value
     let temp_expr = match &result_value {
-        Value::Number(n) => Expr::Literal(Literal::Number(*n, Span::default())),
+        Value::Number(n) => Expr::Literal(Literal::Number(n.to_string(), Span::default())),
         Value::Boolean(b) => Expr::Literal(Literal::Boolean(*b, Span::default())),
         Value::String(s) => Expr::Literal(Literal::StringTemplate(
             vec![crate::ast::StringPart::Text(s.clone())],
@@ -323,12 +322,14 @@ pub fn eval_compound_assignment(
 fn eval_index_value(target: &Value, index: &Value) -> EvalResult<Value> {
     match (target, index) {
         (Value::List(items), Value::Number(n)) => {
-            if n.fract() != 0.0 {
+            if !n.is_integer() {
                 return Err(RuntimeError::TypeError {
                     message: "List index must be an integer".to_string(),
                 });
             }
-            let idx = *n as i64;
+            let idx = n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
+                message: "List index out of range".to_string(),
+            })?;
             let normalized_idx = if idx < 0 {
                 items.len() as i64 + idx
             } else {
@@ -385,7 +386,7 @@ fn eval_map_access_value(target: &Value, key: &str) -> EvalResult<Value> {
 /// Helper function to convert a Value to an Expr
 fn value_to_expr(value: &Value) -> Expr {
     match value {
-        Value::Number(n) => Expr::Literal(Literal::Number(*n, Span::default())),
+        Value::Number(n) => Expr::Literal(Literal::Number(n.to_string(), Span::default())),
         Value::Boolean(b) => Expr::Literal(Literal::Boolean(*b, Span::default())),
         Value::String(s) => Expr::Literal(Literal::StringTemplate(
             vec![crate::ast::StringPart::Text(s.clone())],
@@ -425,7 +426,7 @@ fn map_key_to_expr(key: &crate::runtime::value::MapKey) -> Expr {
             Span::default(),
         )),
         crate::runtime::value::MapKey::Number(n) => {
-            Expr::Literal(Literal::Number(n.0, Span::default()))
+            Expr::Literal(Literal::Number(n.0.to_string(), Span::default()))
         }
         crate::runtime::value::MapKey::Boolean(b) => {
             Expr::Literal(Literal::Boolean(*b, Span::default()))
@@ -444,16 +445,25 @@ fn map_key_to_expr(key: &crate::runtime::value::MapKey) -> Expr {
 mod tests {
     use super::*;
     use crate::ast::BinaryOp;
+    use crate::runtime::value::DecimalNumber;
 
     #[test]
     fn test_arithmetic() {
-        let result =
-            eval_binary_op(&BinaryOp::Add, Value::Number(2.0), Value::Number(3.0)).unwrap();
-        assert_eq!(result, Value::Number(5.0));
+        let result = eval_binary_op(
+            &BinaryOp::Add,
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
+        )
+        .unwrap();
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
 
-        let result =
-            eval_binary_op(&BinaryOp::Multiply, Value::Number(4.0), Value::Number(5.0)).unwrap();
-        assert_eq!(result, Value::Number(20.0));
+        let result = eval_binary_op(
+            &BinaryOp::Multiply,
+            Value::Number(DecimalNumber::from_i64(4)),
+            Value::Number(DecimalNumber::from_i64(5)),
+        )
+        .unwrap();
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(20)));
     }
 
     #[test]
@@ -470,37 +480,57 @@ mod tests {
     #[test]
     fn test_list_concatenation() {
         // Test basic list concatenation
-        let list1 = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
-        let list2 = Value::List(vec![Value::Number(3.0), Value::Number(4.0)]);
+        let list1 = Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+        ]);
+        let list2 = Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(3)),
+            Value::Number(DecimalNumber::from_i64(4)),
+        ]);
         let result = eval_binary_op(&BinaryOp::Add, list1.clone(), list2.clone()).unwrap();
 
         let expected = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
-            Value::Number(4.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
+            Value::Number(DecimalNumber::from_i64(4)),
         ]);
         assert_eq!(result, expected);
 
         // Test pass-by-value semantics (original lists unchanged)
         assert_eq!(
             list1,
-            Value::List(vec![Value::Number(1.0), Value::Number(2.0)])
+            Value::List(vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::Number(DecimalNumber::from_i64(2))
+            ])
         );
         assert_eq!(
             list2,
-            Value::List(vec![Value::Number(3.0), Value::Number(4.0)])
+            Value::List(vec![
+                Value::Number(DecimalNumber::from_i64(3)),
+                Value::Number(DecimalNumber::from_i64(4))
+            ])
         );
     }
 
     #[test]
     fn test_comparisons() {
-        let result =
-            eval_binary_op(&BinaryOp::Less, Value::Number(2.0), Value::Number(3.0)).unwrap();
+        let result = eval_binary_op(
+            &BinaryOp::Less,
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
+        )
+        .unwrap();
         assert_eq!(result, Value::Boolean(true));
 
-        let result =
-            eval_binary_op(&BinaryOp::Equal, Value::Number(5.0), Value::Number(5.0)).unwrap();
+        let result = eval_binary_op(
+            &BinaryOp::Equal,
+            Value::Number(DecimalNumber::from_i64(5)),
+            Value::Number(DecimalNumber::from_i64(5)),
+        )
+        .unwrap();
         assert_eq!(result, Value::Boolean(true));
     }
 }

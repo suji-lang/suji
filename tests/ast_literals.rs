@@ -6,7 +6,7 @@ fn test_literal_span() {
     let span = Span::new(0, 5, 1, 0);
 
     let literals = vec![
-        Literal::Number(42.0, span.clone()),
+        Literal::Number("42".to_string(), span.clone()),
         Literal::Boolean(true, span.clone()),
         Literal::Identifier("x".to_string(), span.clone()),
         Literal::StringTemplate(vec![], span.clone()),

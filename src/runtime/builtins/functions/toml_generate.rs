@@ -44,6 +44,7 @@ pub fn builtin_toml_generate(args: &[Value]) -> Result<Value, RuntimeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::value::DecimalNumber;
 
     #[test]
     fn test_toml_generate_simple_values() {
@@ -57,11 +58,14 @@ mod tests {
             Value::String("value = false\n".to_string())
         );
         assert_eq!(
-            builtin_toml_generate(&[Value::Number(42.0)]).unwrap(),
+            builtin_toml_generate(&[Value::Number(DecimalNumber::from_i64(42))]).unwrap(),
             Value::String("value = 42\n".to_string())
         );
         assert_eq!(
-            builtin_toml_generate(&[Value::Number(std::f64::consts::PI)]).unwrap(),
+            builtin_toml_generate(&[Value::Number(
+                DecimalNumber::parse(&std::f64::consts::PI.to_string()).unwrap()
+            )])
+            .unwrap(),
             Value::String("value = 3.141592653589793\n".to_string())
         );
         assert_eq!(
@@ -73,9 +77,9 @@ mod tests {
     #[test]
     fn test_toml_generate_arrays() {
         let result = builtin_toml_generate(&[Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ])])
         .unwrap();
         assert_eq!(result, Value::String("value = [1, 2, 3]\n".to_string()));
@@ -90,7 +94,7 @@ mod tests {
         );
         map.insert(
             crate::runtime::value::MapKey::String("age".to_string()),
-            Value::Number(30.0),
+            Value::Number(DecimalNumber::from_i64(30)),
         );
 
         let result = builtin_toml_generate(&[Value::Map(map)]).unwrap();
@@ -116,7 +120,9 @@ mod tests {
     fn test_toml_generate_non_string_map_key_error() {
         let mut map = indexmap::IndexMap::new();
         map.insert(
-            crate::runtime::value::MapKey::Number(crate::runtime::value::OrderedFloat(42.0)),
+            crate::runtime::value::MapKey::Number(crate::runtime::value::OrderedDecimal::new(
+                rust_decimal::Decimal::from(42),
+            )),
             Value::String("value".to_string()),
         );
 

@@ -23,7 +23,7 @@ fn test_parse_function_single_expression() {
                     panic!("Expected x as left operand");
                 }
                 if let Expr::Literal(Literal::Number(n, _)) = right.as_ref() {
-                    assert_eq!(*n, 2.0);
+                    assert_eq!(*n, "2".to_string());
                 } else {
                     panic!("Expected 2 as right operand");
                 }
@@ -49,13 +49,10 @@ fn test_parse_function_block() {
 
         if let Stmt::Block { statements, .. } = body.as_ref() {
             assert_eq!(statements.len(), 1);
-            if let Stmt::Return {
-                value: Some(expr), ..
-            } = &statements[0]
-            {
-                if let Expr::Binary {
+            if let Stmt::Return { values, .. } = &statements[0] {
+                if let Some(Expr::Binary {
                     op, left, right, ..
-                } = expr
+                }) = values.first()
                 {
                     assert_eq!(*op, BinaryOp::Multiply);
                     if let Expr::Literal(Literal::Identifier(name, _)) = left.as_ref() {
@@ -64,7 +61,7 @@ fn test_parse_function_block() {
                         panic!("Expected x as left operand");
                     }
                     if let Expr::Literal(Literal::Number(n, _)) = right.as_ref() {
-                        assert_eq!(*n, 2.0);
+                        assert_eq!(*n, "2".to_string());
                     } else {
                         panic!("Expected 2 as right operand");
                     }
@@ -83,6 +80,43 @@ fn test_parse_function_block() {
 }
 
 #[test]
+fn test_parse_function_multi_return_destructure() {
+    let result = parse_expression("|x| { return x, x + 1 }");
+    assert!(result.is_ok());
+
+    if let Ok(Expr::FunctionLiteral { body, .. }) = result {
+        if let Stmt::Block { statements, .. } = body.as_ref() {
+            assert_eq!(statements.len(), 1);
+            if let Stmt::Return { values, .. } = &statements[0] {
+                assert_eq!(values.len(), 2);
+            } else {
+                panic!("Expected return statement");
+            }
+        } else {
+            panic!("Expected block statement");
+        }
+    } else {
+        panic!("Expected function literal");
+    }
+}
+
+#[test]
+fn test_parse_destructuring_assignment() {
+    let result = parse_expression("(a, _, b) = f()");
+    assert!(result.is_ok());
+
+    if let Ok(Expr::Assign { target, .. }) = result {
+        if let Expr::Destructure { elements, .. } = target.as_ref() {
+            assert_eq!(elements.len(), 3);
+        } else {
+            panic!("Expected destructure target");
+        }
+    } else {
+        panic!("Expected assignment expression");
+    }
+}
+
+#[test]
 fn test_parse_empty_function_single_expression() {
     let result = parse_expression("|| 42");
     assert!(result.is_ok());
@@ -92,7 +126,7 @@ fn test_parse_empty_function_single_expression() {
 
         if let Stmt::Expr(expr) = body.as_ref() {
             if let Expr::Literal(Literal::Number(n, _)) = expr {
-                assert_eq!(*n, 42.0);
+                assert_eq!(*n, "42".to_string());
             } else {
                 panic!("Expected number literal");
             }
@@ -115,13 +149,13 @@ fn test_parse_function_with_default_params_single_expression() {
         assert_eq!(params[1].name, "y");
 
         if let Some(Expr::Literal(Literal::Number(n, _))) = &params[0].default {
-            assert_eq!(*n, 0.0);
+            assert_eq!(*n, "0".to_string());
         } else {
             panic!("Expected default value 0 for x");
         }
 
         if let Some(Expr::Literal(Literal::Number(n, _))) = &params[1].default {
-            assert_eq!(*n, 1.0);
+            assert_eq!(*n, "1".to_string());
         } else {
             panic!("Expected default value 1 for y");
         }

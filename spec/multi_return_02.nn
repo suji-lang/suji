@@ -1,0 +1,9 @@
+import std:println
+
+make_triple = || {
+    return 10, 20, 30
+}
+
+first, _, third = make_triple()
+
+println(third)  # 30

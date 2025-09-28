@@ -1,4 +1,4 @@
-use super::super::value::{RuntimeError, Value};
+use super::super::value::{DecimalNumber, RuntimeError, Value};
 use super::common::{ValueRef, eval_closure};
 
 /// List methods: push(item), pop(), length(), join(separator=" "), index_of(), filter(), map(), fold(), sum(), product()
@@ -47,7 +47,7 @@ pub fn call_list_method(
             }
 
             if let Value::List(items) = receiver.get() {
-                Ok(Value::Number(items.len() as f64))
+                Ok(Value::Number(DecimalNumber::from_usize(items.len())))
             } else {
                 unreachable!()
             }
@@ -87,10 +87,10 @@ pub fn call_list_method(
                 let search_value = &args[0];
                 for (i, item) in items.iter().enumerate() {
                     if item == search_value {
-                        return Ok(Value::Number(i as f64));
+                        return Ok(Value::Number(DecimalNumber::from_usize(i)));
                     }
                 }
-                Ok(Value::Number(-1.0))
+                Ok(Value::Number(DecimalNumber::from_i64(-1)))
             } else {
                 unreachable!()
             }
@@ -155,10 +155,10 @@ pub fn call_list_method(
                 });
             }
             if let Value::List(items) = receiver.get() {
-                let mut sum = 0.0;
+                let mut sum = DecimalNumber::from_i64(0);
                 for item in items {
                     match item {
-                        Value::Number(n) => sum += n,
+                        Value::Number(n) => sum = sum.add(n),
                         _ => {
                             return Err(RuntimeError::TypeError {
                                 message: "sum() can only be called on lists of numbers".to_string(),
@@ -178,10 +178,10 @@ pub fn call_list_method(
                 });
             }
             if let Value::List(items) = receiver.get() {
-                let mut product = 1.0;
+                let mut product = DecimalNumber::from_i64(1);
                 for item in items {
                     match item {
-                        Value::Number(n) => product *= n,
+                        Value::Number(n) => product = product.mul(n),
                         _ => {
                             return Err(RuntimeError::TypeError {
                                 message: "product() can only be called on lists of numbers"
@@ -251,12 +251,12 @@ pub fn call_list_method(
                 for item in items {
                     match item {
                         Value::Number(n) => {
-                            if let Some(current_min) = min_val {
-                                if n < &current_min {
-                                    min_val = Some(*n);
+                            if let Some(ref current_min) = min_val {
+                                if n < current_min {
+                                    min_val = Some(n.clone());
                                 }
                             } else {
-                                min_val = Some(*n);
+                                min_val = Some(n.clone());
                             }
                         }
                         _ => {
@@ -287,12 +287,12 @@ pub fn call_list_method(
                 for item in items {
                     match item {
                         Value::Number(n) => {
-                            if let Some(current_max) = max_val {
-                                if n > &current_max {
-                                    max_val = Some(*n);
+                            if let Some(ref current_max) = max_val {
+                                if n > current_max {
+                                    max_val = Some(n.clone());
                                 }
                             } else {
-                                max_val = Some(*n);
+                                max_val = Some(n.clone());
                             }
                         }
                         _ => {
@@ -353,13 +353,13 @@ pub fn call_list_method(
                     return Ok(Value::Nil);
                 }
 
-                let mut sum = 0.0;
+                let mut sum = DecimalNumber::from_i64(0);
                 let mut count = 0;
 
                 for item in items {
                     match item {
                         Value::Number(n) => {
-                            sum += n;
+                            sum = sum.add(n);
                             count += 1;
                         }
                         _ => {
@@ -371,7 +371,13 @@ pub fn call_list_method(
                     }
                 }
 
-                Ok(Value::Number(sum / count as f64))
+                let count_decimal = DecimalNumber::from_i64(count as i64);
+                match sum.div(&count_decimal) {
+                    Ok(result) => Ok(Value::Number(result)),
+                    Err(err) => Err(RuntimeError::InvalidOperation {
+                        message: err.to_string(),
+                    }),
+                }
             } else {
                 unreachable!()
             }
@@ -401,16 +407,24 @@ mod tests {
 
     #[test]
     fn test_list_push_pop() {
-        let mut list = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+        let mut list = Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+        ]);
         let receiver = ValueRef::Mutable(&mut list);
 
         // Test push
-        let result = call_list_method(receiver, "push", vec![Value::Number(3.0)]).unwrap();
+        let result = call_list_method(
+            receiver,
+            "push",
+            vec![Value::Number(DecimalNumber::from_i64(3))],
+        )
+        .unwrap();
         assert_eq!(result, Value::Nil);
 
         if let Value::List(items) = &list {
             assert_eq!(items.len(), 3);
-            assert_eq!(items[2], Value::Number(3.0));
+            assert_eq!(items[2], Value::Number(DecimalNumber::from_i64(3)));
         } else {
             panic!("Expected list");
         }
@@ -418,7 +432,7 @@ mod tests {
         // Test pop
         let receiver2 = ValueRef::Mutable(&mut list);
         let result = call_list_method(receiver2, "pop", vec![]).unwrap();
-        assert_eq!(result, Value::Number(3.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
         if let Value::List(items) = &list {
             assert_eq!(items.len(), 2);
@@ -462,7 +476,7 @@ mod tests {
             vec![Value::String("banana".to_string())],
         )
         .unwrap();
-        assert_eq!(result, Value::Number(1.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(1)));
 
         let receiver2 = ValueRef::Immutable(&list);
         let result2 = call_list_method(
@@ -471,40 +485,40 @@ mod tests {
             vec![Value::String("grape".to_string())],
         )
         .unwrap();
-        assert_eq!(result2, Value::Number(-1.0));
+        assert_eq!(result2, Value::Number(DecimalNumber::from_i64(-1)));
     }
 
     #[test]
     fn test_list_sum() {
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
-            Value::Number(4.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
+            Value::Number(DecimalNumber::from_i64(4)),
         ]);
         let receiver = ValueRef::Immutable(&list);
         let result = call_list_method(receiver, "sum", vec![]).unwrap();
-        assert_eq!(result, Value::Number(10.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(10)));
     }
 
     #[test]
     fn test_list_product() {
         let list = Value::List(vec![
-            Value::Number(2.0),
-            Value::Number(3.0),
-            Value::Number(4.0),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
+            Value::Number(DecimalNumber::from_i64(4)),
         ]);
         let receiver = ValueRef::Immutable(&list);
         let result = call_list_method(receiver, "product", vec![]).unwrap();
-        assert_eq!(result, Value::Number(24.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(24)));
     }
 
     #[test]
     fn test_list_sum_with_non_numbers() {
         let list = Value::List(vec![
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
             Value::String("not a number".to_string()),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         let receiver = ValueRef::Immutable(&list);
         let result = call_list_method(receiver, "sum", vec![]);
@@ -541,21 +555,26 @@ mod tests {
 
         // Test contains with numbers
         let numbers = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         let receiver3 = ValueRef::Immutable(&numbers);
-        let result3 = call_list_method(receiver3, "contains", vec![Value::Number(2.0)]).unwrap();
+        let result3 = call_list_method(
+            receiver3,
+            "contains",
+            vec![Value::Number(DecimalNumber::from_i64(2))],
+        )
+        .unwrap();
         assert_eq!(result3, Value::Boolean(true));
     }
 
     #[test]
     fn test_list_reverse() {
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         let receiver = ValueRef::Immutable(&list);
 
@@ -563,7 +582,11 @@ mod tests {
         if let Value::List(reversed) = result {
             assert_eq!(
                 reversed,
-                vec![Value::Number(3.0), Value::Number(2.0), Value::Number(1.0),]
+                vec![
+                    Value::Number(DecimalNumber::from_i64(3)),
+                    Value::Number(DecimalNumber::from_i64(2)),
+                    Value::Number(DecimalNumber::from_i64(1)),
+                ]
             );
         } else {
             panic!("Expected list");
@@ -573,7 +596,11 @@ mod tests {
         if let Value::List(original) = &list {
             assert_eq!(
                 original,
-                &vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0),]
+                &vec![
+                    Value::Number(DecimalNumber::from_i64(1)),
+                    Value::Number(DecimalNumber::from_i64(2)),
+                    Value::Number(DecimalNumber::from_i64(3)),
+                ]
             );
         }
 
@@ -591,11 +618,11 @@ mod tests {
     #[test]
     fn test_list_sort() {
         let list = Value::List(vec![
-            Value::Number(3.0),
-            Value::Number(1.0),
-            Value::Number(4.0),
-            Value::Number(1.0),
-            Value::Number(5.0),
+            Value::Number(DecimalNumber::from_i64(3)),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(4)),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(5)),
         ]);
         let receiver = ValueRef::Immutable(&list);
 
@@ -604,11 +631,11 @@ mod tests {
             assert_eq!(
                 sorted,
                 vec![
-                    Value::Number(1.0),
-                    Value::Number(1.0),
-                    Value::Number(3.0),
-                    Value::Number(4.0),
-                    Value::Number(5.0),
+                    Value::Number(DecimalNumber::from_i64(1)),
+                    Value::Number(DecimalNumber::from_i64(1)),
+                    Value::Number(DecimalNumber::from_i64(3)),
+                    Value::Number(DecimalNumber::from_i64(4)),
+                    Value::Number(DecimalNumber::from_i64(5)),
                 ]
             );
         } else {
@@ -663,55 +690,55 @@ mod tests {
     #[test]
     fn test_list_min() {
         let list = Value::List(vec![
-            Value::Number(85.0),
-            Value::Number(92.0),
-            Value::Number(78.0),
-            Value::Number(96.0),
-            Value::Number(88.0),
+            Value::Number(DecimalNumber::from_i64(85)),
+            Value::Number(DecimalNumber::from_i64(92)),
+            Value::Number(DecimalNumber::from_i64(78)),
+            Value::Number(DecimalNumber::from_i64(96)),
+            Value::Number(DecimalNumber::from_i64(88)),
         ]);
         let receiver = ValueRef::Immutable(&list);
 
         let result = call_list_method(receiver, "min", vec![]).unwrap();
-        assert_eq!(result, Value::Number(78.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(78)));
 
         // Test with negative numbers
         let temps = Value::List(vec![
-            Value::Number(-5.0),
-            Value::Number(10.0),
-            Value::Number(-15.0),
-            Value::Number(20.0),
-            Value::Number(0.0),
+            Value::Number(DecimalNumber::from_i64(-5)),
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(-15)),
+            Value::Number(DecimalNumber::from_i64(20)),
+            Value::Number(DecimalNumber::from_i64(0)),
         ]);
         let receiver2 = ValueRef::Immutable(&temps);
         let result2 = call_list_method(receiver2, "min", vec![]).unwrap();
-        assert_eq!(result2, Value::Number(-15.0));
+        assert_eq!(result2, Value::Number(DecimalNumber::from_i64(-15)));
     }
 
     #[test]
     fn test_list_max() {
         let list = Value::List(vec![
-            Value::Number(85.0),
-            Value::Number(92.0),
-            Value::Number(78.0),
-            Value::Number(96.0),
-            Value::Number(88.0),
+            Value::Number(DecimalNumber::from_i64(85)),
+            Value::Number(DecimalNumber::from_i64(92)),
+            Value::Number(DecimalNumber::from_i64(78)),
+            Value::Number(DecimalNumber::from_i64(96)),
+            Value::Number(DecimalNumber::from_i64(88)),
         ]);
         let receiver = ValueRef::Immutable(&list);
 
         let result = call_list_method(receiver, "max", vec![]).unwrap();
-        assert_eq!(result, Value::Number(96.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(96)));
 
         // Test with negative numbers
         let temps = Value::List(vec![
-            Value::Number(-5.0),
-            Value::Number(10.0),
-            Value::Number(-15.0),
-            Value::Number(20.0),
-            Value::Number(0.0),
+            Value::Number(DecimalNumber::from_i64(-5)),
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(-15)),
+            Value::Number(DecimalNumber::from_i64(20)),
+            Value::Number(DecimalNumber::from_i64(0)),
         ]);
         let receiver2 = ValueRef::Immutable(&temps);
         let result2 = call_list_method(receiver2, "max", vec![]).unwrap();
-        assert_eq!(result2, Value::Number(20.0));
+        assert_eq!(result2, Value::Number(DecimalNumber::from_i64(20)));
     }
 
     #[test]
@@ -735,9 +762,9 @@ mod tests {
 
         // Test non-number type errors for both min and max
         let mixed_list = Value::List(vec![
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
             Value::String("not a number".to_string()),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
 
         let receiver3 = ValueRef::Immutable(&mixed_list);
@@ -769,13 +796,13 @@ mod tests {
 
         // Test with numbers
         let numbers = Value::List(vec![
-            Value::Number(10.0),
-            Value::Number(20.0),
-            Value::Number(30.0),
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(20)),
+            Value::Number(DecimalNumber::from_i64(30)),
         ]);
         let receiver2 = ValueRef::Immutable(&numbers);
         let result2 = call_list_method(receiver2, "first", vec![]).unwrap();
-        assert_eq!(result2, Value::Number(10.0));
+        assert_eq!(result2, Value::Number(DecimalNumber::from_i64(10)));
     }
 
     #[test]
@@ -792,13 +819,13 @@ mod tests {
 
         // Test with numbers
         let numbers = Value::List(vec![
-            Value::Number(10.0),
-            Value::Number(20.0),
-            Value::Number(30.0),
+            Value::Number(DecimalNumber::from_i64(10)),
+            Value::Number(DecimalNumber::from_i64(20)),
+            Value::Number(DecimalNumber::from_i64(30)),
         ]);
         let receiver2 = ValueRef::Immutable(&numbers);
         let result2 = call_list_method(receiver2, "last", vec![]).unwrap();
-        assert_eq!(result2, Value::Number(30.0));
+        assert_eq!(result2, Value::Number(DecimalNumber::from_i64(30)));
     }
 
     #[test]
@@ -819,7 +846,7 @@ mod tests {
     #[test]
     fn test_list_to_string() {
         let list = Value::List(vec![
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
             Value::String("test".to_string()),
             Value::Boolean(true),
         ]);
@@ -837,20 +864,32 @@ mod tests {
 
     #[test]
     fn test_list_to_string_arity_mismatch() {
-        let list = Value::List(vec![Value::Number(1.0)]);
+        let list = Value::List(vec![Value::Number(DecimalNumber::from_i64(1))]);
         let receiver = ValueRef::Immutable(&list);
 
-        let result = call_list_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        let result = call_list_method(
+            receiver,
+            "to_string",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 
     #[test]
     fn test_list_first_with_default() {
         // Test non-empty list ignores default
-        let list = Value::List(vec![Value::Number(1.0), Value::Number(2.0)]);
+        let list = Value::List(vec![
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+        ]);
         let receiver = ValueRef::Immutable(&list);
-        let result = call_list_method(receiver, "first", vec![Value::Number(99.0)]).unwrap();
-        assert_eq!(result, Value::Number(1.0));
+        let result = call_list_method(
+            receiver,
+            "first",
+            vec![Value::Number(DecimalNumber::from_i64(99))],
+        )
+        .unwrap();
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(1)));
 
         // Test empty list uses default
         let empty = Value::List(vec![]);
@@ -873,13 +912,18 @@ mod tests {
     fn test_list_last_with_default() {
         // Test non-empty list ignores default
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         let receiver = ValueRef::Immutable(&list);
-        let result = call_list_method(receiver, "last", vec![Value::Number(99.0)]).unwrap();
-        assert_eq!(result, Value::Number(3.0));
+        let result = call_list_method(
+            receiver,
+            "last",
+            vec![Value::Number(DecimalNumber::from_i64(99))],
+        )
+        .unwrap();
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
         // Test empty list uses default
         let empty = Value::List(vec![]);
@@ -902,20 +946,20 @@ mod tests {
     fn test_list_average() {
         // Test normal case
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
-            Value::Number(4.0),
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+            Value::Number(DecimalNumber::from_i64(3)),
+            Value::Number(DecimalNumber::from_i64(4)),
         ]);
         let receiver = ValueRef::Immutable(&list);
         let result = call_list_method(receiver, "average", vec![]).unwrap();
-        assert_eq!(result, Value::Number(2.5));
+        assert_eq!(result, Value::Number(DecimalNumber::parse("2.5").unwrap()));
 
         // Test single element
-        let single = Value::List(vec![Value::Number(10.0)]);
+        let single = Value::List(vec![Value::Number(DecimalNumber::from_i64(10))]);
         let receiver2 = ValueRef::Immutable(&single);
         let result2 = call_list_method(receiver2, "average", vec![]).unwrap();
-        assert_eq!(result2, Value::Number(10.0));
+        assert_eq!(result2, Value::Number(DecimalNumber::from_i64(10)));
 
         // Test empty list
         let empty = Value::List(vec![]);
@@ -927,9 +971,9 @@ mod tests {
     #[test]
     fn test_list_average_mixed_types() {
         let list = Value::List(vec![
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
             Value::String("not a number".to_string()),
-            Value::Number(3.0),
+            Value::Number(DecimalNumber::from_i64(3)),
         ]);
         let receiver = ValueRef::Immutable(&list);
         let result = call_list_method(receiver, "average", vec![]);
@@ -938,14 +982,17 @@ mod tests {
 
     #[test]
     fn test_list_first_last_arity_errors() {
-        let list = Value::List(vec![Value::Number(1.0)]);
+        let list = Value::List(vec![Value::Number(DecimalNumber::from_i64(1))]);
         let receiver = ValueRef::Immutable(&list);
 
         // Test too many arguments for first
         let result = call_list_method(
             receiver,
             "first",
-            vec![Value::Number(1.0), Value::Number(2.0)],
+            vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::Number(DecimalNumber::from_i64(2)),
+            ],
         );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
 
@@ -954,18 +1001,25 @@ mod tests {
         let result2 = call_list_method(
             receiver2,
             "last",
-            vec![Value::Number(1.0), Value::Number(2.0)],
+            vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::Number(DecimalNumber::from_i64(2)),
+            ],
         );
         assert!(matches!(result2, Err(RuntimeError::ArityMismatch { .. })));
     }
 
     #[test]
     fn test_list_average_arity_error() {
-        let list = Value::List(vec![Value::Number(1.0)]);
+        let list = Value::List(vec![Value::Number(DecimalNumber::from_i64(1))]);
         let receiver = ValueRef::Immutable(&list);
 
         // Test too many arguments for average
-        let result = call_list_method(receiver, "average", vec![Value::Number(1.0)]);
+        let result = call_list_method(
+            receiver,
+            "average",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 }

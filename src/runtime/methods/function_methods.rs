@@ -31,6 +31,7 @@ mod tests {
     use super::super::common::ValueRef;
     use super::*;
     use crate::ast::Stmt;
+    use crate::runtime::value::DecimalNumber;
     use crate::token::Span;
     use std::rc::Rc;
 
@@ -39,7 +40,7 @@ mod tests {
         let func_val = Value::Function(FunctionValue {
             params: vec![],
             body: Stmt::Return {
-                value: None,
+                values: Vec::new(),
                 span: Span::default(),
             },
             env: Rc::new(crate::runtime::env::Env::new()),
@@ -54,13 +55,17 @@ mod tests {
         let func_val = Value::Function(FunctionValue {
             params: vec![],
             body: Stmt::Return {
-                value: None,
+                values: Vec::new(),
                 span: Span::default(),
             },
             env: Rc::new(crate::runtime::env::Env::new()),
         });
         let receiver = ValueRef::Immutable(&func_val);
-        let result = call_function_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        let result = call_function_method(
+            receiver,
+            "to_string",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 
@@ -69,7 +74,7 @@ mod tests {
         let func_val = Value::Function(FunctionValue {
             params: vec![],
             body: Stmt::Return {
-                value: None,
+                values: Vec::new(),
                 span: Span::default(),
             },
             env: Rc::new(crate::runtime::env::Env::new()),

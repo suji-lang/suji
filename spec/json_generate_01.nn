@@ -5,4 +5,4 @@ import std:json
 user = { name: "Bob", age: 25 }
 json_output = json:generate(user)
 
-println(json_output)  # {"age":25.0,"name":"Bob"}
+println(json_output)  # {"age":25,"name":"Bob"}

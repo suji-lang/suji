@@ -40,6 +40,7 @@ pub fn builtin_yaml_parse(args: &[Value]) -> Result<Value, RuntimeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::value::DecimalNumber;
 
     #[test]
     fn test_yaml_parse_simple_values() {
@@ -58,7 +59,7 @@ mod tests {
         );
         assert_eq!(
             builtin_yaml_parse(&[Value::String("42".to_string())]).unwrap(),
-            Value::Number(42.0)
+            Value::Number(DecimalNumber::from_i64(42))
         );
         assert_eq!(
             builtin_yaml_parse(&[Value::String("hello".to_string())]).unwrap(),
@@ -71,9 +72,9 @@ mod tests {
         let result = builtin_yaml_parse(&[Value::String("- 1\n- 2\n- 3".to_string())]).unwrap();
         if let Value::List(items) = result {
             assert_eq!(items.len(), 3);
-            assert_eq!(items[0], Value::Number(1.0));
-            assert_eq!(items[1], Value::Number(2.0));
-            assert_eq!(items[2], Value::Number(3.0));
+            assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(1)));
+            assert_eq!(items[1], Value::Number(DecimalNumber::from_i64(2)));
+            assert_eq!(items[2], Value::Number(DecimalNumber::from_i64(3)));
         } else {
             panic!("Expected list");
         }
@@ -91,7 +92,7 @@ mod tests {
             );
             assert_eq!(
                 map.get(&crate::runtime::value::MapKey::String("age".to_string())),
-                Some(&Value::Number(30.0))
+                Some(&Value::Number(DecimalNumber::from_i64(30)))
             );
         } else {
             panic!("Expected map");
@@ -117,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_yaml_parse_wrong_argument_type() {
-        let result = builtin_yaml_parse(&[Value::Number(42.0)]);
+        let result = builtin_yaml_parse(&[Value::Number(DecimalNumber::from_i64(42))]);
         assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
     }
 }

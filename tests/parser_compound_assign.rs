@@ -29,7 +29,11 @@ fn test_parse_compound_assignment_operators() {
             }
 
             if let Expr::Literal(Literal::Number(n, _)) = value.as_ref() {
-                assert!(n > &0.0, "Expected positive number for: {}", expr_str);
+                assert!(
+                    n.parse::<f64>().unwrap() > 0.0,
+                    "Expected positive number for: {}",
+                    expr_str
+                );
             } else {
                 panic!("Expected number value for: {}", expr_str);
             }
@@ -73,7 +77,7 @@ fn test_parse_compound_assignment_precedence() {
             }
 
             if let Expr::Literal(Literal::Number(n, _)) = inner_value.as_ref() {
-                assert_eq!(*n, 5.0);
+                assert_eq!(*n, "5".to_string());
             } else {
                 panic!("Expected 5 as inner value");
             }

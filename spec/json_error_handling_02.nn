@@ -6,4 +6,4 @@ data = { name: "Bob", age: 25 }
 json_output = json:generate(data)
 
 # If we get here, generation worked
-println(json_output)  # {"age":25.0,"name":"Bob"}
+println(json_output)  # {"age":25,"name":"Bob"}

@@ -68,10 +68,17 @@ pub fn eval_stmt_with_modules(
             eval_block_with_modules(statements, env, loop_stack, module_registry)
         }
 
-        Stmt::Return { value, .. } => {
-            let return_value = match value {
-                Some(expr) => eval_expr(expr, env)?,
-                None => Value::Nil,
+        Stmt::Return { values, .. } => {
+            let return_value = if values.is_empty() {
+                Value::Nil
+            } else if values.len() == 1 {
+                eval_expr(&values[0], env)?
+            } else {
+                let mut tuple_values = Vec::new();
+                for expr in values {
+                    tuple_values.push(eval_expr(expr, env.clone())?);
+                }
+                Value::Tuple(tuple_values)
             };
             Err(RuntimeError::ControlFlow {
                 flow: ControlFlow::Return(Box::new(return_value)),

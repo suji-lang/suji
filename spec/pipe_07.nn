@@ -2,12 +2,14 @@ import std:println
 import std:io
 
 sink = || {
-    count = 0
-    loop through io:stdin::read_lines() with line {
-        count++
+    return || {
+        count = 0
+        loop through io:stdin::read_lines() with line {
+            count++
+        }
+        return count
     }
-    return count
 }
 
-out = `printf 'a\nb\nc\n'` | sink
+out = `printf 'a\nb\nc\n'` | sink()
 println(out)  # 3

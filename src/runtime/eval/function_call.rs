@@ -223,6 +223,7 @@ mod tests {
     use super::*;
     use crate::ast::{Expr, Literal, Stmt};
     use crate::runtime::env::Env;
+    use crate::runtime::value::DecimalNumber;
     use crate::runtime::value::ParamSpec;
     use crate::token::Span;
 
@@ -252,15 +253,18 @@ mod tests {
                 Span::default(),
             ))),
             op: crate::ast::BinaryOp::Add,
-            right: Box::new(Expr::Literal(Literal::Number(1.0, Span::default()))),
+            right: Box::new(Expr::Literal(Literal::Number(
+                "1".to_string(),
+                Span::default(),
+            ))),
             span: Span::default(),
         });
 
         let func = create_test_function(params, body, env.clone());
-        let args = vec![Value::Number(5.0)];
+        let args = vec![Value::Number(DecimalNumber::from_i64(5))];
 
         let result = call_function(&func, args, Some(env)).unwrap();
-        assert_eq!(result, Value::Number(6.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(6)));
     }
 
     #[test]
@@ -275,7 +279,10 @@ mod tests {
             },
             ParamSpec {
                 name: "y".to_string(),
-                default: Some(Expr::Literal(Literal::Number(10.0, Span::default()))),
+                default: Some(Expr::Literal(Literal::Number(
+                    "10".to_string(),
+                    Span::default(),
+                ))),
             },
         ];
 
@@ -295,14 +302,17 @@ mod tests {
         let func = create_test_function(params, body, env.clone());
 
         // Test with one argument (should use default for y)
-        let args = vec![Value::Number(5.0)];
+        let args = vec![Value::Number(DecimalNumber::from_i64(5))];
         let result = call_function(&func, args, Some(env.clone())).unwrap();
-        assert_eq!(result, Value::Number(15.0)); // 5 + 10
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(15))); // 5 + 10
 
         // Test with two arguments (should override default)
-        let args = vec![Value::Number(5.0), Value::Number(3.0)];
+        let args = vec![
+            Value::Number(DecimalNumber::from_i64(5)),
+            Value::Number(DecimalNumber::from_i64(3)),
+        ];
         let result = call_function(&func, args, Some(env)).unwrap();
-        assert_eq!(result, Value::Number(8.0)); // 5 + 3
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(8))); // 5 + 3
     }
 
     #[test]
@@ -327,7 +337,10 @@ mod tests {
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
 
         // Test with too many arguments (should fail)
-        let args = vec![Value::Number(1.0), Value::Number(2.0)];
+        let args = vec![
+            Value::Number(DecimalNumber::from_i64(1)),
+            Value::Number(DecimalNumber::from_i64(2)),
+        ];
         let result = call_function(&func, args, Some(env));
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
@@ -348,9 +361,9 @@ mod tests {
         )));
         let func = create_test_function(params, body, env.clone());
 
-        let args = vec![Value::Number(42.0)];
+        let args = vec![Value::Number(DecimalNumber::from_i64(42))];
         let result = call_function(&func, args, Some(env.clone())).unwrap();
-        assert_eq!(result, Value::Number(42.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(42)));
 
         // Test block with expression as last statement
         let params = vec![ParamSpec {
@@ -360,7 +373,10 @@ mod tests {
 
         let body = Stmt::Block {
             statements: vec![
-                Stmt::Expr(Expr::Literal(Literal::Number(1.0, Span::default()))), // This is ignored
+                Stmt::Expr(Expr::Literal(Literal::Number(
+                    "1".to_string(),
+                    Span::default(),
+                ))), // This is ignored
                 Stmt::Expr(Expr::Literal(Literal::Identifier(
                     "x".to_string(),
                     Span::default(),
@@ -370,9 +386,9 @@ mod tests {
         };
 
         let func = create_test_function(params, body, env.clone());
-        let args = vec![Value::Number(99.0)];
+        let args = vec![Value::Number(DecimalNumber::from_i64(99))];
         let result = call_function(&func, args, Some(env)).unwrap();
-        assert_eq!(result, Value::Number(99.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(99)));
     }
 
     #[test]
@@ -391,14 +407,17 @@ mod tests {
                 Span::default(),
             ))),
             op: crate::ast::BinaryOp::Multiply,
-            right: Box::new(Expr::Literal(Literal::Number(2.0, Span::default()))),
+            right: Box::new(Expr::Literal(Literal::Number(
+                "2".to_string(),
+                Span::default(),
+            ))),
             span: Span::default(),
         });
 
         let func = create_test_function(params, body, env);
-        let args = vec![Value::Number(7.0)];
+        let args = vec![Value::Number(DecimalNumber::from_i64(7))];
 
         let result = call_closure_simple(&func, args).unwrap();
-        assert_eq!(result, Value::Number(14.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(14)));
     }
 }

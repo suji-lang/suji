@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::eval_program;
@@ -16,7 +17,7 @@ fn test_map_iteration_no_bindings() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(2.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(2)));
 }
 
 #[test]
@@ -54,7 +55,7 @@ fn test_map_iteration_two_bindings() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(30.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(30)));
 }
 
 #[test]
@@ -70,7 +71,7 @@ fn test_map_iteration_empty_map() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(0.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(0)));
 }
 
 #[test]
@@ -129,7 +130,7 @@ fn test_map_iteration_mixed_key_types() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(3.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(3)));
 }
 
 #[test]
@@ -148,5 +149,5 @@ fn test_map_iteration_nested_maps() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(2.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(2)));
 }

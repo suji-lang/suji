@@ -1,10 +1,12 @@
 import std:println
 
 source = || {
-    println("alpha")
-    println("beta")
-    println("gamma")
+    return || {
+        println("alpha")
+        println("beta")
+        println("gamma")
+    }
 }
 
-out = source | `grep beta`
+out = source() | `grep beta`
 println(out::replace("\n", "\\n"))  # beta\n

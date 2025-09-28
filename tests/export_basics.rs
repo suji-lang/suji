@@ -1,7 +1,7 @@
 mod common;
 
 use common::{assert_import_works, eval_program_with_modules};
-use nnlang::runtime::value::Value;
+use nnlang::runtime::value::{DecimalNumber, Value};
 
 #[test]
 fn test_export_single_per_file_and_parsing() {
@@ -23,13 +23,13 @@ fn test_export_evaluation_and_functions() {
     if let Value::Map(map) = result {
         assert_eq!(
             map.get(&nnlang::runtime::value::MapKey::String("value".to_string())),
-            Some(&Value::Number(10.0))
+            Some(&Value::Number(DecimalNumber::from_i64(10)))
         );
         assert_eq!(
             map.get(&nnlang::runtime::value::MapKey::String(
                 "doubled".to_string()
             )),
-            Some(&Value::Number(20.0))
+            Some(&Value::Number(DecimalNumber::from_i64(20)))
         );
     } else {
         panic!("Export should return a map, got: {:?}", result);

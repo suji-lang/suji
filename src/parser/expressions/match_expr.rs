@@ -138,14 +138,30 @@ impl Parser {
     fn parse_match_arm_return(&mut self) -> ParseResult<Stmt> {
         let return_span = self.advance().span.clone(); // consume Return
 
-        let value = if self.has_expression_after() {
-            Some(self.expression()?)
-        } else {
-            None
-        };
+        if !self.has_expression_after() {
+            return Ok(Stmt::Return {
+                values: Vec::new(),
+                span: return_span,
+            });
+        }
+
+        let mut values = Vec::new();
+        loop {
+            values.push(self.expression()?);
+
+            if !self.match_token(Token::Comma) {
+                break;
+            }
+
+            if !self.has_expression_after() {
+                return Err(ParseError::Generic {
+                    message: "Trailing comma not allowed in return".to_string(),
+                });
+            }
+        }
 
         Ok(Stmt::Return {
-            value,
+            values,
             span: return_span,
         })
     }

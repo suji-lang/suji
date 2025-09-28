@@ -4,7 +4,7 @@ use nnlang::token::Span;
 #[test]
 fn test_expr_span_retrieval() {
     let span = Span::new(0, 5, 1, 0);
-    let expr = Expr::Literal(Literal::Number(42.0, span.clone()));
+    let expr = Expr::Literal(Literal::Number("42".to_string(), span.clone()));
     assert_eq!(expr.span(), &span);
 }
 
@@ -19,7 +19,10 @@ fn test_expr_is_assignable() {
     // Index should be assignable
     let index = Expr::Index {
         target: Box::new(identifier.clone()),
-        index: Box::new(Expr::Literal(Literal::Number(0.0, span.clone()))),
+        index: Box::new(Expr::Literal(Literal::Number(
+            "0".to_string(),
+            span.clone(),
+        ))),
         span: span.clone(),
     };
     assert!(index.is_assignable());
@@ -33,7 +36,7 @@ fn test_expr_is_assignable() {
     assert!(map_access.is_assignable());
 
     // Number literal should not be assignable
-    let number = Expr::Literal(Literal::Number(42.0, span));
+    let number = Expr::Literal(Literal::Number("42".to_string(), span));
     assert!(!number.is_assignable());
 }
 
@@ -43,7 +46,7 @@ fn test_stmt_has_control_flow() {
 
     // Return statement has control flow
     let return_stmt = Stmt::Return {
-        value: None,
+        values: Vec::new(),
         span: span.clone(),
     };
     assert!(return_stmt.has_control_flow());
@@ -63,7 +66,10 @@ fn test_stmt_has_control_flow() {
     assert!(continue_stmt.has_control_flow());
 
     // Expression statement without control flow
-    let expr_stmt = Stmt::Expr(Expr::Literal(Literal::Number(42.0, span.clone())));
+    let expr_stmt = Stmt::Expr(Expr::Literal(Literal::Number(
+        "42".to_string(),
+        span.clone(),
+    )));
     assert!(!expr_stmt.has_control_flow());
 
     // Block with control flow inside

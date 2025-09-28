@@ -11,4 +11,4 @@ complex = {
 }
 json_output = json:generate(complex)
 
-println(json_output)  # {"metadata":{"version":"1.0"},"users":[{"age":30.0,"name":"Alice"},{"age":25.0,"name":"Bob"}]}
+println(json_output)  # {"metadata":{"version":"1.0"},"users":[{"age":30,"name":"Alice"},{"age":25,"name":"Bob"}]}

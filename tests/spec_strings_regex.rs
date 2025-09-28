@@ -1,7 +1,7 @@
 mod common;
 
 use common::{eval_program, eval_string_expr};
-use nnlang::runtime::value::Value;
+use nnlang::runtime::value::{DecimalNumber, Value};
 
 #[test]
 fn test_string_interpolation() {
@@ -184,7 +184,7 @@ fn test_string_slicing_and_single_quotes() {
     // Single-quoted strings behave like double-quoted
     assert_eq!(
         eval_string_expr("'hello'::length()").unwrap(),
-        Value::Number(5.0)
+        Value::Number(DecimalNumber::from_i64(5))
     );
     assert_eq!(
         eval_program("name = 'Alice'\nresult = 'Hello, ${name}!' ").unwrap(),

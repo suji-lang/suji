@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::eval_program;
@@ -34,7 +35,7 @@ fn test_return_statements_in_match_arms() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(1.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(1)));
 }
 
 #[test]
@@ -52,7 +53,7 @@ fn test_implicit_returns_in_match_arms() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(1.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(1)));
 }
 
 #[test]
@@ -90,7 +91,7 @@ fn test_mixed_match_arm_syntax() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(1.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(1)));
 }
 
 #[test]

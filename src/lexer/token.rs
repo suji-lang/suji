@@ -62,8 +62,8 @@ pub enum Token {
     Nil,
 
     // Literals
-    #[regex(r"[0-9]+(\.[0-9]+)?", |lex| lex.slice().parse::<f64>().ok())]
-    Number(f64),
+    #[regex(r"[0-9]+(\.[0-9]+)?", |lex| lex.slice().to_owned())]
+    Number(String),
 
     // Wildcard pattern - must come before Identifier
     #[token("_")]

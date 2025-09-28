@@ -1,17 +1,24 @@
 use crate::ast::Stmt;
 use indexmap::IndexMap;
 use regex::Regex;
+use rust_decimal::Decimal;
+use rust_decimal::RoundingStrategy;
+use rust_decimal::prelude::*;
 use std::cell::{Cell, RefCell};
+use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::io::BufReader;
+use std::ops::Neg;
 use std::rc::Rc;
+use std::str::FromStr;
 
 use super::super::env_overlay::EnvProxy;
 
 /// Runtime values in the NN language
 #[derive(Debug, Clone)]
 pub enum Value {
-    /// 64-bit floating point number
-    Number(f64),
+    /// Number value
+    Number(DecimalNumber),
     /// Boolean value
     Boolean(bool),
     /// Unicode string
@@ -32,6 +39,231 @@ pub enum Value {
     EnvMap(Rc<EnvProxy>),
     /// Nil value (absence of value)
     Nil,
+}
+
+/// Decimal number wrapper for precise base-10 arithmetic
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct DecimalNumber(pub Decimal);
+
+impl DecimalNumber {
+    pub fn parse(s: &str) -> Result<Self, rust_decimal::Error> {
+        Decimal::from_str(s).map(DecimalNumber)
+    }
+
+    pub fn from_i64(n: i64) -> Self {
+        DecimalNumber(Decimal::from(n))
+    }
+
+    /// Create a decimal from an unsigned integer
+    pub fn from_u64(n: u64) -> Self {
+        DecimalNumber(Decimal::from(n))
+    }
+
+    /// Create a decimal from a usize
+    pub fn from_usize(n: usize) -> Self {
+        DecimalNumber(Decimal::from(n))
+    }
+
+    /// Check if this decimal represents an integer (no fractional part)
+    pub fn is_integer(&self) -> bool {
+        self.0.fract() == Decimal::ZERO
+    }
+
+    /// Convert to i64 if possible (integer and within range)
+    pub fn to_i64_checked(&self) -> Option<i64> {
+        if self.is_integer() {
+            self.0.to_i64()
+        } else {
+            None
+        }
+    }
+
+    /// Get the underlying decimal
+    pub fn inner(&self) -> Decimal {
+        self.0
+    }
+
+    /// Arithmetic operations
+    pub fn add(&self, other: &DecimalNumber) -> DecimalNumber {
+        DecimalNumber(self.0 + other.0)
+    }
+
+    pub fn sub(&self, other: &DecimalNumber) -> DecimalNumber {
+        DecimalNumber(self.0 - other.0)
+    }
+
+    pub fn mul(&self, other: &DecimalNumber) -> DecimalNumber {
+        DecimalNumber(self.0 * other.0)
+    }
+
+    pub fn div(&self, other: &DecimalNumber) -> Result<DecimalNumber, &'static str> {
+        if other.0 == Decimal::ZERO {
+            Err("Division by zero")
+        } else {
+            Ok(DecimalNumber(self.0 / other.0))
+        }
+    }
+
+    pub fn rem(&self, other: &DecimalNumber) -> Result<DecimalNumber, &'static str> {
+        if other.0 == Decimal::ZERO {
+            Err("Modulo by zero")
+        } else {
+            Ok(DecimalNumber(self.0 % other.0))
+        }
+    }
+
+    /// Power operation (integer exponent only for determinism)
+    pub fn pow(&self, exponent: &DecimalNumber) -> Result<DecimalNumber, &'static str> {
+        if !exponent.is_integer() {
+            return Err("Power exponent must be an integer");
+        }
+
+        let exp = exponent.to_i64_checked().ok_or("Exponent too large")?;
+        if exp < 0 {
+            return Err("Negative exponents not supported");
+        }
+
+        // Manual power implementation using repeated multiplication
+        let mut result = Decimal::ONE;
+        let mut base = self.0;
+        let mut exp = exp as u64;
+
+        // Fast exponentiation by squaring
+        while exp > 0 {
+            if exp % 2 == 1 {
+                result *= base;
+            }
+            base *= base;
+            exp /= 2;
+        }
+
+        Ok(DecimalNumber(result))
+    }
+
+    /// Mathematical functions
+    pub fn abs(&self) -> DecimalNumber {
+        DecimalNumber(self.0.abs())
+    }
+
+    pub fn ceil(&self) -> DecimalNumber {
+        DecimalNumber(self.0.ceil())
+    }
+
+    pub fn floor(&self) -> DecimalNumber {
+        DecimalNumber(self.0.floor())
+    }
+
+    pub fn round(&self) -> DecimalNumber {
+        DecimalNumber(
+            self.0
+                .round_dp_with_strategy(0, RoundingStrategy::MidpointAwayFromZero),
+        )
+    }
+
+    /// Square root using Newton's method with fixed precision
+    pub fn sqrt(&self) -> Result<DecimalNumber, &'static str> {
+        if self.0 < Decimal::ZERO {
+            return Err("Square root of negative number");
+        }
+
+        if self.0 == Decimal::ZERO {
+            return Ok(DecimalNumber(Decimal::ZERO));
+        }
+
+        // Newton's method: x_{n+1} = (x_n + a/x_n) / 2
+        let mut x = self.0;
+        let two = Decimal::from(2);
+
+        // Iterate until convergence (max 50 iterations for safety)
+        for _ in 0..50 {
+            let x_next = (x + self.0 / x) / two;
+            if (x - x_next).abs() < Decimal::new(1, 28) {
+                // Very small epsilon
+                break;
+            }
+            x = x_next;
+        }
+
+        Ok(DecimalNumber(x))
+    }
+
+    pub fn min(&self, other: &DecimalNumber) -> DecimalNumber {
+        DecimalNumber(self.0.min(other.0))
+    }
+
+    pub fn max(&self, other: &DecimalNumber) -> DecimalNumber {
+        DecimalNumber(self.0.max(other.0))
+    }
+}
+
+impl FromStr for DecimalNumber {
+    type Err = rust_decimal::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Decimal::from_str(s).map(DecimalNumber)
+    }
+}
+
+impl fmt::Display for DecimalNumber {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Display integers without decimal point
+        if self.is_integer() {
+            write!(f, "{}", self.0.trunc())
+        } else {
+            write!(f, "{}", self.0)
+        }
+    }
+}
+
+impl Neg for DecimalNumber {
+    type Output = DecimalNumber;
+
+    fn neg(self) -> Self::Output {
+        DecimalNumber(-self.0)
+    }
+}
+
+/// Wrapper for Decimal that implements Eq and Hash for use as map keys
+#[derive(Debug, Clone)]
+pub struct OrderedDecimal(pub Decimal);
+
+impl OrderedDecimal {
+    pub fn new(decimal: Decimal) -> Self {
+        OrderedDecimal(decimal)
+    }
+
+    /// Normalize the decimal for consistent hashing and equality
+    fn normalize(&self) -> Decimal {
+        self.0.normalize()
+    }
+}
+
+impl PartialEq for OrderedDecimal {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl Eq for OrderedDecimal {}
+
+impl PartialOrd for OrderedDecimal {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OrderedDecimal {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+impl Hash for OrderedDecimal {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash the normalized decimal to ensure 1.0 and 1.00 hash the same
+        let normalized = self.normalize();
+        normalized.serialize().hash(state);
+    }
 }
 
 /// Function value with parameters, body, and captured environment
@@ -57,15 +289,11 @@ pub struct ParamSpec {
 /// Wrapper for map keys that implements Hash and Eq for valid key types
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MapKey {
-    Number(OrderedFloat),
+    Number(OrderedDecimal),
     Boolean(bool),
     String(String),
     Tuple(Vec<MapKey>),
 }
-
-/// Wrapper for f64 that implements Eq and Hash for use as map keys
-#[derive(Debug, Clone, Copy, PartialOrd)]
-pub struct OrderedFloat(pub f64);
 
 /// Control flow signals for break/continue/return
 #[derive(Debug, Clone, PartialEq)]

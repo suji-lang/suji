@@ -29,6 +29,7 @@ pub fn call_nil_method(
 mod tests {
     use super::super::common::ValueRef;
     use super::*;
+    use crate::runtime::value::DecimalNumber;
 
     #[test]
     fn test_nil_to_string() {
@@ -42,7 +43,11 @@ mod tests {
     fn test_nil_to_string_arity_mismatch() {
         let nil_val = Value::Nil;
         let receiver = ValueRef::Immutable(&nil_val);
-        let result = call_nil_method(receiver, "to_string", vec![Value::Number(1.0)]);
+        let result = call_nil_method(
+            receiver,
+            "to_string",
+            vec![Value::Number(DecimalNumber::from_i64(1))],
+        );
         assert!(matches!(result, Err(RuntimeError::ArityMismatch { .. })));
     }
 

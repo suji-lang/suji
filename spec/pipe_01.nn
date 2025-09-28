@@ -1,18 +1,22 @@
 import std:println
 import std:io
 
-destination = || {
-    lines = io:stdin::read_lines()
-    match lines::length() > 0 {
-        true: { "output received" }
-        false: { "no output" }
+source = || {
+    return || {
+        println("test")
     }
 }
 
-source = || {
-    println("test")
+destination = || {
+    return || {
+        lines = io:stdin::read_lines()
+        match lines::length() > 0 {
+            true: { "output received" }
+            false: { "no output" }
+        }
+    }
 }
 
-out = source | destination
+out = source() | destination()
 
 println(out)  # output received

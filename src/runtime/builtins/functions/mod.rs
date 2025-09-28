@@ -1,5 +1,6 @@
 //! Built-in function implementations.
 
+pub mod io_open;
 pub mod json_generate;
 pub mod json_parse;
 pub mod print;
@@ -13,6 +14,7 @@ pub mod yaml_generate;
 pub mod yaml_parse;
 
 // Re-export all function implementations
+pub use io_open::builtin_io_open;
 pub use json_generate::builtin_json_generate;
 pub use json_parse::builtin_json_parse;
 pub use print::builtin_print;
@@ -47,6 +49,7 @@ pub fn call_builtin(name: &str, args: &[Value]) -> Result<Value, RuntimeError> {
         "random_seed" => builtin_random_seed(args),
         "json_parse" => builtin_json_parse(args),
         "json_generate" => builtin_json_generate(args),
+        "io_open" => builtin_io_open(args),
         "toml_parse" => builtin_toml_parse(args),
         "toml_generate" => builtin_toml_generate(args),
         "yaml_parse" => builtin_yaml_parse(args),

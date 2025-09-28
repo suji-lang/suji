@@ -118,6 +118,7 @@ mod tests {
     use super::*;
     use crate::ast::{Expr, Literal, Stmt};
     use crate::runtime::env::Env;
+    use crate::runtime::value::DecimalNumber;
     use crate::token::Span;
 
     fn create_test_env() -> Rc<Env> {
@@ -131,30 +132,42 @@ mod tests {
         let env = create_test_env();
 
         // Test match with single expression arms (implicit returns)
-        let scrutinee = Expr::Literal(Literal::Number(3.0, Span::default()));
+        let scrutinee = Expr::Literal(Literal::Number("3".to_string(), Span::default()));
         let arms = vec![
             crate::ast::MatchArm {
                 pattern: crate::ast::Pattern::Literal {
-                    value: crate::ast::ValueLike::Number(3.0),
+                    value: crate::ast::ValueLike::Number("3".to_string()),
                     span: Span::default(),
                 },
                 body: Stmt::Expr(Expr::Binary {
-                    left: Box::new(Expr::Literal(Literal::Number(5.0, Span::default()))),
+                    left: Box::new(Expr::Literal(Literal::Number(
+                        "5".to_string(),
+                        Span::default(),
+                    ))),
                     op: crate::ast::BinaryOp::Add,
-                    right: Box::new(Expr::Literal(Literal::Number(5.0, Span::default()))),
+                    right: Box::new(Expr::Literal(Literal::Number(
+                        "5".to_string(),
+                        Span::default(),
+                    ))),
                     span: Span::default(),
                 }),
                 span: Span::default(),
             },
             crate::ast::MatchArm {
                 pattern: crate::ast::Pattern::Literal {
-                    value: crate::ast::ValueLike::Number(4.0),
+                    value: crate::ast::ValueLike::Number("4".to_string()),
                     span: Span::default(),
                 },
                 body: Stmt::Expr(Expr::Binary {
-                    left: Box::new(Expr::Literal(Literal::Number(2.0, Span::default()))),
+                    left: Box::new(Expr::Literal(Literal::Number(
+                        "2".to_string(),
+                        Span::default(),
+                    ))),
                     op: crate::ast::BinaryOp::Multiply,
-                    right: Box::new(Expr::Literal(Literal::Number(3.0, Span::default()))),
+                    right: Box::new(Expr::Literal(Literal::Number(
+                        "3".to_string(),
+                        Span::default(),
+                    ))),
                     span: Span::default(),
                 }),
                 span: Span::default(),
@@ -163,29 +176,41 @@ mod tests {
                 pattern: crate::ast::Pattern::Wildcard {
                     span: Span::default(),
                 },
-                body: Stmt::Expr(Expr::Literal(Literal::Number(0.0, Span::default()))),
+                body: Stmt::Expr(Expr::Literal(Literal::Number(
+                    "0".to_string(),
+                    Span::default(),
+                ))),
                 span: Span::default(),
             },
         ];
 
         let mut loop_stack = Vec::new();
         let result = eval_match(Some(&scrutinee), &arms, env.clone(), &mut loop_stack).unwrap();
-        assert_eq!(result, Some(Value::Number(10.0))); // 5 + 5 = 10
+        assert_eq!(result, Some(Value::Number(DecimalNumber::from_i64(10)))); // 5 + 5 = 10
 
         // Test match with block arms (last statement as expression)
-        let scrutinee2 = Expr::Literal(Literal::Number(4.0, Span::default()));
+        let scrutinee2 = Expr::Literal(Literal::Number("4".to_string(), Span::default()));
         let arms2 = vec![crate::ast::MatchArm {
             pattern: crate::ast::Pattern::Literal {
-                value: crate::ast::ValueLike::Number(4.0),
+                value: crate::ast::ValueLike::Number("4".to_string()),
                 span: Span::default(),
             },
             body: Stmt::Block {
                 statements: vec![
-                    Stmt::Expr(Expr::Literal(Literal::Number(10.0, Span::default()))),
+                    Stmt::Expr(Expr::Literal(Literal::Number(
+                        "10".to_string(),
+                        Span::default(),
+                    ))),
                     Stmt::Expr(Expr::Binary {
-                        left: Box::new(Expr::Literal(Literal::Number(2.0, Span::default()))),
+                        left: Box::new(Expr::Literal(Literal::Number(
+                            "2".to_string(),
+                            Span::default(),
+                        ))),
                         op: crate::ast::BinaryOp::Multiply,
-                        right: Box::new(Expr::Literal(Literal::Number(3.0, Span::default()))),
+                        right: Box::new(Expr::Literal(Literal::Number(
+                            "3".to_string(),
+                            Span::default(),
+                        ))),
                         span: Span::default(),
                     }),
                 ],
@@ -195,6 +220,6 @@ mod tests {
         }];
 
         let result2 = eval_match(Some(&scrutinee2), &arms2, env, &mut loop_stack).unwrap();
-        assert_eq!(result2, Some(Value::Number(6.0))); // 2 * 3 = 6
+        assert_eq!(result2, Some(Value::Number(DecimalNumber::from_i64(6)))); // 2 * 3 = 6
     }
 }

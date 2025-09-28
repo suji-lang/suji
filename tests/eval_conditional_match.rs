@@ -1,7 +1,7 @@
 mod common;
 
 use common::eval_program;
-use nnlang::runtime::value::Value;
+use nnlang::runtime::value::{DecimalNumber, Value};
 
 #[test]
 fn test_conditional_match_basic() {
@@ -171,7 +171,7 @@ fn test_conditional_match_in_binary_operation() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(15.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(15)));
 }
 
 #[test]

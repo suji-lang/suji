@@ -1,7 +1,7 @@
 //! TOML conversion functions.
 
 use super::types::TomlError;
-use crate::runtime::value::{MapKey, RuntimeError, Value};
+use crate::runtime::value::{DecimalNumber, MapKey, RuntimeError, Value};
 use indexmap::IndexMap;
 use toml::{Value as TomlValue, map::Map as TomlMap};
 
@@ -9,8 +9,19 @@ use toml::{Value as TomlValue, map::Map as TomlMap};
 pub fn toml_to_nn_value(toml_value: TomlValue) -> Result<Value, RuntimeError> {
     match toml_value {
         TomlValue::Boolean(b) => Ok(Value::Boolean(b)),
-        TomlValue::Integer(i) => Ok(Value::Number(i as f64)),
-        TomlValue::Float(f) => Ok(Value::Number(f)),
+        TomlValue::Integer(i) => Ok(Value::Number(DecimalNumber::from_i64(i))),
+        TomlValue::Float(f) => {
+            // Convert float to string and then parse as decimal for precision
+            let float_str = f.to_string();
+            match DecimalNumber::parse(&float_str) {
+                Ok(decimal) => Ok(Value::Number(decimal)),
+                Err(_) => Err(TomlError::ParseError {
+                    message: format!("TOML float '{}' cannot be converted to decimal", float_str),
+                    toml_input: None,
+                }
+                .into()),
+            }
+        }
         TomlValue::String(s) => Ok(Value::String(s)),
         TomlValue::Array(arr) => {
             let mut nn_array = Vec::new();
@@ -44,10 +55,30 @@ pub fn nn_to_toml_value(nn_value: &Value) -> Result<TomlValue, RuntimeError> {
         .into()),
         Value::Boolean(b) => Ok(TomlValue::Boolean(*b)),
         Value::Number(n) => {
-            if n.fract() == 0.0 {
-                Ok(TomlValue::Integer(*n as i64))
+            if n.is_integer() {
+                if let Some(i) = n.to_i64_checked() {
+                    Ok(TomlValue::Integer(i))
+                } else {
+                    // Integer too large, convert to float
+                    let float_str = n.to_string();
+                    match float_str.parse::<f64>() {
+                        Ok(f) => Ok(TomlValue::Float(f)),
+                        Err(_) => Err(TomlError::ConversionError {
+                            message: format!("Number '{}' cannot be converted to TOML", float_str),
+                        }
+                        .into()),
+                    }
+                }
             } else {
-                Ok(TomlValue::Float(*n))
+                // Convert decimal to float for TOML
+                let float_str = n.to_string();
+                match float_str.parse::<f64>() {
+                    Ok(f) => Ok(TomlValue::Float(f)),
+                    Err(_) => Err(TomlError::ConversionError {
+                        message: format!("Number '{}' cannot be converted to TOML", float_str),
+                    }
+                    .into()),
+                }
             }
         }
         Value::String(s) => Ok(TomlValue::String(s.clone())),

@@ -52,7 +52,7 @@ mod tests {
         );
         assert_eq!(
             builtin_json_parse(&[Value::String("42".to_string())]).unwrap(),
-            Value::Number(42.0)
+            Value::Number(crate::runtime::value::DecimalNumber::parse("42").unwrap())
         );
         assert_eq!(
             builtin_json_parse(&[Value::String("\"hello\"".to_string())]).unwrap(),
@@ -65,9 +65,18 @@ mod tests {
         let result = builtin_json_parse(&[Value::String("[1, 2, 3]".to_string())]).unwrap();
         if let Value::List(items) = result {
             assert_eq!(items.len(), 3);
-            assert_eq!(items[0], Value::Number(1.0));
-            assert_eq!(items[1], Value::Number(2.0));
-            assert_eq!(items[2], Value::Number(3.0));
+            assert_eq!(
+                items[0],
+                Value::Number(crate::runtime::value::DecimalNumber::parse("1").unwrap())
+            );
+            assert_eq!(
+                items[1],
+                Value::Number(crate::runtime::value::DecimalNumber::parse("2").unwrap())
+            );
+            assert_eq!(
+                items[2],
+                Value::Number(crate::runtime::value::DecimalNumber::parse("3").unwrap())
+            );
         } else {
             panic!("Expected list");
         }
@@ -87,7 +96,9 @@ mod tests {
             );
             assert_eq!(
                 map.get(&crate::runtime::value::MapKey::String("age".to_string())),
-                Some(&Value::Number(30.0))
+                Some(&Value::Number(
+                    crate::runtime::value::DecimalNumber::parse("30").unwrap()
+                ))
             );
         } else {
             panic!("Expected map");
@@ -102,7 +113,9 @@ mod tests {
 
     #[test]
     fn test_json_parse_wrong_argument_type() {
-        let result = builtin_json_parse(&[Value::Number(42.0)]);
+        let result = builtin_json_parse(&[Value::Number(
+            crate::runtime::value::DecimalNumber::parse("42").unwrap(),
+        )]);
         assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
     }
 }

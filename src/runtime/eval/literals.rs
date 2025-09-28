@@ -2,14 +2,20 @@ use super::{EvalResult, eval_expr};
 use crate::ast::Literal;
 use crate::runtime::env::Env;
 use crate::runtime::string_template::evaluate_string_template;
-use crate::runtime::value::{RuntimeError, Value};
+use crate::runtime::value::{DecimalNumber, RuntimeError, Value};
 use regex::Regex;
 use std::rc::Rc;
 
 /// Evaluate a literal expression
 pub fn eval_literal(literal: &Literal, env: Rc<Env>) -> EvalResult<Value> {
     match literal {
-        Literal::Number(n, _) => Ok(Value::Number(*n)),
+        Literal::Number(n, _) => {
+            let decimal =
+                DecimalNumber::parse(n).map_err(|err| RuntimeError::InvalidNumberConversion {
+                    message: format!("Invalid number '{}': {}", n, err),
+                })?;
+            Ok(Value::Number(decimal))
+        }
         Literal::Boolean(b, _) => Ok(Value::Boolean(*b)),
         Literal::Identifier(name, _) => env.get(name),
         Literal::StringTemplate(parts, _) => {
@@ -66,9 +72,9 @@ mod tests {
     #[test]
     fn test_number_literal() {
         let env = create_test_env();
-        let literal = Literal::Number(42.0, Span::default());
+        let literal = Literal::Number("42".to_string(), Span::default());
         let result = eval_literal(&literal, env).unwrap();
-        assert_eq!(result, Value::Number(42.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(42)));
     }
 
     #[test]
@@ -82,11 +88,11 @@ mod tests {
     #[test]
     fn test_identifier_lookup() {
         let env = create_test_env();
-        env.define_or_set("x", Value::Number(100.0));
+        env.define_or_set("x", Value::Number(DecimalNumber::from_i64(100)));
 
         let literal = Literal::Identifier("x".to_string(), Span::default());
         let result = eval_literal(&literal, env).unwrap();
-        assert_eq!(result, Value::Number(100.0));
+        assert_eq!(result, Value::Number(DecimalNumber::from_i64(100)));
     }
 
     #[test]

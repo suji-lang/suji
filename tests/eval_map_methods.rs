@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::eval_program;
@@ -18,7 +19,7 @@ fn test_map_keys_method_integration() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(4.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(4)));
 }
 
 #[test]
@@ -31,7 +32,7 @@ fn test_map_values_method_integration() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(3.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(3)));
 }
 
 #[test]
@@ -44,7 +45,7 @@ fn test_map_to_list_method_integration() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(2.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(2)));
 }
 
 #[test]
@@ -56,7 +57,7 @@ fn test_map_length_method_integration() {
     "#,
     );
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), Value::Number(5.0));
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(5)));
 }
 
 #[test]

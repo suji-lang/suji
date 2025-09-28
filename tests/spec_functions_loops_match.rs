@@ -1,3 +1,4 @@
+use nnlang::runtime::value::DecimalNumber;
 mod common;
 
 use common::eval_program;
@@ -6,13 +7,13 @@ use nnlang::runtime::value::Value;
 #[test]
 fn test_function_basics_and_defaults() {
     let result = eval_program("add = |x, y| { return x + y }\nresult = add(3, 4)").unwrap();
-    assert_eq!(result, Value::Number(7.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(7)));
 
     let result = eval_program("square = |x| { return x * x }\nresult = square(5)").unwrap();
-    assert_eq!(result, Value::Number(25.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(25)));
 
     let result = eval_program("getfive = || { return 5 }\nresult = getfive()").unwrap();
-    assert_eq!(result, Value::Number(5.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
 
     let result =
         eval_program("ispositive = |x| { return x > 0 }\nresult = ispositive(-3)").unwrap();
@@ -38,96 +39,96 @@ fn test_function_basics_and_defaults() {
 #[test]
 fn test_closures_and_hof() {
     let result = eval_program("x = 10\naddx = |y| { return x + y }\nresult = addx(5)").unwrap();
-    assert_eq!(result, Value::Number(15.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(15)));
 
     let result = eval_program("makeadder = |base| { return |x| { return base + x } }\nadd10 = makeadder(10)\nresult = add10(7)").unwrap();
-    assert_eq!(result, Value::Number(17.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(17)));
 
     let result = eval_program("makeadder = |base| { return |x| { return base + x } }\nadd5 = makeadder(5)\nadd20 = makeadder(20)\nresult1 = add5(3)\nresult2 = add20(3)\nresult = result1 + result2").unwrap();
-    assert_eq!(result, Value::Number(31.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(31)));
 
     let result = eval_program("counter = 0\nincrement = || { counter = counter + 1; return counter }\nfirst = increment()\nsecond = increment()\nresult = second").unwrap();
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 
     let result = eval_program(
         "apply = |f, x| { return f(x) }\ndouble = |n| { return n * 2 }\nresult = apply(double, 6)",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(12.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(12)));
 
     let result = eval_program("makemultiplier = |factor| { return |x| { return x * factor } }\ntriple = makemultiplier(3)\nresult = triple(4)").unwrap();
-    assert_eq!(result, Value::Number(12.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(12)));
 
     let result = eval_program(
         "add1 = |x| { return x + 1 }\nmul2 = |x| { return x * 2 }\nresult = mul2(add1(5))",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(12.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(12)));
 
     let result = eval_program("compose = |f, g| { return |x| { return f(g(x)) } }\nadd3 = |x| { return x + 3 }\nmul2 = |x| { return x * 2 }\ncomposed = compose(mul2, add3)\nresult = composed(4)").unwrap();
-    assert_eq!(result, Value::Number(14.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(14)));
 }
 
 #[test]
 fn test_function_scope_and_loops() {
     let result = eval_program("x = 10\ntest = |x| { return x * 2 }\nresult = test(5)").unwrap();
-    assert_eq!(result, Value::Number(10.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(10)));
 
     let result =
         eval_program("outer = 100\ntest = |inner| { return inner + outer }\nresult = test(5)")
             .unwrap();
-    assert_eq!(result, Value::Number(105.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(105)));
 
     let result = eval_program(
         "x = 1\ntest = || { x = 2; inner = || { return x }; return inner() }\nresult = test()",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 
     let result = eval_program("x = 1\ntest = || { x = 2; return x }\ntest()\nresult = x").unwrap();
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 
     let result = eval_program(
         "counter = 0\nloop { counter++; match counter { 5: { break } } }\nresult = counter",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(5.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
 
     let result = eval_program("sum = 0\ni = 0\nloop { i++; match i { 3: { continue } 6: { break } } sum = sum + i }\nresult = sum").unwrap();
-    assert_eq!(result, Value::Number(12.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(12)));
 
     let result = eval_program("count = 0\nloop through 0..5 { count++ }\nresult = count").unwrap();
-    assert_eq!(result, Value::Number(5.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
 }
 
 #[test]
 fn test_loop_through_bindings_and_match() {
     let result =
         eval_program("sum = 0\nloop through 0..5 with i { sum = sum + i }\nresult = sum").unwrap();
-    assert_eq!(result, Value::Number(10.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(10)));
 
     let result = eval_program(
         "nums = [10, 20, 30]\nsum = 0\nloop through nums with n { sum = sum + n }\nresult = sum",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(60.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(60)));
 
     let result = eval_program(
         "nums = [1, 2, 3]\nsum = 0\nloop through nums with n { sum = sum + (n * 2) }\nresult = sum",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(12.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(12)));
 
     let result = eval_program("count = 0\nloop through 0..3 { count++ }\nresult = count").unwrap();
-    assert_eq!(result, Value::Number(3.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
     let result =
         eval_program("i = 0\nloop as outer { i++; match i { 3: { break outer } } }\nresult = i")
             .unwrap();
-    assert_eq!(result, Value::Number(3.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
     let result = eval_program("counter = 0\nloop as my_loop { counter++; match counter { 5: { break my_loop } } }\nresult = counter").unwrap();
-    assert_eq!(result, Value::Number(5.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
 
     let result = eval_program(
         "x = 42\nmatch x { 42: { result = \"found\" } 99: { result = \"not found\" } }",
@@ -200,7 +201,7 @@ fn test_match_without_expression_and_method_calls_in_conditions() {
         "outer = 0\nloop as outer_loop {\n  match outer { 2: { break outer_loop } }\n  inner = 0\n  loop {\n    inner++\n    match inner { 3: { outer++; continue outer_loop } }\n  }\n}\nresult = outer",
     )
     .unwrap();
-    assert_eq!(result, Value::Number(2.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 }
 
 #[test]

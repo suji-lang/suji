@@ -120,4 +120,13 @@ pub enum RuntimeError {
 
     #[error("Pipe apply (<|) requires a function on the left-hand side")]
     PipeApplyLeftTypeError,
+
+    #[error("Destructuring assignment requires a tuple value")]
+    DestructureTypeError,
+
+    #[error("Destructuring arity mismatch: expected {expected}, got {actual}")]
+    DestructureArityMismatch { expected: usize, actual: usize },
+
+    #[error("Invalid destructuring target: {message}")]
+    DestructureInvalidTarget { message: String },
 }

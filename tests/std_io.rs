@@ -2,7 +2,7 @@
 
 use nnlang::runtime::methods::{ValueRef, call_method};
 use nnlang::runtime::module::ModuleRegistry;
-use nnlang::runtime::value::{MapKey, Value};
+use nnlang::runtime::value::{DecimalNumber, MapKey, Value};
 
 #[test]
 fn test_io_stream_method_calls() {
@@ -41,7 +41,7 @@ fn test_io_stream_write_method() {
     .unwrap();
 
     // Should return number of bytes written
-    assert_eq!(result, Value::Number(4.0));
+    assert_eq!(result, Value::Number(DecimalNumber::from_i64(4)));
 }
 
 #[test]
@@ -92,6 +92,11 @@ fn test_io_module_registry_resolution() {
         .resolve_nested_module_item("std:io", "stdin")
         .unwrap();
     assert!(matches!(stdin, Value::Stream(_)));
+
+    let open_fn = registry
+        .resolve_nested_module_item("std:io", "open")
+        .unwrap();
+    assert!(matches!(open_fn, Value::Function(_)));
 }
 
 #[test]

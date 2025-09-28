@@ -1,10 +1,55 @@
 use super::{ParseResult, Parser};
-use crate::ast::Expr;
+use crate::ast::{Expr, Literal};
 use crate::token::Token;
 
 impl Parser {
+    // Generic helpers for infix parsing layers
+    fn parse_infix_left_layer<F>(
+        &mut self,
+        next: fn(&mut Parser) -> ParseResult<Expr>,
+        mut mapper: F,
+    ) -> ParseResult<Expr>
+    where
+        F: FnMut(&Token) -> Option<crate::ast::BinaryOp>,
+    {
+        let mut expr = next(self)?;
+        while let Some(op) = mapper(&self.peek().token) {
+            let span = self.advance().span.clone();
+            let right = next(self)?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                op,
+                right: Box::new(right),
+                span,
+            };
+        }
+        Ok(expr)
+    }
+
+    fn parse_infix_right_layer<F>(
+        &mut self,
+        next: fn(&mut Parser) -> ParseResult<Expr>,
+        mut mapper: F,
+    ) -> ParseResult<Expr>
+    where
+        F: FnMut(&Token) -> Option<crate::ast::BinaryOp>,
+    {
+        let mut expr = next(self)?;
+        if let Some(op) = mapper(&self.peek().token) {
+            let span = self.advance().span.clone();
+            let right = self.parse_infix_right_layer(next, mapper)?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                op,
+                right: Box::new(right),
+                span,
+            };
+        }
+        Ok(expr)
+    }
+
     /// Parse a unary expression
-    pub(super) fn unary(&mut self) -> ParseResult<Expr> {
+    pub(super) fn parse_unary(&mut self) -> ParseResult<Expr> {
         if self.match_token(Token::Not) || self.match_token(Token::Minus) {
             let op = match &self.previous().token {
                 Token::Not => crate::ast::UnaryOp::Not,
@@ -12,7 +57,7 @@ impl Parser {
                 _ => unreachable!(),
             };
             let span = self.previous().span.clone();
-            let expr = self.unary()?;
+            let expr = self.parse_unary()?;
             return Ok(Expr::Unary {
                 op,
                 expr: Box::new(expr),
@@ -20,274 +65,131 @@ impl Parser {
             });
         }
 
-        self.power()
+        self.parse_power()
     }
 
     /// Parse power expressions (^) - right associative
-    pub(super) fn power(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.postfix()?;
-
-        if self.match_token(Token::Power) {
-            let op = crate::ast::BinaryOp::Power;
-            let span = self.previous().span.clone();
-            let right = self.power()?; // Right-associative recursion
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_power(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_right_layer(Parser::postfix, |t| match t {
+            Token::Power => Some(crate::ast::BinaryOp::Power),
+            _ => None,
+        })
     }
 
     /// Parse a multiplication/division expression
-    pub(super) fn factor(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.unary()?;
-
-        while self.match_token(Token::Divide)
-            || self.match_token(Token::Multiply)
-            || self.match_token(Token::Modulo)
-        {
-            let op = match &self.previous().token {
-                Token::Divide => crate::ast::BinaryOp::Divide,
-                Token::Multiply => crate::ast::BinaryOp::Multiply,
-                Token::Modulo => crate::ast::BinaryOp::Modulo,
-                _ => unreachable!(),
-            };
-            let span = self.previous().span.clone();
-            let right = self.unary()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_factor(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_unary, |t| match t {
+            Token::Divide => Some(crate::ast::BinaryOp::Divide),
+            Token::Multiply => Some(crate::ast::BinaryOp::Multiply),
+            Token::Modulo => Some(crate::ast::BinaryOp::Modulo),
+            _ => None,
+        })
     }
 
     /// Parse an addition/subtraction expression
-    pub(super) fn term(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.factor()?;
-
-        while self.match_token(Token::Minus) || self.match_token(Token::Plus) {
-            let op = match &self.previous().token {
-                Token::Minus => crate::ast::BinaryOp::Subtract,
-                Token::Plus => crate::ast::BinaryOp::Add,
-                _ => unreachable!(),
-            };
-            let span = self.previous().span.clone();
-            let right = self.factor()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_term(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_factor, |t| match t {
+            Token::Minus => Some(crate::ast::BinaryOp::Subtract),
+            Token::Plus => Some(crate::ast::BinaryOp::Add),
+            _ => None,
+        })
     }
 
     /// Parse range expressions (..)
-    pub(super) fn range(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.term()?;
-
-        while self.match_token(Token::Range) {
-            let op = crate::ast::BinaryOp::Range;
-            let span = self.previous().span.clone();
-            let right = self.term()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_range(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_term, |t| match t {
+            Token::Range => Some(crate::ast::BinaryOp::Range),
+            _ => None,
+        })
     }
 
     /// Parse a comparison expression
-    pub(super) fn comparison(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.range()?;
-
-        while self.match_token(Token::Greater)
-            || self.match_token(Token::GreaterEqual)
-            || self.match_token(Token::Less)
-            || self.match_token(Token::LessEqual)
-        {
-            let op = match &self.previous().token {
-                Token::Greater => crate::ast::BinaryOp::Greater,
-                Token::GreaterEqual => crate::ast::BinaryOp::GreaterEqual,
-                Token::Less => crate::ast::BinaryOp::Less,
-                Token::LessEqual => crate::ast::BinaryOp::LessEqual,
-                _ => unreachable!(),
-            };
-            let span = self.previous().span.clone();
-            let right = self.range()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_comparison(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_range, |t| match t {
+            Token::Greater => Some(crate::ast::BinaryOp::Greater),
+            Token::GreaterEqual => Some(crate::ast::BinaryOp::GreaterEqual),
+            Token::Less => Some(crate::ast::BinaryOp::Less),
+            Token::LessEqual => Some(crate::ast::BinaryOp::LessEqual),
+            _ => None,
+        })
     }
 
     /// Parse an equality expression
-    pub(super) fn equality(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.comparison()?;
-
-        while self.match_token(Token::NotEqual) || self.match_token(Token::Equal) {
-            let op = match &self.previous().token {
-                Token::NotEqual => crate::ast::BinaryOp::NotEqual,
-                Token::Equal => crate::ast::BinaryOp::Equal,
-                _ => unreachable!(),
-            };
-            let span = self.previous().span.clone();
-            let right = self.comparison()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_equality(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_comparison, |t| match t {
+            Token::NotEqual => Some(crate::ast::BinaryOp::NotEqual),
+            Token::Equal => Some(crate::ast::BinaryOp::Equal),
+            _ => None,
+        })
     }
 
     /// Parse regex match expressions (~, !~)
-    pub(super) fn regex_match(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.equality()?;
-
-        while self.match_token(Token::RegexMatch) || self.match_token(Token::RegexNotMatch) {
-            let op = match &self.previous().token {
-                Token::RegexMatch => crate::ast::BinaryOp::RegexMatch,
-                Token::RegexNotMatch => crate::ast::BinaryOp::RegexNotMatch,
-                _ => unreachable!(),
-            };
-            let span = self.previous().span.clone();
-            let right = self.equality()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_regex_match(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_equality, |t| match t {
+            Token::RegexMatch => Some(crate::ast::BinaryOp::RegexMatch),
+            Token::RegexNotMatch => Some(crate::ast::BinaryOp::RegexNotMatch),
+            _ => None,
+        })
     }
 
     /// Parse logical AND expressions (&&)
-    pub(super) fn logical_and(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.regex_match()?;
-
-        while self.match_token(Token::And) {
-            let op = crate::ast::BinaryOp::And;
-            let span = self.previous().span.clone();
-            let right = self.regex_match()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_logical_and(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_regex_match, |t| match t {
+            Token::And => Some(crate::ast::BinaryOp::And),
+            _ => None,
+        })
     }
 
     /// Parse logical OR expressions (||)
-    pub(super) fn logical_or(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.logical_and()?;
-
-        while self.match_token(Token::Or) {
-            let op = crate::ast::BinaryOp::Or;
-            let span = self.previous().span.clone();
-            let right = self.logical_and()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_logical_or(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_logical_and, |t| match t {
+            Token::Or => Some(crate::ast::BinaryOp::Or),
+            _ => None,
+        })
     }
 
     /// Parse forward apply pipelines (|>) - left-associative
-    pub(super) fn pipe_apply_forward(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.logical_or()?;
-
-        while self.match_token(Token::PipeForward) {
-            let op = crate::ast::BinaryOp::PipeApplyFwd;
-            let span = self.previous().span.clone();
-            let right = self.logical_or()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_pipe_apply_forward(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_logical_or, |t| match t {
+            Token::PipeForward => Some(crate::ast::BinaryOp::PipeApplyFwd),
+            _ => None,
+        })
     }
 
     /// Parse backward apply pipelines (<|) - right-associative
-    pub(super) fn pipe_apply_backward(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.pipe_apply_forward()?;
-
-        if self.match_token(Token::PipeBackward) {
-            let op = crate::ast::BinaryOp::PipeApplyBwd;
-            let span = self.previous().span.clone();
-            let right = self.pipe_apply_backward()?; // right-associative
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_pipe_apply_backward(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_right_layer(Parser::parse_pipe_apply_forward, |t| match t {
+            Token::PipeBackward => Some(crate::ast::BinaryOp::PipeApplyBwd),
+            _ => None,
+        })
     }
 
     /// Parse stream pipe (|) built over apply-pipe layers - left-associative
-    pub(super) fn pipe_stream(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.pipe_apply_backward()?;
-
-        while self.match_token(Token::Pipe) {
-            let op = crate::ast::BinaryOp::Pipe;
-            let span = self.previous().span.clone();
-            let right = self.pipe_apply_backward()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-                span,
-            };
-        }
-
-        Ok(expr)
+    pub(super) fn parse_pipe_stream(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_pipe_apply_backward, |t| match t {
+            Token::Pipe => Some(crate::ast::BinaryOp::Pipe),
+            _ => None,
+        })
     }
 
     /// Parse assignment expressions (right-associative)
-    pub(super) fn assignment(&mut self) -> ParseResult<Expr> {
-        let expr = self.pipe_stream()?;
+    pub(super) fn parse_assignment(&mut self) -> ParseResult<Expr> {
+        let mut expr = self.parse_pipe_stream()?;
+
+        if self.check(Token::Comma) && self.looks_like_destructure_pattern() {
+            expr = self.parse_destructure_pattern(expr)?;
+        }
 
         if self.match_token(Token::Assign) {
             let span = self.previous().span.clone();
-            let value = self.assignment()?; // Right-associative
+            let expr = match expr {
+                Expr::Literal(Literal::Tuple(elements, tuple_span)) => {
+                    self.convert_tuple_to_destructure(elements, tuple_span)?
+                }
+                other => other,
+            };
+
+            let value = self.parse_assignment()?; // Right-associative
             return Ok(Expr::Assign {
                 target: Box::new(expr),
                 value: Box::new(value),
@@ -298,7 +200,7 @@ impl Parser {
         // Compound assignment operators
         if self.match_token(Token::PlusAssign) {
             let span = self.previous().span.clone();
-            let value = self.assignment()?; // Right-associative
+            let value = self.parse_assignment()?; // Right-associative
             return Ok(Expr::CompoundAssign {
                 target: Box::new(expr),
                 op: crate::ast::CompoundOp::PlusAssign,
@@ -309,7 +211,7 @@ impl Parser {
 
         if self.match_token(Token::MinusAssign) {
             let span = self.previous().span.clone();
-            let value = self.assignment()?; // Right-associative
+            let value = self.parse_assignment()?; // Right-associative
             return Ok(Expr::CompoundAssign {
                 target: Box::new(expr),
                 op: crate::ast::CompoundOp::MinusAssign,
@@ -320,7 +222,7 @@ impl Parser {
 
         if self.match_token(Token::MultiplyAssign) {
             let span = self.previous().span.clone();
-            let value = self.assignment()?; // Right-associative
+            let value = self.parse_assignment()?; // Right-associative
             return Ok(Expr::CompoundAssign {
                 target: Box::new(expr),
                 op: crate::ast::CompoundOp::MultiplyAssign,
@@ -331,7 +233,7 @@ impl Parser {
 
         if self.match_token(Token::DivideAssign) {
             let span = self.previous().span.clone();
-            let value = self.assignment()?; // Right-associative
+            let value = self.parse_assignment()?; // Right-associative
             return Ok(Expr::CompoundAssign {
                 target: Box::new(expr),
                 op: crate::ast::CompoundOp::DivideAssign,
@@ -342,7 +244,7 @@ impl Parser {
 
         if self.match_token(Token::ModuloAssign) {
             let span = self.previous().span.clone();
-            let value = self.assignment()?; // Right-associative
+            let value = self.parse_assignment()?; // Right-associative
             return Ok(Expr::CompoundAssign {
                 target: Box::new(expr),
                 op: crate::ast::CompoundOp::ModuloAssign,
@@ -356,12 +258,12 @@ impl Parser {
 
     /// Parse an expression
     pub fn expression(&mut self) -> ParseResult<Expr> {
-        self.assignment()
+        self.parse_assignment()
     }
 
     /// Parse an expression but without considering the pipe operator layer.
     /// Useful in contexts (like function parameter defaults) where '|' is a terminator.
-    pub(super) fn expression_without_pipe(&mut self) -> ParseResult<Expr> {
-        self.logical_or()
+    pub(super) fn parse_expression_without_pipe(&mut self) -> ParseResult<Expr> {
+        self.parse_logical_or()
     }
 }

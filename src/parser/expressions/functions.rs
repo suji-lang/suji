@@ -67,7 +67,7 @@ impl Parser {
                     // Check for default value
                     let default = if self.match_token(Token::Assign) {
                         // Use an expression parser that doesn't consume the '|' param terminator as a pipe op
-                        Some(self.expression_without_pipe()?)
+                        Some(self.parse_expression_without_pipe()?)
                     } else {
                         None
                     };

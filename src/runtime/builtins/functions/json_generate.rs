@@ -48,8 +48,11 @@ mod tests {
             Value::String("false".to_string())
         );
         assert_eq!(
-            builtin_json_generate(&[Value::Number(42.0)]).unwrap(),
-            Value::String("42.0".to_string())
+            builtin_json_generate(&[Value::Number(
+                crate::runtime::value::DecimalNumber::from_i64(42)
+            )])
+            .unwrap(),
+            Value::String("42".to_string())
         );
         assert_eq!(
             builtin_json_generate(&[Value::String("hello".to_string())]).unwrap(),
@@ -60,12 +63,12 @@ mod tests {
     #[test]
     fn test_json_generate_arrays() {
         let list = Value::List(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(crate::runtime::value::DecimalNumber::from_i64(1)),
+            Value::Number(crate::runtime::value::DecimalNumber::from_i64(2)),
+            Value::Number(crate::runtime::value::DecimalNumber::from_i64(3)),
         ]);
         let result = builtin_json_generate(&[list]).unwrap();
-        assert_eq!(result, Value::String("[1.0,2.0,3.0]".to_string()));
+        assert_eq!(result, Value::String("[1,2,3]".to_string()));
     }
 
     #[test]
@@ -75,7 +78,10 @@ mod tests {
             MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
-        map_data.insert(MapKey::String("age".to_string()), Value::Number(30.0));
+        map_data.insert(
+            MapKey::String("age".to_string()),
+            Value::Number(crate::runtime::value::DecimalNumber::from_i64(30)),
+        );
         let map = Value::Map(map_data);
 
         let result = builtin_json_generate(&[map]).unwrap();

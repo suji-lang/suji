@@ -13,7 +13,14 @@ pub fn builtin_random_seed(args: &[Value]) -> Result<Value, RuntimeError> {
                 Ok(Value::Nil)
             }
             Value::Number(n) => {
-                rng_seed_with(Some(*n as u64));
+                if let Some(seed) = n.to_i64_checked() {
+                    rng_seed_with(Some(seed as u64));
+                } else {
+                    return Err(RuntimeError::TypeError {
+                        message: "random:seed number must be an integer within valid range"
+                            .to_string(),
+                    });
+                }
                 Ok(Value::Nil)
             }
             other => Err(RuntimeError::TypeError {

@@ -30,12 +30,20 @@ where
 mod tests {
     use super::*;
     use crate::ast::{Expr, Literal};
+    use crate::runtime::value::DecimalNumber;
     use crate::token::Span;
 
     fn dummy_evaluator(expr: &crate::ast::Expr) -> Result<Value, RuntimeError> {
         // Simple evaluator for testing
         match expr {
-            Expr::Literal(Literal::Number(n, _)) => Ok(Value::Number(*n)),
+            Expr::Literal(Literal::Number(n, _)) => {
+                let decimal = DecimalNumber::parse(n).map_err(|err| {
+                    RuntimeError::InvalidNumberConversion {
+                        message: format!("Invalid number '{}': {}", n, err),
+                    }
+                })?;
+                Ok(Value::Number(decimal))
+            }
             Expr::Literal(Literal::StringTemplate(parts, _)) => {
                 // For test purposes, if it's a simple string template, return the first text part
                 if parts.len() == 1
@@ -50,7 +58,7 @@ mod tests {
                 // Return a dummy value based on name
                 match name.as_str() {
                     "name" => Ok(Value::String("Alice".to_string())),
-                    "age" => Ok(Value::Number(30.0)),
+                    "age" => Ok(Value::Number(DecimalNumber::from_i64(30))),
                     _ => Err(RuntimeError::UndefinedVariable { name: name.clone() }),
                 }
             }
@@ -105,7 +113,10 @@ mod tests {
     fn test_number_interpolation() {
         let parts = vec![
             StringPart::Text("The answer is ".to_string()),
-            StringPart::Expr(Expr::Literal(Literal::Number(42.0, Span::default()))),
+            StringPart::Expr(Expr::Literal(Literal::Number(
+                "42".to_string(),
+                Span::default(),
+            ))),
         ];
 
         let result = evaluate_string_template(&parts, dummy_evaluator).unwrap();

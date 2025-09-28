@@ -1,7 +1,7 @@
 /// Literal values that can be used in patterns
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueLike {
-    Number(f64),
+    Number(String),
     Boolean(bool),
     String(String),
     Tuple(Vec<ValueLike>),

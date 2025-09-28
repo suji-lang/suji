@@ -78,5 +78,9 @@ pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
         Expr::Match {
             scrutinee, arms, ..
         } => eval_match_expression(scrutinee.as_deref(), arms, env),
+
+        Expr::Destructure { .. } => Err(RuntimeError::InvalidOperation {
+            message: "Destructuring pattern cannot appear as a standalone expression".to_string(),
+        }),
     }
 }

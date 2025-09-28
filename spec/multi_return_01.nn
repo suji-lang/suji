@@ -1,0 +1,9 @@
+import std:println
+
+make_pair = || {
+    return 1, 2
+}
+
+left, right = make_pair()
+
+println(right)  # 2

@@ -1,7 +1,7 @@
 use super::EvalResult;
 use crate::ast::Pattern;
 use crate::runtime::env::Env;
-use crate::runtime::value::{RuntimeError, Value};
+use crate::runtime::value::{DecimalNumber, RuntimeError, Value};
 use regex::Regex;
 use std::rc::Rc;
 
@@ -68,7 +68,13 @@ pub fn value_like_matches(pattern_value: &crate::ast::ValueLike, value: &Value) 
     use crate::ast::ValueLike;
 
     match (pattern_value, value) {
-        (ValueLike::Number(a), Value::Number(b)) => a == b,
+        (ValueLike::Number(a), Value::Number(b)) => {
+            // Parse the string representation and compare with DecimalNumber
+            match DecimalNumber::parse(a) {
+                Ok(decimal_a) => decimal_a == *b,
+                Err(_) => false,
+            }
+        }
         (ValueLike::Boolean(a), Value::Boolean(b)) => a == b,
         (ValueLike::String(a), Value::String(b)) => a == b,
         (ValueLike::Nil, Value::Nil) => true,
@@ -99,7 +105,7 @@ mod tests {
             span: Span::default(),
         };
 
-        assert!(pattern_matches(&pattern, &Value::Number(42.0)).unwrap());
+        assert!(pattern_matches(&pattern, &Value::Number(DecimalNumber::from_i64(42))).unwrap());
         assert!(pattern_matches(&pattern, &Value::String("hello".to_string())).unwrap());
         assert!(pattern_matches(&pattern, &Value::Boolean(true)).unwrap());
     }
@@ -107,12 +113,12 @@ mod tests {
     #[test]
     fn test_literal_pattern() {
         let pattern = Pattern::Literal {
-            value: ValueLike::Number(42.0),
+            value: ValueLike::Number("42".to_string()),
             span: Span::default(),
         };
 
-        assert!(pattern_matches(&pattern, &Value::Number(42.0)).unwrap());
-        assert!(!pattern_matches(&pattern, &Value::Number(43.0)).unwrap());
+        assert!(pattern_matches(&pattern, &Value::Number(DecimalNumber::from_i64(42))).unwrap());
+        assert!(!pattern_matches(&pattern, &Value::Number(DecimalNumber::from_i64(43))).unwrap());
         assert!(!pattern_matches(&pattern, &Value::String("42".to_string())).unwrap());
     }
 
@@ -125,7 +131,7 @@ mod tests {
 
         assert!(pattern_matches(&pattern, &Value::String("hello".to_string())).unwrap());
         assert!(!pattern_matches(&pattern, &Value::String("world".to_string())).unwrap());
-        assert!(!pattern_matches(&pattern, &Value::Number(42.0)).unwrap());
+        assert!(!pattern_matches(&pattern, &Value::Number(DecimalNumber::from_i64(42))).unwrap());
     }
 
     #[test]
@@ -137,7 +143,7 @@ mod tests {
 
         assert!(pattern_matches(&pattern, &Value::Boolean(true)).unwrap());
         assert!(!pattern_matches(&pattern, &Value::Boolean(false)).unwrap());
-        assert!(!pattern_matches(&pattern, &Value::Number(1.0)).unwrap());
+        assert!(!pattern_matches(&pattern, &Value::Number(DecimalNumber::from_i64(1))).unwrap());
     }
 
     #[test]
@@ -145,7 +151,7 @@ mod tests {
         let pattern = Pattern::Tuple {
             patterns: vec![
                 Pattern::Literal {
-                    value: ValueLike::Number(1.0),
+                    value: ValueLike::Number("1".to_string()),
                     span: Span::default(),
                 },
                 Pattern::Wildcard {
@@ -156,21 +162,21 @@ mod tests {
         };
 
         let matching_tuple = Value::Tuple(vec![
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
             Value::String("anything".to_string()),
         ]);
 
         let non_matching_tuple = Value::Tuple(vec![
-            Value::Number(2.0),
+            Value::Number(DecimalNumber::from_i64(2)),
             Value::String("anything".to_string()),
         ]);
 
-        let wrong_length_tuple = Value::Tuple(vec![Value::Number(1.0)]);
+        let wrong_length_tuple = Value::Tuple(vec![Value::Number(DecimalNumber::from_i64(1))]);
 
         assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
         assert!(!pattern_matches(&pattern, &non_matching_tuple).unwrap());
         assert!(!pattern_matches(&pattern, &wrong_length_tuple).unwrap());
-        assert!(!pattern_matches(&pattern, &Value::Number(1.0)).unwrap());
+        assert!(!pattern_matches(&pattern, &Value::Number(DecimalNumber::from_i64(1))).unwrap());
     }
 
     #[test]
@@ -182,7 +188,7 @@ mod tests {
 
         assert!(pattern_matches(&pattern, &Value::String("hello world".to_string())).unwrap());
         assert!(!pattern_matches(&pattern, &Value::String("world hello".to_string())).unwrap());
-        assert!(!pattern_matches(&pattern, &Value::Number(42.0)).unwrap());
+        assert!(!pattern_matches(&pattern, &Value::Number(DecimalNumber::from_i64(42))).unwrap());
     }
 
     #[test]
@@ -213,7 +219,7 @@ mod tests {
                     span: Span::default(),
                 },
                 Pattern::Literal {
-                    value: ValueLike::Number(0.0),
+                    value: ValueLike::Number("0".to_string()),
                     span: Span::default(),
                 },
             ],
@@ -223,13 +229,13 @@ mod tests {
         let matching_tuple = Value::Tuple(vec![
             Value::String("anything".to_string()),
             Value::Boolean(true),
-            Value::Number(0.0),
+            Value::Number(DecimalNumber::from_i64(0)),
         ]);
 
         let non_matching_tuple = Value::Tuple(vec![
             Value::String("anything".to_string()),
             Value::Boolean(true),
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
         ]);
 
         assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
@@ -268,13 +274,22 @@ mod tests {
         };
 
         let matching_tuple = Value::Tuple(vec![
-            Value::Tuple(vec![Value::Number(1.0), Value::String("test".to_string())]),
-            Value::Tuple(vec![Value::Boolean(true), Value::Number(42.0)]),
+            Value::Tuple(vec![
+                Value::Number(DecimalNumber::from_i64(1)),
+                Value::String("test".to_string()),
+            ]),
+            Value::Tuple(vec![
+                Value::Boolean(true),
+                Value::Number(DecimalNumber::from_i64(42)),
+            ]),
         ]);
 
         let non_matching_tuple = Value::Tuple(vec![
-            Value::Tuple(vec![Value::Number(1.0)]), // Wrong length
-            Value::Tuple(vec![Value::Boolean(true), Value::Number(42.0)]),
+            Value::Tuple(vec![Value::Number(DecimalNumber::from_i64(1))]), // Wrong length
+            Value::Tuple(vec![
+                Value::Boolean(true),
+                Value::Number(DecimalNumber::from_i64(42)),
+            ]),
         ]);
 
         assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
@@ -300,13 +315,13 @@ mod tests {
 
         let matching_tuple = Value::Tuple(vec![
             Value::String("anything".to_string()),
-            Value::Number(42.0),
+            Value::Number(DecimalNumber::from_i64(42)),
             Value::Boolean(true),
         ]);
 
         let wrong_length_tuple = Value::Tuple(vec![
             Value::String("anything".to_string()),
-            Value::Number(42.0),
+            Value::Number(DecimalNumber::from_i64(42)),
         ]);
 
         assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
@@ -322,9 +337,9 @@ mod tests {
             span: Span::default(),
         };
 
-        let matching_tuple = Value::Tuple(vec![Value::Number(42.0)]);
+        let matching_tuple = Value::Tuple(vec![Value::Number(DecimalNumber::from_i64(42))]);
         let wrong_length_tuple = Value::Tuple(vec![]);
-        let non_tuple_value = Value::Number(42.0);
+        let non_tuple_value = Value::Number(DecimalNumber::from_i64(42));
 
         assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
         assert!(!pattern_matches(&pattern, &wrong_length_tuple).unwrap());
@@ -339,7 +354,7 @@ mod tests {
         };
 
         let matching_tuple = Value::Tuple(vec![]);
-        let non_matching_tuple = Value::Tuple(vec![Value::Number(42.0)]);
+        let non_matching_tuple = Value::Tuple(vec![Value::Number(DecimalNumber::from_i64(42))]);
 
         assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
         assert!(!pattern_matches(&pattern, &non_matching_tuple).unwrap());
@@ -350,7 +365,7 @@ mod tests {
         let pattern = Pattern::Tuple {
             patterns: vec![
                 Pattern::Literal {
-                    value: ValueLike::Number(1.0),
+                    value: ValueLike::Number("1".to_string()),
                     span: Span::default(),
                 },
                 Pattern::Wildcard {
@@ -365,19 +380,19 @@ mod tests {
         };
 
         let matching_tuple = Value::Tuple(vec![
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
             Value::Boolean(true),
             Value::String("test".to_string()),
         ]);
 
         let non_matching_tuple = Value::Tuple(vec![
-            Value::Number(2.0), // Wrong first element
+            Value::Number(DecimalNumber::from_i64(2)), // Wrong first element
             Value::Boolean(true),
             Value::String("test".to_string()),
         ]);
 
         let non_matching_tuple2 = Value::Tuple(vec![
-            Value::Number(1.0),
+            Value::Number(DecimalNumber::from_i64(1)),
             Value::Boolean(true),
             Value::String("wrong".to_string()), // Wrong third element
         ]);
@@ -420,10 +435,13 @@ mod tests {
 
         let matching_tuple = Value::Tuple(vec![
             Value::Tuple(vec![
-                Value::Tuple(vec![Value::Number(1.0), Value::String("test".to_string())]),
+                Value::Tuple(vec![
+                    Value::Number(DecimalNumber::from_i64(1)),
+                    Value::String("test".to_string()),
+                ]),
                 Value::Boolean(true),
             ]),
-            Value::Number(42.0),
+            Value::Number(DecimalNumber::from_i64(42)),
         ]);
 
         assert!(pattern_matches(&pattern, &matching_tuple).unwrap());
