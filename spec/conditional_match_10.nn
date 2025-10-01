@@ -3,9 +3,9 @@ import std:println
 # Conditional match with string comparison
 name = "alice"
 result = match {
-    name == "alice": "Hello Alice"
-    name == "bob": "Hello Bob"
-    _: "Hello stranger"
+    name == "alice" => "Hello Alice",
+    name == "bob" => "Hello Bob",
+    _ => "Hello stranger",
 }
 
 println(result)  # Hello Alice

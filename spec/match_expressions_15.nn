@@ -3,10 +3,10 @@ import std:println
 # Test match expression with number calculations
 x = 10
 result = match x {
-    5: x * 2
-    10: x + 5
-    15: x - 3
-    _: 0
+    5 => x * 2,
+    10 => x + 5,
+    15 => x - 3,
+    _ => 0,
 }
 
 println(result)  # 15

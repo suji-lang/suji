@@ -3,9 +3,9 @@ import std:println
 # Test basic string method calls in conditional match conditions
 text = "hello world"
 result = match {
-    text::length() > 10: "long text"
-    text::length() > 5: "medium text"
-    _: "short text"
+    text::length() > 10 => "long text",
+    text::length() > 5 => "medium text",
+    _ => "short text",
 }
 
 println(result)  # medium text
@@ -13,8 +13,8 @@ println(result)  # medium text
 # Test string index_of method for contains-like behavior
 email = "user@example.com"
 result2 = match {
-    email::index_of("@") >= 0: "valid email format"
-    _: "invalid email format"
+    email::index_of("@") >= 0 => "valid email format",
+    _ => "invalid email format",
 }
 
 println(result2)  # valid email format
@@ -22,8 +22,8 @@ println(result2)  # valid email format
 # Test string index_of method
 sentence = "hello world"
 result3 = match {
-    sentence::index_of("world") >= 0: "contains world"
-    _: "does not contain world"
+    sentence::index_of("world") >= 0 => "contains world",
+    _ => "does not contain world",
 }
 
 println(result3)  # contains world

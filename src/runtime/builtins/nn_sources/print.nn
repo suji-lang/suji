@@ -3,8 +3,8 @@ export {
     print: |text, out = nil| {
         import std:io
         stream = match out {
-            nil: io:stdout
-            _: out
+            nil => io:stdout,
+            _ => out,
         }
         text_str = text::to_string()
         return stream::write(text_str)

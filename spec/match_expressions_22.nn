@@ -3,15 +3,15 @@ import std:println
 # Test complex nil handling in match expressions
 find_user = |id| {
     match id {
-        1: { "name": "Alice" }
-        2: { "name": "Bob" }
-        _: nil
+        1 => { "name": "Alice" },
+        2 => { "name": "Bob" },
+        _ => nil,
     }
 }
 
 user_info = match find_user(3) {
-    nil: "User not found"
-    user: "User: " + user:name
+    nil => "User not found",
+    user => "User: " + user:name,
 }
 
 println(user_info)  # User not found

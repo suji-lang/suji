@@ -4,9 +4,9 @@ import std:println
 x = 2
 result = "default"
 match x {
-  1: { result = "one" }
-  2: { result = "two" }
-  3: { result = "three" }
+  1 => { result = "one" },
+  2 => { result = "two" },
+  3 => { result = "three" },
 }
 
 println(result)  # two

@@ -5,7 +5,7 @@ outer = 0
 loop as outer_loop {
     outer++
     match outer {
-        2: { break outer_loop }
+        2 => { break outer_loop },
     }
 }
 

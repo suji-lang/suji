@@ -4,8 +4,8 @@ import std:println
 email = "ada@example.com"
 
 result = match email {
-    /^[^@\s]+@[^@\s]+\.[^@\s]+$/: "valid email"
-    _: "invalid email"
+    /^[^@\s]+@[^@\s]+\.[^@\s]+$/ => "valid email",
+    _ => "invalid email",
 }
 
 println(result)  # valid email

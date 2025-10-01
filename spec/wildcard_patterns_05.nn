@@ -3,8 +3,8 @@ import std:println
 # Test tuple pattern with all wildcards
 data = ("anything", 42, true)
 result = match data {
-    (_, _, _): "all wildcards match"
-    _: "no match"
+    (_, _, _) => "all wildcards match",
+    _ => "no match",
 }
 
 println(result)  # all wildcards match

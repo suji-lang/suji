@@ -71,8 +71,8 @@ make_destination = || {
     return || {
         lines = io:stdin::read_lines()
         match lines::length() > 0 {
-            true: { "output received" }
-            false: { "no output" }
+            true => { "output received" },
+            false => { "no output" },
         }
     }
 }

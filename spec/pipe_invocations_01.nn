@@ -11,7 +11,7 @@ make_consumer = |pattern| {
     return || {
         loop through io:stdin::read_lines() with line {
             match {
-                line ~ pattern: return "match:" + line
+                line ~ pattern => return "match:" + line,
             }
         }
         return "no-match"

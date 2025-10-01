@@ -4,8 +4,8 @@ import std:println
 x = 42
 result = "default"
 match x {
-  42: { result = "found" }
-  99: { result = "not found" }
+  42 => { result = "found" },
+  99 => { result = "not found" },
 }
 
 println(result)  # found

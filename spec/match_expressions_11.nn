@@ -3,10 +3,10 @@ import std:println
 # Match expression with complex expressions
 x = 2
 result = match x * 2 {
-  2: "two"
-  4: "four"
-  6: "six"
-  _: "other"
+  2 => "two",
+  4 => "four",
+  6 => "six",
+  _ => "other",
 }
 
 println(result)  # four

@@ -6,9 +6,9 @@ import std:println
 # Quicksort function - sorts a list of numbers in ascending order
 quicksort = |list| {
     match list::length() {
-        0: []
-        1: list
-        _: {
+        0 => [],
+        1 => list,
+        _ => {
             pivot = list[0]
 
             less = []
@@ -17,14 +17,14 @@ quicksort = |list| {
 
             loop through list with element {
                 match {
-                    element < pivot: less::push(element)
-                    element > pivot: greater::push(element)
-                    _: equal::push(element)
+                    element < pivot => less::push(element),
+                    element > pivot => greater::push(element),
+                    _ => equal::push(element),
                 }
             }
 
             quicksort(less) + equal + quicksort(greater)
-        }
+        },
     }
 }
 

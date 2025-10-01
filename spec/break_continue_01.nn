@@ -5,8 +5,8 @@ count = 0
 loop {
     count++
     match count {
-        3: { continue }
-        5: { break }
+        3 => { continue },
+        5 => { break },
     }
 }
 

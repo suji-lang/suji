@@ -3,8 +3,8 @@ import std:println
 # Test number method calls in conditional match conditions
 x = 42
 result = match {
-    x::is_int(): "integer"
-    _: "decimal"
+    x::is_int() => "integer",
+    _ => "decimal",
 }
 
 println(result)  # integer
@@ -12,8 +12,8 @@ println(result)  # integer
 # Test number to_string method
 y = 3.14
 result2 = match {
-    y::to_string()::length() > 3: "long string representation"
-    _: "short string representation"
+    y::to_string()::length() > 3 => "long string representation",
+    _ => "short string representation",
 }
 
 println(result2)  # long string representation
@@ -21,9 +21,9 @@ println(result2)  # long string representation
 # Test mixed number methods
 z = 100
 result3 = match {
-    z::is_int() && z::to_string()::length() == 3: "three-digit integer"
-    z::is_int(): "integer"
-    _: "decimal"
+    z::is_int() && z::to_string()::length() == 3 => "three-digit integer",
+    z::is_int() => "integer",
+    _ => "decimal",
 }
 
 println(result3)  # three-digit integer
@@ -31,8 +31,8 @@ println(result3)  # three-digit integer
 # Test with decimal numbers
 w = 3.14159
 result4 = match {
-    !w::is_int(): "decimal number"
-    _: "integer"
+    !w::is_int() => "decimal number",
+    _ => "integer",
 }
 
 println(result4)  # decimal number

@@ -11,7 +11,7 @@ c = add(a, b)
 
 loop {
     match c {
-        10: { break }
+        10 => { break },
     }
     c++
 }

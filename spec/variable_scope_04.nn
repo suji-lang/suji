@@ -3,12 +3,12 @@ import std:println
 # Test no shadowing in match scope
 value = 5
 match value {
-    5: {
+    5 => {
         value = 100  # modifies outer value
-    }
-    _: {
+    },
+    _ => {
         value = 200
-    }
+    },
 }
 
 println(value)  # 100

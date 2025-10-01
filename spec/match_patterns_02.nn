@@ -4,8 +4,8 @@ import std:println
 flag = true
 result = "default"
 match flag {
-  false: { result = "false" }
-  true: { result = "true" }
+  false => { result = "false" },
+  true => { result = "true" },
 }
 
 println(result)  # true

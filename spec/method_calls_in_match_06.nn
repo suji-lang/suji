@@ -5,8 +5,8 @@ import std:println
 # Test with empty strings
 empty_text = ""
 result = match {
-    empty_text::length() == 0: "empty string"
-    _: "non-empty string"
+    empty_text::length() == 0 => "empty string",
+    _ => "non-empty string",
 }
 
 println(result)  # empty string
@@ -14,8 +14,8 @@ println(result)  # empty string
 # Test with empty lists
 empty_list = []
 result2 = match {
-    empty_list::length() == 0: "empty list"
-    _: "non-empty list"
+    empty_list::length() == 0 => "empty list",
+    _ => "non-empty list",
 }
 
 println(result2)  # empty list
@@ -23,8 +23,8 @@ println(result2)  # empty list
 # Test with empty maps
 empty_map = {}
 result3 = match {
-    empty_map::length() == 0: "empty map"
-    _: "non-empty map"
+    empty_map::length() == 0 => "empty map",
+    _ => "non-empty map",
 }
 
 println(result3)  # empty map
@@ -32,8 +32,8 @@ println(result3)  # empty map
 # Test with valid values that work
 valid_string = "hello"
 result4 = match {
-    valid_string::length() > 3: "long string"
-    _: "short string"
+    valid_string::length() > 3 => "long string",
+    _ => "short string",
 }
 
 println(result4)  # long string

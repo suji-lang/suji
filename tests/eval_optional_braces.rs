@@ -24,13 +24,13 @@ fn test_optional_braces_function_evaluation() {
 #[test]
 fn test_optional_braces_match_evaluation() {
     let result = eval_program(
-        "x = 3\nmatch x { 1: result = \"one\" 2: result = \"two\" 3: result = \"three\" _: result = \"other\" }",
+        "x = 3\nmatch x { 1 => result = \"one\", 2 => result = \"two\", 3 => result = \"three\", _ => result = \"other\", }",
     );
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::String("three".to_string()));
 
     let result = eval_program(
-        "x = 5\nmatch x { 1: result = 10 2: result = 20 3: result = 30 _: result = 0 }",
+        "x = 5\nmatch x { 1 => result = 10, 2 => result = 20, 3 => result = 30, _ => result = 0, }",
     );
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(0)));
@@ -39,7 +39,7 @@ fn test_optional_braces_match_evaluation() {
 #[test]
 fn test_optional_braces_mixed_evaluation() {
     let result = eval_program(
-        "x = 2\nmatch x { 1: result = x * 2 2: { doubled = x * 2; result = doubled + 1 } _: result = 0 }",
+        "x = 2\nmatch x { 1 => result = x * 2, 2 => { doubled = x * 2; result = doubled + 1 }, _ => result = 0, }",
     );
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(5)));
@@ -77,8 +77,9 @@ fn test_optional_braces_function_with_default_params() {
 
 #[test]
 fn test_optional_braces_nested_expressions() {
-    let result =
-        eval_program("x = 2\nmatch x { 1: result = x * 2 2: result = x + 10 _: result = 0 }");
+    let result = eval_program(
+        "x = 2\nmatch x { 1 => result = x * 2, 2 => result = x + 10, _ => result = 0, }",
+    );
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(12)));
 }
@@ -89,26 +90,27 @@ fn test_optional_braces_backward_compatibility() {
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(7)));
 
-    let result = eval_program("match 1 { 1: { result = \"one\" } 2: { result = \"two\" } }");
+    let result = eval_program("match 1 { 1 => { result = \"one\" }, 2 => { result = \"two\" }, }");
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::String("one".to_string()));
 }
 
 #[test]
 fn test_optional_braces_boolean_match() {
-    let result = eval_program("match true { true: result = 1 false: result = 0 }");
+    let result = eval_program("match true { true => result = 1, false => result = 0, }");
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(1)));
 
-    let result = eval_program("match false { true: result = 1 false: result = 0 }");
+    let result = eval_program("match false { true => result = 1, false => result = 0, }");
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(0)));
 }
 
 #[test]
 fn test_optional_braces_wildcard_match() {
-    let result =
-        eval_program("match 42 { 1: result = \"one\" 2: result = \"two\" _: result = \"other\" }");
+    let result = eval_program(
+        "match 42 { 1 => result = \"one\", 2 => result = \"two\", _ => result = \"other\", }",
+    );
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::String("other".to_string()));
 }

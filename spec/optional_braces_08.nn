@@ -2,9 +2,9 @@ import std:println
 
 # Test mixed usage - process with 5
 process = |x| match x {
-    1: x * 2
-    2: x + 10
-    _: 0
+    1 => x * 2,
+    2 => x + 10,
+    _ => 0,
 }
 
 result3 = process(5)  # 0

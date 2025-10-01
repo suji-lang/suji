@@ -3,8 +3,8 @@ import std:println
 # Match expression with boolean patterns
 flag = true
 result = match flag {
-  false: "false"
-  true: "true"
+  false => "false",
+  true => "true",
 }
 
 println(result)  # true

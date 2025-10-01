@@ -14,15 +14,15 @@ bubble_sort = |arr| {
         loop through 0..(n - i - 1) with j {
             # Use match for comparison
             match arr[j] > arr[j + 1] {
-                true: {
+                true => {
                     # Swap elements
                     temp = arr[j]
                     arr[j] = arr[j + 1]
                     arr[j + 1] = temp
-                }
-                false: {
+                },
+                false => {
                     # No swap needed
-                }
+                },
             }
         }
     }
@@ -48,32 +48,32 @@ println("Bubble sort: ${bubble_result::join(comma)}")
 # Prime number checker
 is_prime = |n| {
     match n < 2 {
-        true: { return false }
-        false: {
+        true => { return false },
+        false => {
             match n == 2 {
-                true: { return true }
-                false: {
+                true => { return true },
+                false => {
                     match n % 2 == 0 {
-                        true: { return false }
-                        false: {
+                        true => { return false },
+                        false => {
                             i = 3
                             loop {
                                 match i * i > n {
-                                    true: { break }
-                                    false: {
+                                    true => { break },
+                                    false => {
                                         match n % i == 0 {
-                                            true: { return false }
-                                            false: { i = i + 2 }
+                                            true => { return false },
+                                            false => { i = i + 2 },
                                         }
-                                    }
+                                    },
                                 }
                             }
                             return true
-                        }
+                        },
                     }
-                }
+                },
             }
-        }
+        },
     }
 }
 
@@ -82,8 +82,8 @@ generate_primes = |n| {
     primes = []
     loop through 2..(n + 1) with i {
         match is_prime(i) {
-            true: { primes::push(i) }
-            false: { }
+            true => { primes::push(i) },
+            false => { },
         }
     }
     return primes
@@ -106,8 +106,8 @@ linear_search = |arr, target| {
     i = 0
     loop through arr with item {
         match item == target {
-            true: return i
-            false: i++
+            true => return i,
+            false => i++,
         }
     }
     return -1
@@ -142,13 +142,13 @@ aggregate_data = |data| {
         sum = sum + item
 
         match item > max_val {
-            true: { max_val = item }
-            false: { }
+            true => { max_val = item },
+            false => { },
         }
 
         match item < min_val {
-            true: { min_val = item }
-            false: { }
+            true => { min_val = item },
+            false => { },
         }
     }
 
@@ -227,13 +227,13 @@ find_patterns = |data| {
         previous = data[i - 1]
 
         match current > previous {
-            true: { patterns:increasing = patterns:increasing + 1 }
-            false: {
+            true => { patterns:increasing = patterns:increasing + 1 },
+            false => {
                 match current < previous {
-                    true: { patterns:decreasing = patterns:decreasing + 1 }
-                    false: { patterns:constant = patterns:constant + 1 }
+                    true => { patterns:decreasing = patterns:decreasing + 1 },
+                    false => { patterns:constant = patterns:constant + 1 },
                 }
-            }
+            },
         }
     }
 
@@ -270,13 +270,13 @@ analyze_string = |text| {
     loop through words with word {
         word_length = word::length()
         match word_length {
-            1: { short_words = short_words + 1 }
-            2: { short_words = short_words + 1 }
-            3: { short_words = short_words + 1 }
-            4: { medium_words = medium_words + 1 }
-            5: { medium_words = medium_words + 1 }
-            6: { medium_words = medium_words + 1 }
-            _: { long_words = long_words + 1 }
+            1 => { short_words = short_words + 1 },
+            2 => { short_words = short_words + 1 },
+            3 => { short_words = short_words + 1 },
+            4 => { medium_words = medium_words + 1 },
+            5 => { medium_words = medium_words + 1 },
+            6 => { medium_words = medium_words + 1 },
+            _ => { long_words = long_words + 1 },
         }
     }
 

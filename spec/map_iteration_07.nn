@@ -6,8 +6,8 @@ result = ""
 
 loop through data with k, v {
     match k {
-        "c": { break }
-        _: result = result + k
+        "c" => { break },
+        _ => result = result + k,
     }
 }
 

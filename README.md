@@ -75,8 +75,8 @@ loop through numbers with n {
 
 # Pattern matching
 result = match 42 {
-    42: "The answer"
-    _: "Something else"
+    42 => "The answer",
+    _ => "Something else",
 }
 println(result)
 ```
@@ -310,8 +310,8 @@ Represents the absence of a value:
 ```nn
 nothing = nil
 result = match nothing {
-    nil: "No value"
-    _: "Has value"
+    nil => "No value",
+    _ => "Has value",
 }
 ```
 
@@ -392,7 +392,7 @@ import std:io
 destination = || {
     loop through io:stdin::read_lines() with line {
         match {
-            line ~ /test/: return "output received"
+            line ~ /test/ => return "output received",
         }
     }
 }
@@ -408,7 +408,7 @@ println(out)  # output received
 sink = || {
     loop through io:stdin::read_lines() with line {
         match {
-            line ~ /beta/: return "beta received"
+            line ~ /beta/ => return "beta received",
         }
     }
 }
@@ -498,8 +498,8 @@ count = 0
 loop {
     count++
     match count {
-        5: { break }
-        _: { continue }
+        5 => { break },
+        _ => { continue },
     }
 }
 
@@ -519,8 +519,8 @@ loop through config with key, value {
 loop as outer {
     loop as inner {
         match some_condition {
-            true: { break outer }  # Exit both loops
-            false: { continue inner }
+            true => { break outer },  # Exit both loops
+            false => { continue inner },
         }
     }
 }
@@ -532,36 +532,36 @@ loop as outer {
 # Basic matching
 x = 42
 result = match x {
-    42: "The answer"
-    0: "Zero"
-    _: "Something else"
+    42 => "The answer",
+    0 => "Zero",
+    _ => "Something else",
 }
 
 # Pattern matching with tuples
 point = (10, 20)
 description = match point {
-    (0, 0): "Origin"
-    (x, 0): "On x-axis"
-    (0, y): "On y-axis"
-    (_, _): "Somewhere else"
+    (0, 0) => "Origin",
+    (x, 0) => "On x-axis",
+    (0, y) => "On y-axis",
+    (_, _) => "Somewhere else",
 }
 
 # Regex patterns
 email = "user@example.com"
 type = match email {
-    /^admin@/: "Admin email"
-    /@company\.com$/: "Company email"
-    _: "Other email"
+    /^admin@/ => "Admin email",
+    /@company\.com$/ => "Company email",
+    _ => "Other email",
 }
 
 # Conditional matching
 x = 5
 y = 3
 status = match {
-    x > 10: "Very large"
-    x > 5: "Large"
-    x > 0: "Positive"
-    _: "Zero or negative"
+    x > 10 => "Very large",
+    x > 5 => "Large",
+    x > 0 => "Positive",
+    _ => "Zero or negative",
 }
 ```
 
@@ -699,9 +699,9 @@ matrix[0][1][0] = 99
 # Single expressions don't need braces
 square = |x| x * x
 result = match x {
-    1: "one"
-    2: "two"
-    _: "other"
+    1 => "one",
+    2 => "two",
+    _ => "other",
 }
 
 # Multiple expressions need braces
@@ -881,9 +881,9 @@ println("to stderr", io:stderr)
 ```nn
 fib = |n| {
     match n {
-        0: 0
-        1: 1
-        _: fib(n - 1) + fib(n - 2)
+        0 => 0,
+        1 => 1,
+        _ => fib(n - 1) + fib(n - 2),
     }
 }
 
@@ -898,9 +898,9 @@ println(fibs)  # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
 ```nn
 quicksort = |list| {
     match list::length() {
-        0: []
-        1: list
-        _: {
+        0 => [],
+        1 => list,
+        _ => {
             pivot = list[0]
             rest = list[1:]
             left = rest::filter(|x| x < pivot)
@@ -937,12 +937,12 @@ config = yaml:parse(config_yaml)
 
 # Process configuration
 match config::contains("database") {
-    true: {
+    true => {
         db_config = config:database
         connection_string = "postgresql://${db_config:host}:${db_config:port}/${db_config:name}"
         println("Connecting to: ${connection_string}")
-    }
-    false: println("No database configuration found")
+    },
+    false => println("No database configuration found"),
 }
 ```
 
@@ -1005,5 +1005,7 @@ cargo test
 - **v0.1.5**: Comprehensive method library, multiline strings
 - **v0.1.6**: ENV map, stream type, FD streams, print/println rewrite, list average, first/last defaults
 - **v0.1.7**: Rename FD->std:io and ENV->std:env:var, add stream::read_line and ::is_terminal, add std:env:args/argv, introduce pipe operator
- - **v0.1.8**: Backticks in `|` pipelines (source/middle/sink), pipe-apply operators `|>` and `<|`, add `std:random` module
- - **v0.1.9**: Decimal number semantics; `std:io:open(path)`; multiple return values and destructuring; `|` requires invocations
+- **v0.1.8**: Backticks in `|` pipelines (source/middle/sink), pipe-apply operators `|>` and `<|`, add `std:random` module
+- **v0.1.9**: Decimal number semantics; `std:io:open(path)`; multiple return values and destructuring; `|` requires invocations
+- **v0.1.10**: Runtime error spans/positions; string-literal-in-interpolation fix; module method calls in match conditions fix
+- **v0.1.11**: Match expressions syntax change

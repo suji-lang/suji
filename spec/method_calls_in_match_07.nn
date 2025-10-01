@@ -6,8 +6,8 @@ import std:println
 get_length = |s| s::length()
 text = "hello"
 result = match {
-    get_length(text) > 3: "long text"
-    _: "short text"
+    get_length(text) > 3 => "long text",
+    _ => "short text",
 }
 
 println(result)  # long text
@@ -15,9 +15,9 @@ println(result)  # long text
 # Test with arithmetic operations
 numbers = [1, 2, 3, 4, 5]
 result2 = match {
-    numbers::sum() * 2 > 20: "double sum is large"
-    numbers::sum() > 10: "sum is large"
-    _: "sum is small"
+    numbers::sum() * 2 > 20 => "double sum is large",
+    numbers::sum() > 10 => "sum is large",
+    _ => "sum is small",
 }
 
 println(result2)  # double sum is large
@@ -25,9 +25,9 @@ println(result2)  # double sum is large
 # Test with comparison operations
 data = "a,b,c,d,e,f"
 result3 = match {
-    data::split(",")::length() == 6: "exactly 6 items"
-    data::split(",")::length() > 3: "more than 3 items"
-    _: "3 or fewer items"
+    data::split(",")::length() == 6 => "exactly 6 items",
+    data::split(",")::length() > 3 => "more than 3 items",
+    _ => "3 or fewer items",
 }
 
 println(result3)  # exactly 6 items
@@ -35,9 +35,9 @@ println(result3)  # exactly 6 items
 # Test with logical operations
 config = { name: "Alice", age: 30, active: true }
 result4 = match {
-    config::contains("name") && config::contains("age"): "has both name and age"
-    config::contains("name"): "has name only"
-    _: "missing name"
+    config::contains("name") && config::contains("age") => "has both name and age",
+    config::contains("name") => "has name only",
+    _ => "missing name",
 }
 
 println(result4)  # has both name and age

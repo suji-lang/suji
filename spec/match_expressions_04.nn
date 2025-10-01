@@ -4,11 +4,11 @@ import std:println
 x = 1
 y = 2
 result = match x {
-  1: 10
-  2: 20
+  1 => 10,
+  2 => 20,
 } + match y {
-  1: 5
-  2: 15
+  1 => 5,
+  2 => 15,
 }
 
 println(result)  # 25

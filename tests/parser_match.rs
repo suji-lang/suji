@@ -4,7 +4,7 @@ use common::{parse_expression, parse_statement};
 
 #[test]
 fn test_parse_match_single_expression() {
-    let result = parse_statement("match x { 1: \"one\" 2: \"two\" _: \"other\" }");
+    let result = parse_statement("match x { 1 => \"one\", 2 => \"two\", _ => \"other\", }");
     assert!(result.is_ok());
 
     if let Ok(Stmt::Expr(Expr::Match {
@@ -79,7 +79,7 @@ fn test_parse_match_single_expression() {
 
 #[test]
 fn test_parse_match_block() {
-    let result = parse_statement("match x { 1: { return \"one\" } 2: { return \"two\" } }");
+    let result = parse_statement("match x { 1 => { return \"one\" }, 2 => { return \"two\" }, }");
     assert!(result.is_ok());
 
     if let Ok(Stmt::Expr(Expr::Match {
@@ -131,7 +131,8 @@ fn test_parse_match_block() {
 
 #[test]
 fn test_parse_mixed_syntax() {
-    let result = parse_statement("match x { 1: \"one\" 2: { return \"two\" } _: \"other\" }");
+    let result =
+        parse_statement("match x { 1 => \"one\", 2 => { return \"two\" }, _ => \"other\", }");
     assert!(result.is_ok());
 
     if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
@@ -155,7 +156,7 @@ fn test_parse_mixed_syntax() {
 
 #[test]
 fn test_parse_nil_pattern() {
-    let result = parse_statement("match x { nil: \"empty\" _: \"something\" }");
+    let result = parse_statement("match x { nil => \"empty\", _ => \"something\", }");
     assert!(result.is_ok());
 
     if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
@@ -179,7 +180,7 @@ fn test_parse_nil_pattern() {
 
 #[test]
 fn test_parse_nil_pattern_in_expression() {
-    let result = parse_expression("match x { nil: \"empty\" _: \"something\" }");
+    let result = parse_expression("match x { nil => \"empty\", _ => \"something\", }");
     assert!(result.is_ok());
 
     if let Ok(Expr::Match { arms, .. }) = result {
@@ -199,7 +200,7 @@ fn test_parse_nil_pattern_in_expression() {
 
 #[test]
 fn test_parse_return_statements_in_non_braced_match_arms() {
-    let result = parse_statement("match x { 1: return 1 2: return 2 _: return 0 }");
+    let result = parse_statement("match x { 1 => return 1, 2 => return 2, _ => return 0, }");
     if result.is_err() {
         println!("Parse error: {:?}", result);
     }
@@ -220,8 +221,9 @@ fn test_parse_return_statements_in_non_braced_match_arms() {
 
 #[test]
 fn test_parse_map_literals_in_match_arms() {
-    let result =
-        parse_statement("match x { 1: { \"status\": \"success\" } 2: { \"status\": \"error\" } }");
+    let result = parse_statement(
+        "match x { 1 => { \"status\": \"success\" }, 2 => { \"status\": \"error\" }, }",
+    );
     if result.is_err() {
         println!("Parse error: {:?}", result);
     }
@@ -238,4 +240,25 @@ fn test_parse_map_literals_in_match_arms() {
     } else {
         panic!("Expected match statement");
     }
+}
+
+#[test]
+fn test_parse_match_error_missing_comma() {
+    // Missing comma after first arm
+    let result = parse_statement("match x { 1 => \"one\" 2 => \"two\" }");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_parse_match_error_missing_comma_last_arm() {
+    // Missing comma after last arm
+    let result = parse_statement("match x { 1 => \"one\", 2 => \"two\" }");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_parse_match_error_legacy_colon_syntax() {
+    // Using old : syntax instead of =>
+    let result = parse_statement("match x { 1: \"one\", 2: \"two\", }");
+    assert!(result.is_err());
 }

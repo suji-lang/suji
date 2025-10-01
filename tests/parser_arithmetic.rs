@@ -179,7 +179,7 @@ fn test_parse_comparison_operators() {
 #[test]
 fn test_parse_nested_expressions_without_braces() {
     // Since match is a statement, not an expression, we test it as a statement
-    let result = parse_statement("match x { 1: x * 2 2: x + 10 _: 0 }");
+    let result = parse_statement("match x { 1 => x * 2, 2 => x + 10, _ => 0, }");
     if result.is_err() {
         println!("Parse error: {:?}", result);
     }

@@ -3,8 +3,8 @@ import std:println
 # Basic conditional match
 x = 5
 result = match {
-    x > 0: "positive"
-    _: "non-positive"
+    x > 0 => "positive",
+    _ => "non-positive",
 }
 
 println(result)  # positive

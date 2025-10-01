@@ -11,7 +11,7 @@ make_destination = || {
     return || {
         loop through io:stdin::read_lines() with line {
             match {
-                line ~ /test/: return "output received"
+                line ~ /test/ => return "output received",
             }
         }
     }
@@ -62,7 +62,7 @@ make_sink = || {
     return || {
         loop through io:stdin::read_lines() with line {
             match {
-                line ~ /beta/: return "beta received"
+                line ~ /beta/ => return "beta received",
             }
         }
     }
@@ -123,7 +123,7 @@ consumer = |pattern| {
     return || {
         loop through io:stdin::read_lines() with line {
             match {
-                line ~ pattern: return line
+                line ~ pattern => return line,
             }
         }
     }

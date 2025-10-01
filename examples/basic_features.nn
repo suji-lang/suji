@@ -130,10 +130,10 @@ loop through colors with color, code {
 # Match statement
 classify_number = |n| {
     match n {
-        0: { return "zero" }
-        1: { return "one" }
-        2: { return "two" }
-        _: { return "other" }
+        0 => { return "zero" },
+        1 => { return "one" },
+        2 => { return "two" },
+        _ => { return "other" },
     }
 }
 

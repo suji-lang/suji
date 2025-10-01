@@ -3,8 +3,8 @@ import std:println
 # Test nested tuple pattern with wildcards
 nested = ((1, 2), (3, 4))
 result = match nested {
-    ((_, _), (3, _)): "nested match"
-    _: "no match"
+    ((_, _), (3, _)) => "nested match",
+    _ => "no match",
 }
 
 println(result)  # nested match

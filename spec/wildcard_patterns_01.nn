@@ -3,8 +3,8 @@ import std:println
 # Test basic wildcard pattern in tuple
 data = (2, "something", "four")
 result = match data {
-    (2, _, "four"): "partial match"
-    _: "no match"
+    (2, _, "four") => "partial match",
+    _ => "no match",
 }
 
 println(result)  # partial match

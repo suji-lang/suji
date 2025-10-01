@@ -6,8 +6,8 @@ found = false
 
 loop through mixed with k, v {
     match k {
-        "string": found = true
-        _: {}
+        "string" => found = true,
+        _ => {},
     }
 }
 

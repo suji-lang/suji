@@ -3,9 +3,9 @@ import std:println
 # Match expression with wildcard pattern
 x = 99
 result = match x {
-  1: "one"
-  2: "two"
-  _: "other"
+  1 => "one",
+  2 => "two",
+  _ => "other",
 }
 
 println(result)  # other

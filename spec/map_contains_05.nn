@@ -9,15 +9,15 @@ user_data = {
 
 # Use contains in match statement
 status = match user_data::contains("email") {
-    true: "User has email"
-    false: "User missing email"
+    true => "User has email",
+    false => "User missing email",
 }
 
 # Use contains in conditional
 has_age = user_data::contains("age")
 age_info = match has_age {
-    true: "Age: " + user_data:age::to_string()
-    false: "Age not specified"
+    true => "Age: " + user_data:age::to_string(),
+    false => "Age not specified",
 }
 
 # Combine results

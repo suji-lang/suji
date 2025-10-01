@@ -3,8 +3,8 @@ import std:println
 # Test single element tuple with wildcard
 data = (42,)
 result = match data {
-    (_): "single wildcard match"
-    _: "no match"
+    (_) => "single wildcard match",
+    _ => "no match",
 }
 
 println(result)  # single wildcard match

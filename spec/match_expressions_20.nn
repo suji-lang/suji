@@ -2,9 +2,9 @@ import std:println
 
 # Test map literals in match arms
 result = match 1 {
-    1: { "status": "success", "value": 42 }
-    2: { "status": "error", "message": "failed" }
-    _: { "status": "unknown" }
+    1 => { "status": "success", "value": 42 },
+    2 => { "status": "error", "message": "failed" },
+    _ => { "status": "unknown" },
 }
 
 println(result:status)  # success

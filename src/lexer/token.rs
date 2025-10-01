@@ -89,6 +89,8 @@ pub enum Token {
     RegexEnd, // /
 
     // Operators
+    #[token("=>")]
+    FatArrow,
     #[token("=")]
     Assign,
     #[token("+")]

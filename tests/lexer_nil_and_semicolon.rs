@@ -47,7 +47,7 @@ fn test_semicolon_token() {
 
 #[test]
 fn test_nil_in_match_pattern() {
-    let input = "match x { nil: \"empty\"; _: \"something\" }";
+    let input = "match x { nil => \"empty\", _ => \"something\", }";
     let tokens = Lexer::lex(input).unwrap();
 
     let expected = vec![
@@ -55,16 +55,17 @@ fn test_nil_in_match_pattern() {
         Token::Identifier("x".to_string()),
         Token::LeftBrace,
         Token::Nil,
-        Token::Colon,
+        Token::FatArrow,
         Token::StringStart,
         Token::StringText("empty".to_string()),
         Token::StringEnd,
-        Token::Semicolon,
+        Token::Comma,
         Token::Underscore,
-        Token::Colon,
+        Token::FatArrow,
         Token::StringStart,
         Token::StringText("something".to_string()),
         Token::StringEnd,
+        Token::Comma,
         Token::RightBrace,
         Token::Eof,
     ];

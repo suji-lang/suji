@@ -10,8 +10,8 @@ fn test_nil_pattern_matching() {
         r#"
         user = nil
         result = match user {
-            nil: "No user found"
-            _: "Some user found"
+            nil => "No user found",
+            _ => "Some user found",
         }
         result
     "#,
@@ -26,9 +26,9 @@ fn test_return_statements_in_match_arms() {
         r#"
         f = || {
             match 1 {
-                1: return 1
-                2: return 2
-                _: return 0
+                1 => return 1,
+                2 => return 2,
+                _ => return 0,
             }
         }
         f()
@@ -44,9 +44,9 @@ fn test_implicit_returns_in_match_arms() {
         r#"
         g = || {
             match 1 {
-                1: 1
-                2: 2
-                _: 0
+                1 => 1,
+                2 => 2,
+                _ => 0,
             }
         }
         g()
@@ -61,9 +61,9 @@ fn test_map_literals_in_match_arms() {
     let result = eval_program(
         r#"
         result = match 1 {
-            1: { "status": "success", "value": 42 }
-            2: { "status": "error", "message": "failed" }
-            _: { "status": "unknown" }
+            1 => { "status": "success", "value": 42 },
+            2 => { "status": "error", "message": "failed" },
+            _ => { "status": "unknown" },
         }
         result:status
     "#,
@@ -79,12 +79,12 @@ fn test_mixed_match_arm_syntax() {
         import std:println
         h = || {
             match 1 {
-                1: {
+                1 => {
                     println("one")
                     return 1
-                }
-                2: 2
-                _: return 0
+                },
+                2 => 2,
+                _ => return 0,
             }
         }
         h()
@@ -100,14 +100,14 @@ fn test_complex_nil_handling() {
         r#"
         find_user = |id| {
             match id {
-                1: { "name": "Alice" }
-                2: { "name": "Bob" }
-                _: nil
+                1 => { "name": "Alice" },
+                2 => { "name": "Bob" },
+                _ => nil,
             }
         }
         user_info = match find_user(3) {
-            nil: "User not found"
-            user: "User: " + user:name
+            nil => "User not found",
+            user => "User: " + user:name,
         }
         user_info
     "#,

@@ -99,8 +99,8 @@ fn test_map_iteration_control_flow_break() {
         result = ""
         loop through map with k, v {
             match k {
-                "c": { break }
-                _: result = result + k
+                "c" => { break },
+                _ => result = result + k,
             }
         }
         result

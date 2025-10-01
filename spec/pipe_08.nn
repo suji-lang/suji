@@ -5,8 +5,8 @@ sink = || {
     return || {
         line = io:stdin::read_line()
         match line {
-            nil: "none"
-            _: line
+            nil => "none",
+            _ => line,
         }
     }
 }

@@ -135,6 +135,8 @@ impl NormalScanner {
             '=' => {
                 if context.match_char('=') {
                     Token::Equal
+                } else if context.match_char('>') {
+                    Token::FatArrow
                 } else {
                     Token::Assign
                 }

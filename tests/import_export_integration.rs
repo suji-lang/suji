@@ -82,8 +82,8 @@ fn test_integration_with_existing_features() {
         import std:println
         x = 42
         match x {
-            42: { println("Found the answer!") }
-            _: { println("Not the answer") }
+            42 => { println("Found the answer!") },
+            _ => { println("Not the answer") },
         }
     "#,
     );

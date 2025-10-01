@@ -4,9 +4,9 @@ import std:println
 f = || {
   x = 3
   return match x {
-    1: "first"
-    2: "second"
-    3: "third"
+    1 => "first",
+    2 => "second",
+    3 => "third",
   }
 }
 

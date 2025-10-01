@@ -3,8 +3,8 @@ import std:println
 # Match expression with no matching pattern
 x = 99
 result = match x {
-  1: "one"
-  2: "two"
+  1 => "one",
+  2 => "two",
 }
 
 println(result)  # nil

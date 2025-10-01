@@ -9,9 +9,9 @@ result = ""
 
 loop through nested with section, data {
     match section {
-        "user": result = result + "user "
-        "settings": result = result + "settings "
-        _: {}
+        "user" => result = result + "user ",
+        "settings" => result = result + "settings ",
+        _ => {},
     }
 }
 

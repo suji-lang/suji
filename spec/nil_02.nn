@@ -3,9 +3,9 @@ import std:println
 # Test function that may return nil
 find_user = |id| {
     match id {
-        1: { return { "name": "Alice" } }
-        2: { return { "name": "Bob" } }
-        _: nil    # no user found
+        1 => { return { "name": "Alice" } },
+        2 => { return { "name": "Bob" } },
+        _ => nil,    # no user found
     }
 }
 

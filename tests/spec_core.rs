@@ -53,7 +53,7 @@ fn test_function_implicit_return_and_match_expression() {
 
     // Match as an expression yielding a value
     let result =
-        eval_program("x = 3\ny = match x { 3: { 5 + 5 } 4: { 2 * 3 } }\nresult = y").unwrap();
+        eval_program("x = 3\ny = match x { 3 => { 5 + 5 }, 4 => { 2 * 3 }, }\nresult = y").unwrap();
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(10)));
 }
 
@@ -65,7 +65,8 @@ fn test_optional_braces_for_functions_and_match_arms() {
 
     // Match arms without braces
     let result =
-        eval_program("x = 5\nresult = match x { 5: \"five\" 6: \"six\" _: \"other\" }").unwrap();
+        eval_program("x = 5\nresult = match x { 5 => \"five\", 6 => \"six\", _ => \"other\", }")
+            .unwrap();
     assert_eq!(result, Value::String("five".to_string()));
 }
 

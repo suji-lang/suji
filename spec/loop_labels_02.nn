@@ -9,11 +9,11 @@ loop as outer_loop {
         inner++
 
         match outer {
-            2: { break outer_loop }
+            2 => { break outer_loop },
         }
 
         match inner >= 3 {
-            true: { continue outer_loop }
+            true => { continue outer_loop },
         }
     }
 }

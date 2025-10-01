@@ -9,8 +9,8 @@ fn test_conditional_match_basic() {
         r#"
         x = 5
         result = match {
-            x > 0: "positive"
-            _: "non-positive"
+            x > 0 => "positive",
+            _ => "non-positive",
         }
         result
     "#,
@@ -25,10 +25,10 @@ fn test_conditional_match_multiple_conditions() {
         r#"
         x = 7
         result = match {
-            x > 10: "very large"
-            x > 5: "large"
-            x > 0: "positive"
-            _: "non-positive"
+            x > 10 => "very large",
+            x > 5 => "large",
+            x > 0 => "positive",
+            _ => "non-positive",
         }
         result
     "#,
@@ -44,10 +44,10 @@ fn test_conditional_match_complex_boolean() {
         x = 3
         y = 4
         result = match {
-            x > 0 && y > 0: "both positive"
-            x > 0: "only x positive"
-            y > 0: "only y positive"
-            _: "neither positive"
+            x > 0 && y > 0 => "both positive",
+            x > 0 => "only x positive",
+            y > 0 => "only y positive",
+            _ => "neither positive",
         }
         result
     "#,
@@ -62,10 +62,10 @@ fn test_conditional_match_in_function() {
         r#"
         f = |x| {
             return match {
-                x > 10: "very large"
-                x > 5: "large"
-                x > 0: "positive"
-                _: "non-positive"
+                x > 10 => "very large",
+                x > 5 => "large",
+                x > 0 => "positive",
+                _ => "non-positive",
             }
         }
         f(15)
@@ -83,14 +83,14 @@ fn test_conditional_match_mixed_with_traditional() {
         y = 3
 
         result1 = match x {
-            1: "one"
-            2: "two"
-            _: "other"
+            1 => "one",
+            2 => "two",
+            _ => "other",
         }
 
         result2 = match {
-            y > 2: "y is large"
-            _: "y is small"
+            y > 2 => "y is large",
+            _ => "y is small",
         }
 
         result1 + " " + result2
@@ -106,9 +106,9 @@ fn test_conditional_match_all_conditions_false() {
         r#"
         x = -5
         result = match {
-            x > 0: "positive"
-            x > -10: "small negative"
-            _: "large negative"
+            x > 0 => "positive",
+            x > -10 => "small negative",
+            _ => "large negative",
         }
         result
     "#,
@@ -123,9 +123,9 @@ fn test_conditional_match_with_wildcard() {
         r#"
         x = 0
         result = match {
-            x > 0: "positive"
-            x < 0: "negative"
-            _: "zero"
+            x > 0 => "positive",
+            x < 0 => "negative",
+            _ => "zero",
         }
         result
     "#,
@@ -141,11 +141,11 @@ fn test_conditional_match_nested() {
         x = 3
         y = 4
         result = match {
-            x > 0: match {
-                y > 0: "both positive"
-                _: "x positive, y non-positive"
-            }
-            _: "x non-positive"
+            x > 0 => match {
+                y > 0 => "both positive",
+                _ => "x positive, y non-positive",
+            },
+            _ => "x non-positive",
         }
         result
     "#,
@@ -161,11 +161,11 @@ fn test_conditional_match_in_binary_operation() {
         x = 5
         y = 3
         result = match {
-            x > 0: 10
-            _: 0
+            x > 0 => 10,
+            _ => 0,
         } + match {
-            y > 0: 5
-            _: 0
+            y > 0 => 5,
+            _ => 0,
         }
         result
     "#,
@@ -180,9 +180,9 @@ fn test_conditional_match_with_string_comparison() {
         r#"
         name = "alice"
         result = match {
-            name == "alice": "Hello Alice"
-            name == "bob": "Hello Bob"
-            _: "Hello stranger"
+            name == "alice" => "Hello Alice",
+            name == "bob" => "Hello Bob",
+            _ => "Hello stranger",
         }
         result
     "#,

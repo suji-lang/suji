@@ -5,7 +5,7 @@ counter = 0
 loop {
   counter++
   match counter {
-    5: { break }
+    5 => { break },
   }
 }
 

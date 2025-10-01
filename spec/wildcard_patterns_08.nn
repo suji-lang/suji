@@ -3,8 +3,8 @@ import std:println
 # Test wildcards with other pattern types
 data = (1, "test", true, 3.14)
 result = match data {
-    (1, _, true, _): "number and boolean match with wildcards"
-    _: "no match"
+    (1, _, true, _) => "number and boolean match with wildcards",
+    _ => "no match",
 }
 
 println(result)  # number and boolean match with wildcards

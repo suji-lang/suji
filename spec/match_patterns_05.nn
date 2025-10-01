@@ -4,8 +4,8 @@ import std:println
 x = 5
 result = "default"
 match x {
-  5: { result = "first" }
-  5: { result = "second" }
+  5 => { result = "first" },
+  5 => { result = "second" },
 }
 
 println(result)  # first

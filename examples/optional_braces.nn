@@ -20,43 +20,43 @@ process = |x| {
 
 # Match with single expressions (no braces needed)
 match 3 {
-    1: result1 = "one"
-    2: result1 = "two" 
-    3: result1 = "three"
-    _: result1 = "other"
+    1 => result1 = "one",
+    2 => result1 = "two",
+    3 => result1 = "three",
+    _ => result1 = "other",
 }
 
 match true {
-    true: result2 = 1
-    false: result2 = 0
+    true => result2 = 1,
+    false => result2 = 0,
 }
 
 # Match with blocks (braces still work)
 match 2 {
-    1: {
+    1 => {
         result3 = "one"
-    }
-    2: {
+    },
+    2 => {
         result3 = "two"
-    }
-    _: result3 = "other"
+    },
+    _ => result3 = "other",
 }
 
 # Mixed match syntax
 match 1 {
-    1: result4 = "one"  # single expression
-    2: {      # block
+    1 => result4 = "one",  # single expression
+    2 => {      # block
         result4 = "two"
-    }
-    _: result4 = "other"  # single expression
+    },
+    _ => result4 = "other",  # single expression
 }
 
 # Nested expressions without braces
 nested = |x| {
     match x {
-        1: result = x * 2
-        2: result = x + 10
-        _: result = 0
+        1 => result = x * 2,
+        2 => result = x + 10,
+        _ => result = 0,
     }
     result
 }
@@ -64,8 +64,8 @@ nested = |x| {
 # Complex nested expressions
 complex = |x| {
     match x > 0 {
-        true: result = x * 2
-        false: result = 0
+        true => result = x * 2,
+        false => result = 0,
     }
     result
 }

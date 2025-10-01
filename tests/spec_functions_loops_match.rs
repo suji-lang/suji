@@ -89,12 +89,12 @@ fn test_function_scope_and_loops() {
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 
     let result = eval_program(
-        "counter = 0\nloop { counter++; match counter { 5: { break } } }\nresult = counter",
+        "counter = 0\nloop { counter++; match counter { 5 => { break }, } }\nresult = counter",
     )
     .unwrap();
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
 
-    let result = eval_program("sum = 0\ni = 0\nloop { i++; match i { 3: { continue } 6: { break } } sum = sum + i }\nresult = sum").unwrap();
+    let result = eval_program("sum = 0\ni = 0\nloop { i++; match i { 3 => { continue }, 6 => { break }, } sum = sum + i }\nresult = sum").unwrap();
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(12)));
 
     let result = eval_program("count = 0\nloop through 0..5 { count++ }\nresult = count").unwrap();
@@ -123,82 +123,88 @@ fn test_loop_through_bindings_and_match() {
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
     let result =
-        eval_program("i = 0\nloop as outer { i++; match i { 3: { break outer } } }\nresult = i")
+        eval_program("i = 0\nloop as outer { i++; match i { 3 => { break outer }, } }\nresult = i")
             .unwrap();
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
-    let result = eval_program("counter = 0\nloop as my_loop { counter++; match counter { 5: { break my_loop } } }\nresult = counter").unwrap();
+    let result = eval_program("counter = 0\nloop as my_loop { counter++; match counter { 5 => { break my_loop }, } }\nresult = counter").unwrap();
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(5)));
 
     let result = eval_program(
-        "x = 42\nmatch x { 42: { result = \"found\" } 99: { result = \"not found\" } }",
+        "x = 42\nmatch x { 42 => { result = \"found\" }, 99 => { result = \"not found\" }, }",
     )
     .unwrap();
     assert_eq!(result, Value::String("found".to_string()));
 
     let result = eval_program(
-        "flag = true\nmatch flag { false: { result = \"false\" } true: { result = \"true\" } }",
+        "flag = true\nmatch flag { false => { result = \"false\" }, true => { result = \"true\" }, }",
     )
     .unwrap();
     assert_eq!(result, Value::String("true".to_string()));
 
-    let result = eval_program("x = 2\nmatch x { 1: { result = \"one\" } 2: { result = \"two\" } 3: { result = \"three\" } }").unwrap();
+    let result = eval_program("x = 2\nmatch x { 1 => { result = \"one\" }, 2 => { result = \"two\" }, 3 => { result = \"three\" }, }").unwrap();
     assert_eq!(result, Value::String("two".to_string()));
 
-    let result =
-        eval_program("x = 5\nmatch x { 5: { result = \"first\" } 5: { result = \"second\" } }")
-            .unwrap();
+    let result = eval_program(
+        "x = 5\nmatch x { 5 => { result = \"first\" }, 5 => { result = \"second\" }, }",
+    )
+    .unwrap();
     assert_eq!(result, Value::String("first".to_string()));
 
-    let result =
-        eval_program("x = 99\nmatch x { 1: { result = \"one\" } _: { result = \"wildcard\" } }")
-            .unwrap();
+    let result = eval_program(
+        "x = 99\nmatch x { 1 => { result = \"one\" }, _ => { result = \"wildcard\" }, }",
+    )
+    .unwrap();
     assert_eq!(result, Value::String("wildcard".to_string()));
 
-    let result =
-        eval_program("x = 1\nmatch x { 1: { result = \"one\" } _: { result = \"wildcard\" } }")
-            .unwrap();
+    let result = eval_program(
+        "x = 1\nmatch x { 1 => { result = \"one\" }, _ => { result = \"wildcard\" }, }",
+    )
+    .unwrap();
     assert_eq!(result, Value::String("one".to_string()));
 }
 
 #[test]
 fn test_match_patterns_regex_tuples_and_nil() {
     // Regex pattern in match arm
-    let result =
-        eval_program("s = \"user_123\"\nresult = match s { /^user_[0-9]+$/: \"ok\" _: \"no\" }")
-            .unwrap();
+    let result = eval_program(
+        "s = \"user_123\"\nresult = match s { /^user_[0-9]+$/ => \"ok\", _ => \"no\", }",
+    )
+    .unwrap();
     assert_eq!(result, Value::String("ok".to_string()));
 
     // Tuple patterns and wildcards
     let result = eval_program(
-        "t = (2, 10, 0)\nresult = match t {\n  (3, 4, 0): \"exact\",\n  (2, 10, 0): \"partial\",\n  _: \"none\"\n }",
+        "t = (2, 10, 0)\nresult = match t {\n  (3, 4, 0) => \"exact\",\n  (2, 10, 0) => \"partial\",\n  _ => \"none\",\n }",
     )
     .unwrap();
     assert_eq!(result, Value::String("partial".to_string()));
 
     // Nil in match arms
-    let result = eval_program("x = nil\nresult = match x { nil: \"none\" _: \"some\" }").unwrap();
+    let result =
+        eval_program("x = nil\nresult = match x { nil => \"none\", _ => \"some\", }").unwrap();
     assert_eq!(result, Value::String("none".to_string()));
 }
 
 #[test]
 fn test_match_without_expression_and_method_calls_in_conditions() {
     // Conditional match (no expression)
-    let result =
-        eval_program("x = 5\nresult = match { x > 10: \"big\" x > 0: \"positive\" _: \"other\" }")
-            .unwrap();
+    let result = eval_program(
+        "x = 5\nresult = match { x > 10 => \"big\", x > 0 => \"positive\", _ => \"other\", }",
+    )
+    .unwrap();
     assert_eq!(result, Value::String("positive".to_string()));
 
     // Method calls in conditions
     let result = eval_program(
-        "text = \"hello world\"\nresult = match { text::contains(\"world\"): \"has world\" text::length() > 10: \"long\" _: \"short\" }",
+        "text = \"hello world\"\nresult = match { text::contains(\"world\") => \"has world\", text::length() > 10 => \"long\", _ => \"short\", }",
     )
     .unwrap();
     assert_eq!(result, Value::String("has world".to_string()));
 
     // Labeled continue example
     let result = eval_program(
-        "outer = 0\nloop as outer_loop {\n  match outer { 2: { break outer_loop } }\n  inner = 0\n  loop {\n    inner++\n    match inner { 3: { outer++; continue outer_loop } }\n  }\n}\nresult = outer",
+        "outer = 0\nloop as outer_loop {\n  match outer { 2 => { break outer_loop }, }\n  inner = 0\n  loop {\n    inner++\n    match inner { 3 => { outer++; continue outer_loop }, }\n  }\n}\nresult = outer",
     )
     .unwrap();
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
@@ -206,6 +212,7 @@ fn test_match_without_expression_and_method_calls_in_conditions() {
 
 #[test]
 fn test_tuple_wildcard_pattern() {
-    let result = eval_program("t = (2, 3)\nresult = match t { (2, _): \"ok\" _: \"no\" }").unwrap();
+    let result =
+        eval_program("t = (2, 3)\nresult = match t { (2, _) => \"ok\", _ => \"no\", }").unwrap();
     assert_eq!(result, Value::String("ok".to_string()));
 }

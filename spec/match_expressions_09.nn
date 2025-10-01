@@ -4,13 +4,13 @@ import std:println
 x = 1
 y = 2
 result = match x {
-  1: match y {
-    1: "both one"
-    2: "x is one, y is two"
-    _: "x is one, y is other"
-  }
-  2: "x is two"
-  _: "x is other"
+  1 => match y {
+    1 => "both one",
+    2 => "x is one, y is two",
+    _ => "x is one, y is other",
+  },
+  2 => "x is two",
+  _ => "x is other",
 }
 
 println(result)  # x is one, y is two

@@ -10,10 +10,10 @@ result = ""
 
 loop through complex with k, v {
     match k {
-        "list": result = result + "list "
-        "map": result = result + "map "
-        "func": result = result + "func "
-        _: {}
+        "list" => result = result + "list ",
+        "map" => result = result + "map ",
+        "func" => result = result + "func ",
+        _ => {},
     }
 }
 
