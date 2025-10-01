@@ -1,0 +1,5 @@
+import std:println
+
+msg = 'Single with ${"double"}'
+
+println(msg)  # Single with double

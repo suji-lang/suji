@@ -22,6 +22,92 @@ fn test_string_interpolation_simple() {
 }
 
 #[test]
+fn test_string_interpolation_nested_double_quotes() {
+    let input = r#""Hello ${"world"}""#;
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::StringStart,
+        Token::StringText("Hello ".to_string()),
+        Token::InterpStart,
+        Token::StringStart,
+        Token::StringText("world".to_string()),
+        Token::StringEnd,
+        Token::InterpEnd,
+        Token::StringEnd,
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_string_interpolation_nested_single_quotes() {
+    let input = r#""Hello ${'world'}""#;
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::StringStart,
+        Token::StringText("Hello ".to_string()),
+        Token::InterpStart,
+        Token::StringStart,
+        Token::StringText("world".to_string()),
+        Token::StringEnd,
+        Token::InterpEnd,
+        Token::StringEnd,
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_string_interpolation_mixed_quotes() {
+    let input = r#"'Hello ${"world"}'"#;
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::StringStart,
+        Token::StringText("Hello ".to_string()),
+        Token::InterpStart,
+        Token::StringStart,
+        Token::StringText("world".to_string()),
+        Token::StringEnd,
+        Token::InterpEnd,
+        Token::StringEnd,
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_string_interpolation_nested_with_expression() {
+    let input = r#""Result: ${"value: " + x}""#;
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::StringStart,
+        Token::StringText("Result: ".to_string()),
+        Token::InterpStart,
+        Token::StringStart,
+        Token::StringText("value: ".to_string()),
+        Token::StringEnd,
+        Token::Plus,
+        Token::Identifier("x".to_string()),
+        Token::InterpEnd,
+        Token::StringEnd,
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn test_string_interpolation_expression() {
     let input = r#""Result: ${a + b * 2}""#;
     let tokens = Lexer::lex(input).unwrap();

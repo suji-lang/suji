@@ -18,7 +18,7 @@ alphabet = {
 
 translate_letter = |letter| {
     match {
-        alphabet::contains(letter): random:pick(alphabet::get(letter))
+        alphabet::contains(letter): alphabet::get(letter)::to_list() |> random:pick
         _: letter
     }
 }
@@ -37,7 +37,7 @@ out = match io:stdin::is_terminal() {
     false: io:stdin
             ::read_lines()
             ::map(|line| line |> translate_string)
-            ::join("")
+            ::join("\n")
 
 }
 

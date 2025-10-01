@@ -210,8 +210,18 @@ fn print_parse_error(error: ParseError, context: &DiagnosticContext) {
 
 /// Print a runtime error using ariadne
 fn print_runtime_error(error: RuntimeError, context: &DiagnosticContext) {
+    // Check if error has an embedded span (preferred path)
+    if let Some(span) = error.span() {
+        // Use the embedded span for precise error highlighting
+        let template = error.without_span().to_template();
+        let _ = ErrorBuilder::new(template, context.clone()).print_with_span(span);
+        return;
+    }
+
+    // Fall back to special cases and heuristics for errors without spans
+
     // Handle special case for UndefinedVariable with variable name suggestions
-    if let RuntimeError::UndefinedVariable { name } = &error {
+    if let RuntimeError::UndefinedVariable { name } = error.without_span() {
         let suggestions = find_similar_variables(name, &context.source);
         let mut template = error.to_template();
 

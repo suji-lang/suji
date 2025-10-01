@@ -140,6 +140,157 @@ impl Expr {
                 | Expr::Destructure { .. }
         )
     }
+
+    /// Compute a covering span that encompasses this entire expression.
+    /// For multi-token expressions (like binary ops, method calls), this
+    /// returns a span from the leftmost child's start to the rightmost child's end.
+    pub fn covering_span(&self) -> Span {
+        match self {
+            // Literal uses its own span
+            Expr::Literal(lit) => lit.span().clone(),
+
+            // Unary: combine operator span with child expression
+            Expr::Unary { expr, span, .. } => {
+                let child_span = expr.covering_span();
+                combine_spans(span, &child_span)
+            }
+
+            // Binary: combine left, operator, and right
+            Expr::Binary {
+                left, right, span, ..
+            } => {
+                let left_span = left.covering_span();
+                let right_span = right.covering_span();
+                combine_three_spans(&left_span, span, &right_span)
+            }
+
+            // Call: from callee to last arg (or closing paren)
+            Expr::Call {
+                callee, args, span, ..
+            } => {
+                let callee_span = callee.covering_span();
+                if let Some(last_arg) = args.last() {
+                    let last_span = last_arg.covering_span();
+                    combine_three_spans(&callee_span, span, &last_span)
+                } else {
+                    combine_spans(&callee_span, span)
+                }
+            }
+
+            // MethodCall: from target to last arg (or closing paren)
+            Expr::MethodCall {
+                target, args, span, ..
+            } => {
+                let target_span = target.covering_span();
+                if let Some(last_arg) = args.last() {
+                    let last_span = last_arg.covering_span();
+                    combine_three_spans(&target_span, span, &last_span)
+                } else {
+                    combine_spans(&target_span, span)
+                }
+            }
+
+            // Index: from target through index
+            Expr::Index {
+                target,
+                index,
+                span,
+                ..
+            } => {
+                let target_span = target.covering_span();
+                let index_span = index.covering_span();
+                combine_three_spans(&target_span, span, &index_span)
+            }
+
+            // Slice: from target through end (if present) or start (if present)
+            Expr::Slice {
+                target,
+                start,
+                end,
+                span,
+                ..
+            } => {
+                let target_span = target.covering_span();
+                let last_span = if let Some(e) = end {
+                    e.covering_span()
+                } else if let Some(s) = start {
+                    s.covering_span()
+                } else {
+                    span.clone()
+                };
+                combine_three_spans(&target_span, span, &last_span)
+            }
+
+            // MapAccessByName: from target through key
+            Expr::MapAccessByName { target, span, .. } => {
+                let target_span = target.covering_span();
+                combine_spans(&target_span, span)
+            }
+
+            // Assign: from target through value
+            Expr::Assign {
+                target,
+                value,
+                span,
+                ..
+            } => {
+                let target_span = target.covering_span();
+                let value_span = value.covering_span();
+                combine_three_spans(&target_span, span, &value_span)
+            }
+
+            // CompoundAssign: from target through value
+            Expr::CompoundAssign {
+                target,
+                value,
+                span,
+                ..
+            } => {
+                let target_span = target.covering_span();
+                let value_span = value.covering_span();
+                combine_three_spans(&target_span, span, &value_span)
+            }
+
+            // Grouping: use the inner expression's covering span
+            Expr::Grouping { expr, span, .. } => {
+                let expr_span = expr.covering_span();
+                combine_spans(span, &expr_span)
+            }
+
+            // Destructure: from first to last element
+            Expr::Destructure { elements, span, .. } => {
+                if let (Some(first), Some(last)) = (elements.first(), elements.last()) {
+                    let first_span = first.covering_span();
+                    let last_span = last.covering_span();
+                    combine_three_spans(&first_span, span, &last_span)
+                } else {
+                    span.clone()
+                }
+            }
+
+            // These variants already have comprehensive spans
+            Expr::PostfixIncrement { span, .. }
+            | Expr::PostfixDecrement { span, .. }
+            | Expr::FunctionLiteral { span, .. }
+            | Expr::ShellCommandTemplate { span, .. }
+            | Expr::Match { span, .. } => span.clone(),
+        }
+    }
+}
+
+/// Helper to combine two spans into a covering span
+fn combine_spans(a: &Span, b: &Span) -> Span {
+    Span {
+        start: a.start.min(b.start),
+        end: a.end.max(b.end),
+        line: a.line.min(b.line),
+        column: a.column.min(b.column),
+    }
+}
+
+/// Helper to combine three spans
+fn combine_three_spans(a: &Span, b: &Span, c: &Span) -> Span {
+    combine_spans(&combine_spans(a, b), c)
 }
 
 // Literal span impl now lives with the type in `literal.rs`

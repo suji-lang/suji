@@ -1,4 +1,5 @@
 use super::types::ControlFlow;
+use crate::token::Span;
 
 /// Runtime errors that can occur during evaluation
 #[derive(Debug, Clone, thiserror::Error)]
@@ -129,4 +130,47 @@ pub enum RuntimeError {
 
     #[error("Invalid destructuring target: {message}")]
     DestructureInvalidTarget { message: String },
+
+    /// Runtime error with source location span
+    #[error("{error}")]
+    WithSpan {
+        error: Box<RuntimeError>,
+        span: Span,
+    },
+}
+
+impl RuntimeError {
+    /// Wrap this error with a source span
+    pub fn with_span(self, span: Span) -> RuntimeError {
+        // Check if already wrapped to avoid double-wrapping
+        if matches!(self, RuntimeError::WithSpan { .. }) {
+            return self;
+        }
+
+        // Don't wrap ControlFlow errors - they're signals, not real errors
+        if matches!(self, RuntimeError::ControlFlow { .. }) {
+            return self;
+        }
+
+        RuntimeError::WithSpan {
+            error: Box::new(self),
+            span,
+        }
+    }
+
+    /// Get the span if this error carries one
+    pub fn span(&self) -> Option<Span> {
+        match self {
+            RuntimeError::WithSpan { span, .. } => Some(span.clone()),
+            _ => None,
+        }
+    }
+
+    /// Get the underlying error, unwrapping WithSpan if present
+    pub fn without_span(&self) -> &RuntimeError {
+        match self {
+            RuntimeError::WithSpan { error, .. } => error.without_span(),
+            _ => self,
+        }
+    }
 }

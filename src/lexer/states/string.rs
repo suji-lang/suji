@@ -1,4 +1,5 @@
 use super::super::utils::LexerUtils;
+use super::context::ParentInterpolation;
 use super::{LexError, LexState, QuoteType, ScannerContext, ScannerResult};
 use crate::token::{Span, Token, TokenWithSpan};
 
@@ -43,10 +44,10 @@ impl StringScanner {
                     // Consume single quote
                     context.advance();
                 }
-                *state = LexState::Normal;
 
                 if !content.is_empty() {
                     // Return accumulated content first, then we'll be called again for StringEnd
+                    // Don't pop from stack yet - let handle_content_returned_state do it
                     let quote_type = if quote_char == '"' {
                         QuoteType::Double
                     } else {
@@ -67,7 +68,32 @@ impl StringScanner {
                     return Ok(TokenWithSpan::new(Token::StringText(content), span));
                 } else {
                     // Empty string content, return StringEnd directly
-                    *state = LexState::Normal;
+                    // Check if we should return to a parent interpolation context
+                    let next_state = if let Some(parent) = context.interpolation_stack.pop() {
+                        match parent {
+                            ParentInterpolation::String {
+                                start_pos,
+                                quote_type,
+                                multiline,
+                                brace_depth,
+                            } => LexState::InStringInterp {
+                                start_pos,
+                                quote_type,
+                                multiline,
+                                brace_depth,
+                            },
+                            ParentInterpolation::Shell {
+                                start_pos,
+                                brace_depth,
+                            } => LexState::InShellInterp {
+                                start_pos,
+                                brace_depth,
+                            },
+                        }
+                    } else {
+                        LexState::Normal
+                    };
+                    *state = next_state;
                     let span = Span::new(start_pos, context.position, start_line, start_column);
                     let token = Token::StringEnd;
                     context.prev_token = Some(token.clone());

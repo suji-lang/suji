@@ -30,11 +30,13 @@ pub type EvalResult<T> = Result<T, RuntimeError>;
 
 /// Evaluate an expression in the given environment
 pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
-    match expr {
+    let result = match expr {
         Expr::Literal(literal) => eval_literal(literal, env),
 
-        Expr::Unary { op, expr, .. } => {
-            let value = eval_expr(expr, env)?;
+        Expr::Unary {
+            op, expr: inner, ..
+        } => {
+            let value = eval_expr(inner, env)?;
             eval_unary_op(op, value)
         }
 
@@ -48,7 +50,7 @@ pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
 
         Expr::Call { callee, args, .. } => eval_function_call(callee, args, env),
 
-        Expr::Grouping { expr, .. } => eval_expr(expr, env),
+        Expr::Grouping { expr: inner, .. } => eval_expr(inner, env),
 
         Expr::FunctionLiteral { params, body, .. } => eval_function_literal(params, body, env),
 
@@ -82,5 +84,8 @@ pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
         Expr::Destructure { .. } => Err(RuntimeError::InvalidOperation {
             message: "Destructuring pattern cannot appear as a standalone expression".to_string(),
         }),
-    }
+    };
+
+    // Wrap any error with the expression's covering span
+    result.map_err(|e| e.with_span(expr.covering_span()))
 }

@@ -1,4 +1,5 @@
 use super::super::utils::LexerUtils;
+use super::context::ParentInterpolation;
 use super::{LexError, LexState, ScannerContext, ScannerResult};
 use crate::token::{Span, Token, TokenWithSpan};
 
@@ -30,7 +31,31 @@ impl ShellScanner {
                     return Ok(TokenWithSpan::new(Token::StringText(content), span));
                 } else {
                     // Empty shell command content, return ShellEnd directly
-                    *state = LexState::Normal;
+                    // Check if we should return to a parent interpolation context
+                    *state = if let Some(parent) = context.interpolation_stack.pop() {
+                        match parent {
+                            ParentInterpolation::String {
+                                start_pos,
+                                quote_type,
+                                multiline,
+                                brace_depth,
+                            } => LexState::InStringInterp {
+                                start_pos,
+                                quote_type,
+                                multiline,
+                                brace_depth,
+                            },
+                            ParentInterpolation::Shell {
+                                start_pos,
+                                brace_depth,
+                            } => LexState::InShellInterp {
+                                start_pos,
+                                brace_depth,
+                            },
+                        }
+                    } else {
+                        LexState::Normal
+                    };
                     let span = Span::new(start_pos, context.position, start_line, start_column);
                     let token = Token::ShellEnd;
                     context.prev_token = Some(token.clone());

@@ -1,0 +1,5 @@
+import std:println
+
+msg = "Hello ${"world"}"
+
+println(msg)  # Hello world

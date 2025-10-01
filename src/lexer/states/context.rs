@@ -1,4 +1,20 @@
+use super::QuoteType;
 use crate::lexer::token::{Span, Token, TokenWithSpan};
+
+/// Represents a saved interpolation state to return to
+#[derive(Debug, Clone)]
+pub enum ParentInterpolation {
+    String {
+        start_pos: usize,
+        quote_type: QuoteType,
+        multiline: bool,
+        brace_depth: usize,
+    },
+    Shell {
+        start_pos: usize,
+        brace_depth: usize,
+    },
+}
 
 /// Context information passed to state scanners
 #[derive(Debug, Clone)]
@@ -8,6 +24,7 @@ pub struct ScannerContext<'a> {
     pub line: usize,
     pub column: usize,
     pub prev_token: Option<Token>,
+    pub interpolation_stack: Vec<ParentInterpolation>,
 }
 impl<'a> ScannerContext<'a> {
     pub fn new(input: &'a str) -> Self {
@@ -17,6 +34,7 @@ impl<'a> ScannerContext<'a> {
             line: 1,
             column: 1,
             prev_token: None,
+            interpolation_stack: Vec::new(),
         }
     }
 

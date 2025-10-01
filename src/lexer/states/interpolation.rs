@@ -1,3 +1,4 @@
+use super::context::ParentInterpolation;
 use super::normal::NormalScanner;
 use super::{LexState, ScannerContext, ScannerResult};
 use crate::token::{Span, Token, TokenWithSpan};
@@ -30,6 +31,12 @@ impl InterpolationScanner {
         };
         // Scan normal tokens until we hit the closing brace
         let token_result = NormalScanner::scan_token(context, state);
+
+        // Check if NormalScanner transitioned to a nested context (string, shell, regex)
+        let is_nested_context = matches!(
+            state,
+            LexState::InString { .. } | LexState::InShellCommand { .. } | LexState::InRegex { .. }
+        );
 
         match &token_result {
             Ok(token_with_span) => {
@@ -71,13 +78,25 @@ impl InterpolationScanner {
                         }
                     }
                     _ => {
-                        // Keep interpolation state
-                        *state = LexState::InStringInterp {
-                            start_pos,
-                            quote_type,
-                            multiline,
-                            brace_depth,
-                        };
+                        if is_nested_context {
+                            // Nested context started - push current interpolation state to stack
+                            context
+                                .interpolation_stack
+                                .push(ParentInterpolation::String {
+                                    start_pos,
+                                    quote_type,
+                                    multiline,
+                                    brace_depth,
+                                });
+                        } else {
+                            // No nested context - restore interpolation state
+                            *state = LexState::InStringInterp {
+                                start_pos,
+                                quote_type,
+                                multiline,
+                                brace_depth,
+                            };
+                        }
                     }
                 }
             }
@@ -98,6 +117,12 @@ impl InterpolationScanner {
     ) -> ScannerResult {
         // Same as string interpolation
         let token_result = NormalScanner::scan_token(context, state);
+
+        // Check if NormalScanner transitioned to a nested context (string, shell, regex)
+        let is_nested_context = matches!(
+            state,
+            LexState::InString { .. } | LexState::InShellCommand { .. } | LexState::InRegex { .. }
+        );
 
         match &token_result {
             Ok(token_with_span) => {
@@ -130,10 +155,21 @@ impl InterpolationScanner {
                         }
                     }
                     _ => {
-                        *state = LexState::InShellInterp {
-                            start_pos,
-                            brace_depth,
-                        };
+                        if is_nested_context {
+                            // Nested context started - push current interpolation state to stack
+                            context
+                                .interpolation_stack
+                                .push(ParentInterpolation::Shell {
+                                    start_pos,
+                                    brace_depth,
+                                });
+                        } else {
+                            // No nested context - restore interpolation state
+                            *state = LexState::InShellInterp {
+                                start_pos,
+                                brace_depth,
+                            };
+                        }
                     }
                 }
             }

@@ -1,0 +1,5 @@
+import std:println
+
+result = "Concat: ${"Hello" + " " + "World"}"
+
+println(result)  # Concat: Hello World

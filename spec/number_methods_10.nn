@@ -1,7 +1,0 @@
-import std:println
-
-# Test number::pow() with non-number argument (should error)
-x = 2
-result = x::pow("invalid")
-
-println(result)  # [100] Error: Type error

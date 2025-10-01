@@ -76,7 +76,33 @@ impl<'a> Lexer<'a> {
         token: Token,
         start_pos: usize,
     ) -> Result<TokenWithSpan, LexError> {
-        self.state = LexState::Normal;
+        // Check if we should return to a parent interpolation context
+        self.state = if let Some(parent) = self.context.interpolation_stack.pop() {
+            use crate::lexer::states::context::ParentInterpolation;
+            match parent {
+                ParentInterpolation::String {
+                    start_pos,
+                    quote_type,
+                    multiline,
+                    brace_depth,
+                } => LexState::InStringInterp {
+                    start_pos,
+                    quote_type,
+                    multiline,
+                    brace_depth,
+                },
+                ParentInterpolation::Shell {
+                    start_pos,
+                    brace_depth,
+                } => LexState::InShellInterp {
+                    start_pos,
+                    brace_depth,
+                },
+            }
+        } else {
+            LexState::Normal
+        };
+
         self.context.prev_token = Some(token.clone());
         let span = Span::new(
             start_pos,

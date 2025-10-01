@@ -93,6 +93,7 @@ NN is a dynamically and strongly typed language designed for simplicity and expr
 - **String interpolation**: Built-in `${expression}` syntax
 - **Regular expressions**: Native regex support with `/pattern/` literals
 - **Shell integration**: Execute commands with backticks
+- **Pipelines**: Stream data between closures and shell commands with `|`; value pipelines with `|>`/`<|`
 
 ## Data Types
 
@@ -402,6 +403,33 @@ source = || {
 
 out = source() | destination()
 println(out)  # output received
+
+# Shell → closure
+sink = || {
+    loop through io:stdin::read_lines() with line {
+        match {
+            line ~ /beta/: return "beta received"
+        }
+    }
+}
+result1 = `printf "alpha\nbeta\n"` | sink
+println(result1)  # beta received
+
+# Closure → shell
+producer = || {
+    println("alpha")
+    println("beta")
+}
+filtered = producer() | `grep beta`
+println(filtered)  # "beta\n"
+
+# Closure → shell → closure
+collector = || {
+    lines = io:stdin::read_lines()
+    return lines::join(",")
+}
+result2 = producer() | `grep beta` | collector
+println(result2)  # beta
 ```
 
 ### Pipe Apply

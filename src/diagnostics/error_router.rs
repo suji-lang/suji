@@ -122,6 +122,8 @@ pub fn error_code_for_variant(error: &RuntimeError) -> u32 {
         RuntimeError::DestructureTypeError => 132,
         RuntimeError::DestructureArityMismatch { .. } => 133,
         RuntimeError::DestructureInvalidTarget { .. } => 134,
+        // WithSpan wraps another error, unwrap and recurse
+        RuntimeError::WithSpan { error, .. } => error_code_for_variant(error),
     }
 }
 
@@ -603,6 +605,9 @@ impl RuntimeError {
                 .with_suggestion("List concatenation requires both operands to be lists".to_string())
                 .with_suggestion("Use list::push() to add individual items to a list".to_string())
             },
+
+            // WithSpan wraps another error, unwrap and recurse
+            RuntimeError::WithSpan { error, .. } => error.to_error_context(),
         }
     }
 }
