@@ -1,0 +1,10 @@
+import std:println
+
+# Mixed nesting and precedence
+add1 = |n| n + 1
+add2 = |n| n + 2
+mul2 = |n| n * 2
+
+f = add1 >> add2 << mul2   # equivalent to |x| add1(mul2(add2(x)))
+
+println(f(3))  # 9

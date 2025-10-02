@@ -1,8 +1,8 @@
 use super::{EvalResult, eval_assignment, eval_expr, eval_pipe_expression};
-use crate::ast::{BinaryOp, CompoundOp, Expr, Literal};
+use crate::ast::{BinaryOp, CompoundOp, Expr, Literal, Stmt};
 use crate::runtime::env::Env;
 use crate::runtime::range::expand_range_values;
-use crate::runtime::value::{RuntimeError, Value};
+use crate::runtime::value::{FunctionValue, ParamSpec, RuntimeError, Value};
 use crate::token::Span;
 use std::rc::Rc;
 
@@ -66,6 +66,9 @@ pub fn eval_binary_expr(
                 _ => Err(RuntimeError::PipeApplyLeftTypeError),
             }
         }
+        BinaryOp::ComposeRight | BinaryOp::ComposeLeft => {
+            eval_composition_expression(left, op, right, env.clone())
+        }
         _ => {
             // Evaluate both sides for other operations
             let left_val = eval_expr(left, env.clone())?;
@@ -82,6 +85,9 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
         BinaryOp::Pipe => unreachable!("Pipe op is evaluated in eval_binary_expr"),
         BinaryOp::PipeApplyFwd | BinaryOp::PipeApplyBwd => {
             unreachable!("Pipe apply ops are evaluated in eval_binary_expr")
+        }
+        BinaryOp::ComposeRight | BinaryOp::ComposeLeft => {
+            unreachable!("Composition ops are evaluated in eval_binary_expr")
         }
         // Arithmetic operations
         BinaryOp::Add => match (&left, &right) {
@@ -231,6 +237,72 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
         // Logical operations (should be handled by eval_binary_expr)
         BinaryOp::And | BinaryOp::Or => unreachable!("Logical ops should be short-circuited"),
     }
+}
+
+/// Create an identifier expression with a default span
+fn make_identifier_expr(name: &str) -> Expr {
+    Expr::Literal(Literal::Identifier(name.to_string(), Span::default()))
+}
+
+/// Evaluate function composition operators (>> and <<)
+pub fn eval_composition_expression(
+    left: &Expr,
+    op: &BinaryOp,
+    right: &Expr,
+    env: Rc<Env>,
+) -> EvalResult<Value> {
+    // Evaluate both sides and ensure they are functions
+    let left_val = eval_expr(left, env.clone())?;
+    let right_val = eval_expr(right, env.clone())?;
+
+    let (left_func, right_func) = match (left_val, right_val) {
+        (Value::Function(f), Value::Function(g)) => (f, g),
+        (l, r) => {
+            return Err(RuntimeError::TypeError {
+                message: format!("Cannot compose {} and {}", l.type_name(), r.type_name()),
+            });
+        }
+    };
+
+    // Create a closure environment capturing both functions under internal names
+    let composed_env = Rc::new(Env::new_child(env.clone()));
+    composed_env.define_or_set("__f", Value::Function(left_func.clone()));
+    composed_env.define_or_set("__g", Value::Function(right_func.clone()));
+
+    // Build AST for composed function body with a single parameter `x`
+    let param_name = "x".to_string();
+    let x_expr = make_identifier_expr(&param_name);
+
+    let (inner_callee, outer_callee) = match op {
+        BinaryOp::ComposeRight => ("__f", "__g"),
+        BinaryOp::ComposeLeft => ("__g", "__f"),
+        _ => unreachable!(),
+    };
+
+    let inner_call = Expr::Call {
+        callee: Box::new(make_identifier_expr(inner_callee)),
+        args: vec![x_expr],
+        span: Span::default(),
+    };
+
+    let outer_call = Expr::Call {
+        callee: Box::new(make_identifier_expr(outer_callee)),
+        args: vec![inner_call],
+        span: Span::default(),
+    };
+
+    let params = vec![ParamSpec {
+        name: param_name,
+        default: None,
+    }];
+
+    let body = Stmt::Expr(outer_call);
+
+    Ok(Value::Function(FunctionValue {
+        params,
+        body,
+        env: composed_env,
+    }))
 }
 
 /// Evaluate a compound assignment expression (target += value, target -= value, etc.)

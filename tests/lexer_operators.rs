@@ -267,3 +267,68 @@ fn test_fat_arrow_multiple() {
     let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
     assert_eq!(actual, expected);
 }
+
+#[test]
+fn test_function_composition_tokens() {
+    let input = "f >> g h<<i";
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::Identifier("f".to_string()),
+        Token::ComposeRight,
+        Token::Identifier("g".to_string()),
+        Token::Identifier("h".to_string()),
+        Token::ComposeLeft,
+        Token::Identifier("i".to_string()),
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_composition_does_not_conflict_with_relations_and_pipes() {
+    let input = "a >> b >= c a << b <| c x > y x < y";
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::Identifier("a".to_string()),
+        Token::ComposeRight,
+        Token::Identifier("b".to_string()),
+        Token::GreaterEqual,
+        Token::Identifier("c".to_string()),
+        Token::Identifier("a".to_string()),
+        Token::ComposeLeft,
+        Token::Identifier("b".to_string()),
+        Token::PipeBackward,
+        Token::Identifier("c".to_string()),
+        Token::Identifier("x".to_string()),
+        Token::Greater,
+        Token::Identifier("y".to_string()),
+        Token::Identifier("x".to_string()),
+        Token::Less,
+        Token::Identifier("y".to_string()),
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_composition_greedy_matching() {
+    let input = ">>> <<<<";
+    let tokens = Lexer::lex(input).unwrap();
+
+    let expected = vec![
+        Token::ComposeRight,
+        Token::Greater,
+        Token::ComposeLeft,
+        Token::ComposeLeft,
+        Token::Eof,
+    ];
+
+    let actual: Vec<Token> = tokens.into_iter().map(|t| t.token).collect();
+    assert_eq!(actual, expected);
+}

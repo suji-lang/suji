@@ -31,6 +31,10 @@ pub enum BinaryOp {
     PipeApplyFwd, // |>
     PipeApplyBwd, // <|
 
+    // Function composition
+    ComposeRight, // >>
+    ComposeLeft,  // <<
+
     // Range
     Range, // ..
 

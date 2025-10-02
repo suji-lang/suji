@@ -1,0 +1,8 @@
+import std:println
+
+id = |s| s
+
+a = '{"k":2}' |> id
+b = id <| '{"k":3}'
+
+println("${a};${b}")  # {"k":2};{"k":3}

@@ -1,0 +1,7 @@
+import std:println
+
+add2 = |n| n + 2
+mul3 = |n| n * 3
+f = (add2 >> mul3) >> add2
+
+println(f(1))  # 11

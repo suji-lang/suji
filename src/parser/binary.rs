@@ -148,9 +148,18 @@ impl Parser {
         })
     }
 
+    /// Parse function composition operators (>> and <<) - left-associative
+    pub(super) fn parse_composition_layer(&mut self) -> ParseResult<Expr> {
+        self.parse_infix_left_layer(Parser::parse_logical_or, |t| match t {
+            Token::ComposeRight => Some(crate::ast::BinaryOp::ComposeRight),
+            Token::ComposeLeft => Some(crate::ast::BinaryOp::ComposeLeft),
+            _ => None,
+        })
+    }
+
     /// Parse forward apply pipelines (|>) - left-associative
     pub(super) fn parse_pipe_apply_forward(&mut self) -> ParseResult<Expr> {
-        self.parse_infix_left_layer(Parser::parse_logical_or, |t| match t {
+        self.parse_infix_left_layer(Parser::parse_composition_layer, |t| match t {
             Token::PipeForward => Some(crate::ast::BinaryOp::PipeApplyFwd),
             _ => None,
         })

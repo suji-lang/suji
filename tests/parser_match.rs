@@ -1,6 +1,62 @@
-use nnlang::ast::{Expr, Literal, Pattern, Stmt, StringPart, ValueLike};
+use nnlang::ast::{Expr, Pattern, Stmt};
+
 mod common;
-use common::{parse_expression, parse_statement};
+use common::parse_expression;
+
+#[test]
+fn match_alternation_expands_to_multiple_arms() {
+    let src = r#"
+match x {
+    1 | 2 | 3 => "ok",
+    _ => "no",
+}
+"#;
+
+    let expr = parse_expression(src).unwrap();
+    if let Expr::Match {
+        scrutinee, arms, ..
+    } = expr
+    {
+        assert!(scrutinee.is_some());
+        // Expect 4 arms total: 3 alternates + 1 wildcard
+        assert_eq!(arms.len(), 4);
+
+        // First three arms should be literals 1, 2, 3 with identical bodies
+        for (i, expected) in ["1", "2", "3"].iter().enumerate() {
+            let arm = &arms[i];
+            match &arm.pattern {
+                Pattern::Literal { value, .. } => match value {
+                    nnlang::ast::ValueLike::Number(n) => assert_eq!(n, *expected),
+                    _ => panic!("Expected numeric literal pattern"),
+                },
+                _ => panic!("Expected literal pattern"),
+            }
+            // Body should be Expr("ok")
+            match &arm.body {
+                Stmt::Expr(Expr::Literal(nnlang::ast::Literal::StringTemplate(parts, _))) => {
+                    if let [nnlang::ast::StringPart::Text(s)] = parts.as_slice() {
+                        assert_eq!(s, "ok");
+                    } else {
+                        panic!("Expected string template with 'ok'");
+                    }
+                }
+                _ => panic!("Expected literal body 'ok'"),
+            }
+        }
+    } else {
+        panic!("Expected match expression");
+    }
+}
+
+#[test]
+fn alternation_missing_following_pattern_reports_error() {
+    let src = r#"match x { 1 | => "x", _ => "y", }"#;
+    // Parsing should fail with our custom message
+    let res = parse_expression(src);
+    assert!(res.is_err());
+}
+use common::parse_statement;
+use nnlang::ast::{StringPart, ValueLike};
 
 #[test]
 fn test_parse_match_single_expression() {
@@ -12,7 +68,9 @@ fn test_parse_match_single_expression() {
     })) = result
     {
         if let Some(scrutinee_expr) = scrutinee {
-            if let Expr::Literal(Literal::Identifier(name, _)) = scrutinee_expr.as_ref() {
+            if let Expr::Literal(nnlang::ast::Literal::Identifier(name, _)) =
+                scrutinee_expr.as_ref()
+            {
                 assert_eq!(name, "x");
             } else {
                 panic!("Expected x as scrutinee");
@@ -28,7 +86,7 @@ fn test_parse_match_single_expression() {
                 value: ValueLike::Number(n),
                 ..
             },
-            Stmt::Expr(Expr::Literal(Literal::StringTemplate(parts, _))),
+            Stmt::Expr(Expr::Literal(nnlang::ast::Literal::StringTemplate(parts, _))),
         ) = (&arms[0].pattern, &arms[0].body)
         {
             assert_eq!(*n, "1".to_string());
@@ -46,7 +104,7 @@ fn test_parse_match_single_expression() {
                 value: ValueLike::Number(n),
                 ..
             },
-            Stmt::Expr(Expr::Literal(Literal::StringTemplate(parts, _))),
+            Stmt::Expr(Expr::Literal(nnlang::ast::Literal::StringTemplate(parts, _))),
         ) = (&arms[1].pattern, &arms[1].body)
         {
             assert_eq!(*n, "2".to_string());
@@ -61,7 +119,7 @@ fn test_parse_match_single_expression() {
 
         if let (
             Pattern::Wildcard { .. },
-            Stmt::Expr(Expr::Literal(Literal::StringTemplate(parts, _))),
+            Stmt::Expr(Expr::Literal(nnlang::ast::Literal::StringTemplate(parts, _))),
         ) = (&arms[2].pattern, &arms[2].body)
         {
             if let [StringPart::Text(s)] = parts.as_slice() {
@@ -87,7 +145,9 @@ fn test_parse_match_block() {
     })) = result
     {
         if let Some(scrutinee_expr) = scrutinee {
-            if let Expr::Literal(Literal::Identifier(name, _)) = scrutinee_expr.as_ref() {
+            if let Expr::Literal(nnlang::ast::Literal::Identifier(name, _)) =
+                scrutinee_expr.as_ref()
+            {
                 assert_eq!(name, "x");
             } else {
                 panic!("Expected x as scrutinee");
@@ -109,7 +169,9 @@ fn test_parse_match_block() {
             assert_eq!(*n, "1".to_string());
             assert_eq!(statements.len(), 1);
             if let Stmt::Return { values, .. } = &statements[0] {
-                if let [Expr::Literal(Literal::StringTemplate(parts, _))] = values.as_slice() {
+                if let [Expr::Literal(nnlang::ast::Literal::StringTemplate(parts, _))] =
+                    values.as_slice()
+                {
                     if let [StringPart::Text(s)] = parts.as_slice() {
                         assert_eq!(s, "one");
                     } else {
@@ -232,7 +294,7 @@ fn test_parse_map_literals_in_match_arms() {
     if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
         assert_eq!(arms.len(), 2);
         for arm in arms {
-            if let Stmt::Expr(Expr::Literal(Literal::Map(..))) = &arm.body {
+            if let Stmt::Expr(Expr::Literal(nnlang::ast::Literal::Map(..))) = &arm.body {
             } else {
                 panic!("Expected map literal in match arm");
             }

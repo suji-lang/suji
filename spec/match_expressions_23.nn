@@ -1,0 +1,10 @@
+import std:println
+
+x = 3
+result = match x {
+  1 => "one",
+  2 | 3 | 4 => "couple",
+  _ => "other",
+}
+
+println(result)  # couple

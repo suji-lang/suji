@@ -144,6 +144,12 @@ pub enum Token {
     #[token("||")]
     Or,
 
+    // Function composition operators
+    #[token(">>")]
+    ComposeRight,
+    #[token("<<")]
+    ComposeLeft,
+
     // Range operator
     #[token("..")]
     Range,

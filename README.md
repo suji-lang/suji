@@ -24,6 +24,7 @@ A dynamically and strongly typed language with familiar syntax, higher-order fun
   - [Matching](#matching)
   - [Pipe](#pipe)
   - [Pipe Apply](#pipe-apply)
+  - [Function Composition](#function-composition)
 - [Control Flow](#control-flow)
   - [Loops](#loops)
   - [Match Expressions](#match-expressions)
@@ -457,6 +458,24 @@ Notes:
 - `|>` is left-associative; `<|` is right-associative.
 - `|>` requires a function on the right; `<|` requires a function on the left.
 
+```nn
+import std:println
+import std:json
+
+# Left side can be any expression (including backticks)
+data = `echo '{"name":"Ada","age":30}'` |> json:parse
+println(data:name)  # Ada
+
+# Right side can be any expression with <|
+import std:json:parse
+data2 = parse <| '{"x": 1, "y": 2}'
+println(data2:x + data2:y)  # 3
+
+# Backticks also work with <|
+data3 = parse <| `printf '{"ok":true}'`
+println(data3:ok)  # true
+```
+
 Backtick commands can participate in pipelines as sources, middles, or sinks (v0.1.8):
 
 ```nn
@@ -487,6 +506,23 @@ println(out)  # beta
 ```
 
 Associativity and precedence: `|` remains left-associative and sits between assignment and logical-or. Backticks outside of a pipeline behave as before (trimmed output when not piped).
+
+### Function Composition
+
+Compose unary functions into a new function:
+
+```nn
+import std:println
+
+add2 = |n| n + 2
+mul3 = |n| n * 3
+
+add2ThenMul3 = add2 >> mul3   # x -> mul3(add2(x))
+mul3ThenAdd2 = add2 << mul3   # x -> add2(mul3(x))
+
+println(add2ThenMul3(1))  # 9
+println(mul3ThenAdd2(1))  # 5
+```
 
 ## Control Flow
 
@@ -563,6 +599,23 @@ status = match {
     x > 0 => "Positive",
     _ => "Zero or negative",
 }
+```
+
+#### Pattern alternation
+
+Handle multiple patterns in one arm using `|`:
+
+```nn
+import std:println
+
+n = 3
+text = match n {
+    1 => "One",
+    2 | 3 | 4 => "Couple",
+    _ => "Many",
+}
+
+println(text)  # Couple
 ```
 
 ## Functions
@@ -1009,3 +1062,4 @@ cargo test
 - **v0.1.9**: Decimal number semantics; `std:io:open(path)`; multiple return values and destructuring; `|` requires invocations
 - **v0.1.10**: Runtime error spans/positions; string-literal-in-interpolation fix; module method calls in match conditions fix
 - **v0.1.11**: Match expressions syntax change
+- **v0.1.12**: Function composition operators (`>>`, `<<`); pattern alternation in match arms; `|>`/`<|` accept expressions on the applicable side

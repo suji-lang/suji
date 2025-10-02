@@ -41,7 +41,7 @@ fn backward_apply_is_right_associative() {
     {
         assert_eq!(op, BinaryOp::PipeApplyBwd);
         if let Expr::Binary { op: right_op, .. } = right.as_ref() {
-            assert_eq!(*right_op, BinaryOp::PipeApplyBwd);
+            assert_eq!(right_op, &BinaryOp::PipeApplyBwd);
         } else {
             panic!("Expected right to be a backward-apply expression");
         }
@@ -127,6 +127,64 @@ fn forward_apply_is_left_associative() {
             assert_eq!(name, "c");
         } else {
             panic!("Expected right to be identifier c");
+        }
+    } else {
+        panic!("Expected top-level forward-apply expression");
+    }
+}
+
+#[test]
+fn composition_binds_tighter_than_pipe_apply() {
+    let result = parse_expression("x |> f >> g");
+    assert!(result.is_ok());
+    let expr = result.unwrap();
+
+    if let Expr::Binary { op, right, .. } = expr {
+        assert_eq!(op, BinaryOp::PipeApplyFwd);
+        // Right should be a composition binary
+        if let Expr::Binary { op: right_op, .. } = right.as_ref() {
+            assert!(matches!(
+                right_op,
+                BinaryOp::ComposeRight | BinaryOp::ComposeLeft
+            ));
+        } else {
+            panic!("Expected right to be a composition expression");
+        }
+    } else {
+        panic!("Expected top-level forward-apply expression");
+    }
+}
+
+#[test]
+fn composition_left_assoc_chain() {
+    let result = parse_expression("f >> g >> h");
+    assert!(result.is_ok());
+    let expr = result.unwrap();
+
+    if let Expr::Binary { left, op, .. } = expr {
+        assert_eq!(op, BinaryOp::ComposeRight);
+        if let Expr::Binary { op: left_op, .. } = left.as_ref() {
+            assert_eq!(*left_op, BinaryOp::ComposeRight);
+        } else {
+            panic!("Expected left to be a composition expression");
+        }
+    } else {
+        panic!("Expected top-level composition expression");
+    }
+}
+
+#[test]
+fn composition_and_pipe_interaction() {
+    let result = parse_expression("f << g |> h");
+    assert!(result.is_ok());
+    let expr = result.unwrap();
+
+    if let Expr::Binary { left, op, .. } = expr {
+        assert_eq!(op, BinaryOp::PipeApplyFwd);
+        if let Expr::Binary { op: left_op, .. } = left.as_ref() {
+            assert_eq!(*left_op, BinaryOp::ComposeLeft);
+        } else {
+            panic!("Expected left to be a left-composition expression");
         }
     } else {
         panic!("Expected top-level forward-apply expression");

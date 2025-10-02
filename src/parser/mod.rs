@@ -2,7 +2,6 @@ pub mod binary;
 pub mod expressions;
 pub mod patterns;
 pub mod postfix;
-pub mod precedence;
 pub mod statements;
 pub mod utils;
 

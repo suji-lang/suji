@@ -155,12 +155,16 @@ impl NormalScanner {
                     Token::LessEqual
                 } else if context.match_char('|') {
                     Token::PipeBackward
+                } else if context.match_char('<') {
+                    Token::ComposeLeft
                 } else {
                     Token::Less
                 }
             }
             '>' => {
-                if context.match_char('=') {
+                if context.match_char('>') {
+                    Token::ComposeRight
+                } else if context.match_char('=') {
                     Token::GreaterEqual
                 } else {
                     Token::Greater

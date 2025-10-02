@@ -68,18 +68,36 @@ impl Parser {
                     span: span.clone(),
                 });
             } else {
-                // Traditional match: parse pattern
-                let pattern = self.parse_pattern()?;
+                // Traditional match: parse pattern(s) with alternation using '|'
+                let first_pattern = self.parse_pattern()?;
+                let mut patterns = vec![first_pattern];
+                while self.match_token(Token::Pipe) {
+                    // Expect another pattern after '|'
+                    // If parse_pattern fails, propagate with a clearer message
+                    let next_pattern = match self.parse_pattern() {
+                        Ok(p) => p,
+                        Err(_) => {
+                            return Err(ParseError::Generic {
+                                message: "Expected pattern after '|' in match arm".to_string(),
+                            });
+                        }
+                    };
+                    patterns.push(next_pattern);
+                }
+
                 self.consume(Token::FatArrow, "Expected '=>' after match pattern")?;
 
                 // Parse body (either block or single expression)
                 let body = self.parse_match_arm_body(span.clone())?;
 
-                arms.push(MatchArm {
-                    pattern,
-                    body,
-                    span: span.clone(),
-                });
+                // Desugar alternation into multiple arms with identical bodies
+                for pattern in patterns {
+                    arms.push(MatchArm {
+                        pattern,
+                        body: body.clone(),
+                        span: span.clone(),
+                    });
+                }
             }
 
             // Required comma
