@@ -1,4 +1,4 @@
-# NN Language
+# SUJI Language
 
 A dynamically and strongly typed language with familiar syntax, higher-order functions, closures, built-in string interpolation, regular expressions, and seamless shell interaction.
 
@@ -57,7 +57,7 @@ A dynamically and strongly typed language with familiar syntax, higher-order fun
 
 ## Quick Start
 
-```nn
+```suji
 # Hello World
 import std:println
 println("Hello, World!")
@@ -84,7 +84,7 @@ println(result)
 
 ## Language Overview
 
-NN is a dynamically and strongly typed language designed for simplicity and expressiveness. Key features include:
+SUJI is a dynamically and strongly typed language designed for simplicity and expressiveness. Key features include:
 
 - **Dynamic typing**: Variables can hold values of any type
 - **Strong typing**: Type safety enforced at runtime
@@ -100,9 +100,9 @@ NN is a dynamically and strongly typed language designed for simplicity and expr
 
 ### Numbers
 
-NN has one number type: 64-bit decimal numbers with precise base‑10 semantics (no IEEE-754 surprises).
+SUJI has one number type: 64-bit decimal numbers with precise base‑10 semantics (no IEEE-754 surprises).
 
-```nn
+```suji
 x = 42
 y = 3.14159
 z = -10.5
@@ -118,7 +118,7 @@ x++  # x is now 43
 y--  # y is now 2.14159
 ```
 
-```nn
+```suji
 import std:println
 
 # Intuitive equality/ordering
@@ -136,7 +136,7 @@ println((10 / 3)::round())  # 3
 
 ### Booleans
 
-```nn
+```suji
 true_value = true
 false_value = false
 
@@ -150,7 +150,7 @@ result = !true          # false
 
 Strings are Unicode sequences with built-in interpolation:
 
-```nn
+```suji
 # Basic strings
 name = "Alice"
 path = '/home/user'  # Single quotes also supported
@@ -186,7 +186,7 @@ contains_world = text::contains("world")  # true
 
 Ordered, zero-based, growable sequences:
 
-```nn
+```suji
 # List literals
 empty = []
 numbers = [1, 2, 3, 4, 5]
@@ -225,7 +225,7 @@ last_or_zero = empty::last(0)           # 0
 
 Key-value dictionaries:
 
-```nn
+```suji
 # Map literals
 empty_map = {}
 config = { name: "Alice", age: 30, active: true }
@@ -254,7 +254,7 @@ email = config::get("email", "N/A")     # "alice@example.com"
 
 Immutable, fixed-length collections:
 
-```nn
+```suji
 # Tuple literals
 point = (10, 20)
 data = ("hello", 42, true)
@@ -268,7 +268,7 @@ as_string = point::to_string()  # "(10, 20)"
 
 ### Regular Expressions
 
-```nn
+```suji
 # Regex literals
 email_pattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 number_pattern = /\d+/
@@ -283,7 +283,7 @@ has_numbers = "abc123" ~ number_pattern  # true
 
 Blocking I/O type for file descriptors and process streams. Methods may block; `read()` returns nil on EOF.
 
-```nn
+```suji
 import std:io
 
 # Read a single chunk (may block)
@@ -308,7 +308,7 @@ io:stderr::write("Warning: something happened\n")
 
 Represents the absence of a value:
 
-```nn
+```suji
 nothing = nil
 result = match nothing {
     nil => "No value",
@@ -320,7 +320,7 @@ result = match nothing {
 
 ### Assignment
 
-```nn
+```suji
 x = 42
 y = "hello"
 
@@ -334,7 +334,7 @@ x %= 7    # x = x % 7
 
 ### Arithmetic
 
-```nn
+```suji
 a = 10
 b = 3
 
@@ -349,7 +349,7 @@ negative = -a    # -10
 
 ### Relational
 
-```nn
+```suji
 x = 5
 y = 10
 
@@ -363,7 +363,7 @@ x >= y   # false
 
 ### Logical
 
-```nn
+```suji
 a = true
 b = false
 
@@ -374,7 +374,7 @@ a || b   # true
 
 ### Matching
 
-```nn
+```suji
 text = "hello@example.com"
 pattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
@@ -386,7 +386,7 @@ no_match = text !~ pattern  # false
 
 Connect the stdout of a source closure to the stdin of a destination closure.
 
-```nn
+```suji
 import std:println
 import std:io
 
@@ -437,7 +437,7 @@ println(result2)  # beta
 
 Value-to-function application pipelines (v0.1.8):
 
-```nn
+```suji
 # Forward apply (left-to-right): x |> f  ==  f(x)
 inc = |x| x + 1
 double = |x| x * 2
@@ -458,7 +458,7 @@ Notes:
 - `|>` is left-associative; `<|` is right-associative.
 - `|>` requires a function on the right; `<|` requires a function on the left.
 
-```nn
+```suji
 import std:println
 import std:json
 
@@ -478,7 +478,7 @@ println(data3:ok)  # true
 
 Backtick commands can participate in pipelines as sources, middles, or sinks (v0.1.8):
 
-```nn
+```suji
 import std:println
 import std:io
 
@@ -511,7 +511,7 @@ Associativity and precedence: `|` remains left-associative and sits between assi
 
 Compose unary functions into a new function:
 
-```nn
+```suji
 import std:println
 
 add2 = |n| n + 2
@@ -528,7 +528,7 @@ println(mul3ThenAdd2(1))  # 5
 
 ### Loops
 
-```nn
+```suji
 # Infinite loop
 count = 0
 loop {
@@ -564,7 +564,7 @@ loop as outer {
 
 ### Match Expressions
 
-```nn
+```suji
 # Basic matching
 x = 42
 result = match x {
@@ -605,7 +605,7 @@ status = match {
 
 Handle multiple patterns in one arm using `|`:
 
-```nn
+```suji
 import std:println
 
 n = 3
@@ -622,7 +622,7 @@ println(text)  # Couple
 
 Functions are first-class values with closure support:
 
-```nn
+```suji
 # Basic function
 add = |x, y| {
     return x + y
@@ -656,7 +656,7 @@ sum = numbers::fold(0, |acc, x| acc + x)  # 15
 
 ### Multiple return values and destructuring
 
-```nn
+```suji
 make_pair = || { return 1, 4 }
 
 left, right = make_pair()
@@ -671,15 +671,15 @@ println(third)  # 30
 
 Modules provide namespacing and code reuse. The standard library is available under the `std` module (e.g., `import std:println`, `import std:env:var`, `import std:io`):
 
-```nn
-# math.nn
+```suji
+# math.si
 export {
     PI: 3.14159,
     add: |a, b| a + b,
     multiply: |a, b| a * b
 }
 
-# main.nn
+# main.si
 import math:add
 import math:PI
 import math:multiply as mul
@@ -692,7 +692,7 @@ area = mul(PI, 2)   # 6.28318
 
 Execute shell commands with backticks:
 
-```nn
+```suji
 # Basic command execution
 output = `echo "Hello, World!"`
 println(output)  # "Hello, World!"
@@ -711,7 +711,7 @@ count = `wc -l < /etc/passwd`
 
 ### String Interpolation
 
-```nn
+```suji
 name = "Alice"
 age = 30
 message = "Hello, ${name}! You are ${age} years old."
@@ -723,7 +723,7 @@ output = `echo "User: ${name}, Age: ${age}"`
 
 ### Deep Nesting
 
-```nn
+```suji
 # Deep map access
 config = {
     user: {
@@ -748,7 +748,7 @@ matrix[0][1][0] = 99
 
 ### Optional Braces
 
-```nn
+```suji
 # Single expressions don't need braces
 square = |x| x * x
 result = match x {
@@ -768,7 +768,7 @@ process = |x| {
 
 ### JSON Module
 
-```nn
+```suji
 import std:json
 
 # Parse JSON
@@ -782,7 +782,7 @@ json_output = json:generate(user)
 
 ### YAML Module
 
-```nn
+```suji
 import std:yaml
 
 # Parse YAML
@@ -796,7 +796,7 @@ yaml_output = yaml:generate(config)
 
 ### TOML Module
 
-```nn
+```suji
 import std:toml
 
 # Parse TOML
@@ -810,7 +810,7 @@ toml_output = toml:generate(config)
 
 ### Random Module
 
-```nn
+```suji
 import std:random
 import std:println
 
@@ -838,7 +838,7 @@ println(i)
 
 Environment variables exposed as a map under the standard library at `std:env:var`. Changing `var` affects the process environment (and child processes).
 
-```nn
+```suji
 import std:env
 import std:println
 
@@ -856,7 +856,7 @@ println("Editor: ${editor}")
 
 Command-line arguments are exposed as maps under `std:env:args`.
 
-```nn
+```suji
 # Access first argument (after program name)
 import std:env:args
 
@@ -866,7 +866,7 @@ if (first != nil) {
 }
 ```
 
-```nn
+```suji
 # Iterate all arguments by index key
 import std:env:argv
 import std:println
@@ -881,7 +881,7 @@ loop through argv::keys() with k {
 
 Access standard streams as `stream` values. Operations may block.
 
-```nn
+```suji
 import std:io
 import std:println
 
@@ -899,7 +899,7 @@ is_tty = io:stdout::is_terminal()
 
 Open files are streams as well:
 
-```nn
+```suji
 import std:io
 
 # Write
@@ -917,7 +917,7 @@ f::close()
 
 Convenience output functions that write to streams. Default target is `std:io:stdout`.
 
-```nn
+```suji
 import std:print
 import std:println
 import std:io
@@ -931,7 +931,7 @@ println("to stderr", io:stderr)
 
 ### Fibonacci Sequence
 
-```nn
+```suji
 fib = |n| {
     match n {
         0 => 0,
@@ -948,7 +948,7 @@ println(fibs)  # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
 
 ### Quicksort
 
-```nn
+```suji
 quicksort = |list| {
     match list::length() {
         0 => [],
@@ -970,7 +970,7 @@ println(sorted)  # [11, 12, 22, 25, 34, 64, 90]
 
 ### File Processing
 
-```nn
+```suji
 # Read and process a file
 content = `cat data.txt`
 lines = content::split("\n")
@@ -981,7 +981,7 @@ result = processed::join("\n")
 
 ### Configuration Management
 
-```nn
+```suji
 # Load configuration from YAML
 import std:yaml
 
@@ -1003,14 +1003,14 @@ match config::contains("database") {
 
 ```bash
 # Clone the repository
-git clone https://github.com/ragnar-johannsson/nnlang.git
-cd nnlang
+git clone https://github.com/ragnar-johannsson/suji-lang.git
+cd suji-lang
 
 # Build the project
 cargo build --release
 
 # Run examples
-cargo run -- examples/hello.nn
+cargo run -- examples/hello.si
 
 # Start REPL
 cargo run
@@ -1021,9 +1021,9 @@ cargo run
 Run a file:
 
 ```bash
-cargo run -- examples/hello.nn
+cargo run -- examples/hello.si
 # or after building in release:
-target/release/nnlang examples/hello.nn
+target/release/suji examples/hello.si
 ```
 
 Start the REPL:

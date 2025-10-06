@@ -1,5 +1,5 @@
-use nnlang::ast::*;
-use nnlang::token::Span;
+use suji_lang::ast::*;
+use suji_lang::token::Span;
 
 #[test]
 fn test_literal_span() {

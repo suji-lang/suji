@@ -1,8 +1,8 @@
-use nnlang::runtime::value::DecimalNumber;
+use suji_lang::runtime::value::DecimalNumber;
 mod common;
 
 use common::{eval_program, eval_string_expr};
-use nnlang::runtime::value::Value;
+use suji_lang::runtime::value::Value;
 
 #[test]
 fn test_list_indexing_and_slicing() {

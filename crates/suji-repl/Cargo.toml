@@ -1,0 +1,15 @@
+[package]
+name = "suji-repl"
+version = "0.1.13"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+suji-parser = { path = "../suji-parser" }
+suji-runtime = { path = "../suji-runtime" }
+suji-stdlib = { path = "../suji-stdlib" }
+suji-diagnostics = { path = "../suji-diagnostics" }
+rustyline = { workspace = true }
+ariadne = { workspace = true }

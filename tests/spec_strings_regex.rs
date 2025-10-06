@@ -1,7 +1,7 @@
 mod common;
 
 use common::{eval_program, eval_string_expr};
-use nnlang::runtime::value::{DecimalNumber, Value};
+use suji_lang::runtime::value::{DecimalNumber, Value};
 
 #[test]
 fn test_string_interpolation() {

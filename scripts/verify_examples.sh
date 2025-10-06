@@ -19,8 +19,8 @@ FAILED=0
 echo "Running example programs..."
 echo "=========================="
 
-# Find all .nn files in examples/ directory
-for example_file in examples/*.nn; do
+# Find all .si files in examples/ directory
+for example_file in examples/*.si; do
     if [ ! -f "$example_file" ]; then
         echo "No example files found in examples/ directory"
         exit 1
@@ -30,7 +30,7 @@ for example_file in examples/*.nn; do
     filename=$(basename "$example_file")
 
     # Run the example file and capture both stdout and stderr
-    if ./target/release/nnlang "$example_file" >/dev/null 2>&1; then
+    if ./target/release/suji "$example_file" >/dev/null 2>&1; then
         echo -e "${GREEN}PASS: $filename${NC}"
         PASSED=$((PASSED + 1))
     else

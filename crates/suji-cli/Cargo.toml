@@ -1,0 +1,18 @@
+[package]
+name = "suji-cli"
+version = "0.1.13"
+edition = "2024"
+
+[dependencies]
+suji-parser = { path = "../suji-parser" }
+suji-runtime = { path = "../suji-runtime" }
+suji-stdlib = { path = "../suji-stdlib" }
+suji-diagnostics = { path = "../suji-diagnostics" }
+
+[features]
+default = ["repl"]
+repl = ["suji-repl"]
+
+[dependencies.suji-repl]
+path = "../suji-repl"
+optional = true

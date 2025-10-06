@@ -16,18 +16,18 @@ This document defines how AI coding agents (and human collaborators using them) 
 - **Runtime/eval**: `src/runtime/`
 - **Diagnostics**: `src/diagnostics/`
 - **Tests**: `tests/` (Rust integration/unit tests)
-- **Language specs (nn)**: `spec/` (source-of-truth examples and expectations)
-- **Examples (nn)**: `examples/`
-- **Docs**: `docs/` (`NN_LANG.md`, implementation plans)
+- **Language specs (suji)**: `spec/` (source-of-truth examples and expectations)
+- **Examples (suji)**: `examples/`
+- **Docs**: `docs/` (`SUJI_LANG.md`, implementation plans)
 
 ### Local Dev Basics
 - **Build**:
 ```bash
 cargo build
 ```
-- **Run** (interpret a `.nn` program):
+- **Run** (interpret a `.si` program):
 ```bash
-cargo run -- examples/hello.nn
+cargo run -- examples/hello.si
 ```
 - **Test (Rust tests only)**:
 ```bash
@@ -39,10 +39,6 @@ cargo test
 ```bash
 make test
 ```
-- **Verify language specs** (nn spec files):
-```bash
-make verify_spec
-```
 - **Lint**:
 ```bash
 make lint
@@ -50,7 +46,7 @@ make lint
 
 ### Test Conventions
 - **Rust tests**: live in `tests/`. Add specific suites (e.g., `lexer_*`, `parser_*`, `eval_*`) matching the area you change.
-- **Spec files (`spec/*.nn`)**: these are single-spec programs checked by the scripts above. Convention: one expectation per file with a single `println` of the result at the end (project convention) [[Spec tests: one println per file]].
+- **Spec files (`spec/*.si`)**: these are single-spec programs checked by the scripts above. Convention: one expectation per file with a single `println` of the result at the end (project convention) [[Spec tests: one println per file]].
 - **When adding features**: add/adjust both a Rust test and a spec file (when applicable). Prefer minimal, readable inputs that isolate the behavior.
 
 #### Spec file conventions (`spec/`)
@@ -60,9 +56,9 @@ make lint
   - This must be on the same, final line (the runner uses `tail -n 1`).
 - **Import printing**: explicitly import `std:println` in each file that prints.
   - Example: `import std:println`
-- **Naming**: name files by feature area with a numeric suffix: `feature_area_XX.nn`.
-  - Use 2‑digit, zero‑padded counters for sequences (e.g., `pipe_apply_01.nn`, `pipe_apply_02.nn`).
-  - Keep names short, descriptive, and consistent with existing files (e.g., `list_methods_07.nn`, `operator_precedence_03.nn`).
+- **Naming**: name files by feature area with a numeric suffix: `feature_area_XX.si`.
+  - Use 2‑digit, zero‑padded counters for sequences (e.g., `pipe_apply_01.si`, `pipe_apply_02.si`).
+  - Keep names short, descriptive, and consistent with existing files (e.g., `list_methods_07.si`, `operator_precedence_03.si`).
 - **Content**: prefer minimal, readable inputs that isolate the behavior under test; avoid unrelated constructs.
 - **Determinism**: specs must be deterministic. If a feature depends on environment or IO, stub/minimize it so the output is stable.
 
@@ -71,7 +67,7 @@ make lint
 - Add an empty line before the final `println(...)` statement.
 - Add two spaces before the expected output comment in the final println statement. ("println(result) # expected_output")
 - Don't have any trailing empty lines after the final `println(...)`. The spec harness reads only the last line; an extra blank line makes it think the expected output is empty (you'll see errors like `Expected '', got 'value'` when running `make verify_spec`). Ensure the file ends immediately after the commented `println` line.
-- See `spec/pipe_apply_01.nn` for an example layout.
+- See `spec/pipe_apply_01.si` for an example layout.
 
 ### Coding Standards (Rust)
 - **Clarity over cleverness**: favor explicit control flow and readable names.
@@ -97,7 +93,7 @@ make lint
 - When optimizing, include a microbenchmark or measurement if the change is non-trivial. Use `benches/` and Criterion when appropriate.
 
 ### Documentation Expectations
-- **Language behavior**: update `docs/NN_LANG.md` when syntax/semantics change.
+- **Language behavior**: update `docs/SUJI_LANG.md` when syntax/semantics change.
 - **Refactors**: when restructuring modules or interfaces, record rationale in `docs/REFACTORING.md`.
 - **Plans**: if delivering in stages, add/extend `docs/IMPLEMENTATION_PLAN_*.md` as needed.
 
@@ -111,7 +107,7 @@ make lint
   - Add or update tests in the same change.
   - Do not perform any git operations; the user handles git (init/branch/commit/push/rebase/PR).
 - **After any meaningful amount of change**:
-  - Run: `make lint`, `make test`, `make verify_spec`, `make verify_examples`.
+  - Run: `make lint`, `make test`.
   - Update docs as needed.
 
 ### Guardrails

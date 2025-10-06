@@ -1,8 +1,8 @@
-use nnlang::runtime::value::DecimalNumber;
+use suji_lang::runtime::value::DecimalNumber;
 mod common;
 
 use common::{assert_import_works, eval_program_with_modules};
-use nnlang::runtime::value::Value;
+use suji_lang::runtime::value::Value;
 
 #[test]
 fn test_builtin_function_through_import() {
@@ -28,19 +28,19 @@ fn test_complex_import_export_flow() {
 
     if let Value::Map(map) = result {
         assert_eq!(
-            map.get(&nnlang::runtime::value::MapKey::String(
+            map.get(&suji_lang::runtime::value::MapKey::String(
                 "answer".to_string()
             )),
             Some(&Value::Number(DecimalNumber::from_i64(42)))
         );
         assert!(matches!(
-            map.get(&nnlang::runtime::value::MapKey::String(
+            map.get(&suji_lang::runtime::value::MapKey::String(
                 "calculator".to_string()
             )),
             Some(Value::Function(_))
         ));
         assert_eq!(
-            map.get(&nnlang::runtime::value::MapKey::String(
+            map.get(&suji_lang::runtime::value::MapKey::String(
                 "message".to_string()
             )),
             Some(&Value::String("The answer is 42".to_string()))

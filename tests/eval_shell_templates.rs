@@ -1,7 +1,7 @@
 mod common;
 
 use common::{eval_program, eval_string_expr};
-use nnlang::runtime::value::Value;
+use suji_lang::runtime::value::Value;
 
 #[test]
 fn test_shell_command_templates() {

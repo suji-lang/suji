@@ -1,8 +1,8 @@
 //! Integration tests for io streams.
 
-use nnlang::runtime::methods::{ValueRef, call_method};
-use nnlang::runtime::module::ModuleRegistry;
-use nnlang::runtime::value::{DecimalNumber, MapKey, Value};
+use suji_lang::runtime::methods::{ValueRef, call_method};
+use suji_lang::runtime::module::ModuleRegistry;
+use suji_lang::runtime::value::{DecimalNumber, MapKey, Value};
 
 #[test]
 fn test_io_stream_method_calls() {

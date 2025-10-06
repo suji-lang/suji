@@ -1,0 +1,13 @@
+[package]
+name = "suji-parser"
+version = "0.1.13"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+suji-ast = { path = "../suji-ast" }
+suji-lexer = { path = "../suji-lexer" }
+chumsky = { workspace = true }
+thiserror = { workspace = true }

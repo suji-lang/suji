@@ -1,0 +1,18 @@
+import std:json
+import std:println
+import std:random
+
+category =
+    `curl -sL https://api.chucknorris.io/jokes/categories`
+    |> json:parse
+    |> random:pick
+
+joke =
+    `curl -sL 'https://api.chucknorris.io/jokes/random?category=${category}'`
+    |> json:parse
+
+println <| """
+    Joke about ${category}:
+
+    ${joke:value}
+"""

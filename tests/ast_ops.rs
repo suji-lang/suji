@@ -1,4 +1,4 @@
-use nnlang::ast::*;
+use suji_lang::ast::*;
 
 #[test]
 fn test_binary_op_variants() {

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 mod common;
 
 use common::eval_program;
-use nnlang::runtime::value::{DecimalNumber, Value};
+use suji_lang::runtime::value::{DecimalNumber, Value};
 
 fn temp_path(name: &str) -> PathBuf {
     let mut path = std::env::temp_dir();

@@ -1,0 +1,30 @@
+[package]
+name = "suji-stdlib"
+version = "0.1.13"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[features]
+default = ["json", "yaml", "toml", "random"]
+json = []
+yaml = []
+toml = []
+random = []
+
+[dependencies]
+suji-ast = { path = "../suji-ast" }
+suji-lexer = { path = "../suji-lexer" }
+suji-parser = { path = "../suji-parser" }
+suji-runtime = { path = "../suji-runtime" }
+serde_json = { workspace = true, optional = false }
+serde_yaml2 = { workspace = true, optional = false }
+toml = { workspace = true, optional = false }
+rand = { workspace = true, optional = false }
+indexmap = { workspace = true }
+once_cell = { workspace = true }
+regex = { workspace = true }
+rust_decimal = { workspace = true }
+thiserror = { workspace = true }
+yaml-rust2 = { workspace = true }

@@ -1,5 +1,5 @@
-use nnlang::ast::{Expr, Literal, Stmt};
-use nnlang::parser::parse_program;
+use suji_lang::ast::{Expr, Literal, Stmt};
+use suji_lang::parser::parse_program;
 
 mod common;
 use common::parse_statement;

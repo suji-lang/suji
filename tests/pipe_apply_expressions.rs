@@ -1,6 +1,6 @@
 mod common;
 use common::eval_program;
-use nnlang::runtime::value::Value;
+use suji_lang::runtime::value::Value;
 
 #[test]
 fn test_pipe_apply_with_expression_left_side() {

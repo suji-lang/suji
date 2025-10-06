@@ -1,0 +1,16 @@
+[package]
+name = "suji-diagnostics"
+version = "0.1.13"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+ariadne = { workspace = true }
+thiserror = { workspace = true }
+regex = { workspace = true }
+suji-ast = { path = "../suji-ast" }
+suji-lexer = { path = "../suji-lexer" }
+suji-parser = { path = "../suji-parser" }
+suji-runtime = { path = "../suji-runtime" }

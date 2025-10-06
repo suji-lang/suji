@@ -1,6 +1,6 @@
-use nnlang::runtime::methods::{ValueRef, call_method};
-use nnlang::runtime::value::DecimalNumber;
-use nnlang::runtime::value::Value;
+use suji_lang::runtime::methods::{ValueRef, call_method};
+use suji_lang::runtime::value::DecimalNumber;
+use suji_lang::runtime::value::Value;
 
 /// Integration tests for the methods module
 /// These tests verify that the main dispatcher correctly routes to individual method implementations
@@ -18,7 +18,7 @@ fn test_immutable_mutating_method_error() {
     );
     assert!(matches!(
         result,
-        Err(nnlang::runtime::value::RuntimeError::MethodError { .. })
+        Err(suji_lang::runtime::value::RuntimeError::MethodError { .. })
     ));
 }
 
@@ -47,7 +47,7 @@ fn test_method_dispatcher_routing() {
 
     // Test that the dispatcher correctly routes to map methods
     use indexmap::IndexMap;
-    use nnlang::runtime::value::MapKey;
+    use suji_lang::runtime::value::MapKey;
     let mut map_data = IndexMap::new();
     map_data.insert(
         MapKey::String("key".to_string()),
@@ -66,7 +66,7 @@ fn test_unknown_method_error() {
     let result = call_method(receiver, "unknown_method", vec![]);
     assert!(matches!(
         result,
-        Err(nnlang::runtime::value::RuntimeError::MethodError { .. })
+        Err(suji_lang::runtime::value::RuntimeError::MethodError { .. })
     ));
 }
 
@@ -77,6 +77,6 @@ fn test_unsupported_type_method_error() {
     let result = call_method(receiver, "length", vec![]);
     assert!(matches!(
         result,
-        Err(nnlang::runtime::value::RuntimeError::MethodError { .. })
+        Err(suji_lang::runtime::value::RuntimeError::MethodError { .. })
     ));
 }

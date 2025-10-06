@@ -1,4 +1,4 @@
-use nnlang::ast::{CompoundOp, Expr, Literal};
+use suji_lang::ast::{CompoundOp, Expr, Literal};
 mod common;
 use common::parse_expression;
 

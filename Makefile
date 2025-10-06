@@ -1,4 +1,4 @@
-# Makefile for nnlang project
+# Makefile for suji-lang project
 
 .PHONY: build release test rust_tests verify_spec verify_examples clean lint help
 
@@ -7,12 +7,12 @@ all: build
 
 # Build the project
 build:
-	@echo "Building nnlang..."
+	@echo "Building suji-lang..."
 	cargo build
 
 # Build release version
 release:
-	@echo "Building nnlang release..."
+	@echo "Building suji-lang release..."
 	cargo build --release
 
 # Run Rust unit/integration tests only

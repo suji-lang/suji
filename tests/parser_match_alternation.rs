@@ -1,4 +1,4 @@
-use nnlang::ast::{Expr, Stmt};
+use suji_lang::ast::{Expr, Stmt};
 
 mod common;
 use common::parse_statement;

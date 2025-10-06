@@ -67,6 +67,30 @@ add = |x, y = 10| x + y
 }
 
 #[test]
+fn builtin_with_pipe_apply() {
+    let program1 = r#"
+import std:json
+
+s = '{ "name": "Philip" }'
+
+s |> json:parse
+"#;
+    let program2 = r#"
+import std:json
+
+s = '{ "name": "Philip" }'
+
+parse_wrapper = |x| json:parse(x)
+
+s |> parse_wrapper
+"#;
+
+    let v1 = eval_program(program1).unwrap();
+    let v2 = eval_program(program2).unwrap();
+    assert_eq!(format!("{}", v1), format!("{}", v2));
+}
+
+#[test]
 fn mixing_with_stream_pipe_grouping_parse_only() {
     // Ensure parsing groups as (a |> f) | g; we don't execute an actual stream stage here
     let src = r#"

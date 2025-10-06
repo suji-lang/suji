@@ -5,12 +5,12 @@
 
 mod common;
 
-use nnlang::parser::parse_program;
-use nnlang::runtime::builtins::setup_global_env;
-use nnlang::runtime::env::Env;
-use nnlang::runtime::eval::eval_stmt;
-use nnlang::runtime::value::RuntimeError;
 use std::rc::Rc;
+use suji_lang::parser::parse_program;
+use suji_lang::runtime::builtins::setup_global_env;
+use suji_lang::runtime::env::Env;
+use suji_lang::runtime::eval::eval_stmt;
+use suji_lang::runtime::value::RuntimeError;
 
 /// Helper to evaluate a program and get the error (if any)
 fn eval_program_for_error(source: &str) -> Result<(), RuntimeError> {

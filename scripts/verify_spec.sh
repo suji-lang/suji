@@ -19,8 +19,8 @@ FAILED=0
 echo "Running spec tests..."
 echo "===================="
 
-# Find all .nn files in spec/ directory
-for spec_file in spec/*.nn; do
+# Find all .si files in spec/ directory
+for spec_file in spec/*.si; do
     if [ ! -f "$spec_file" ]; then
         echo "No spec files found in spec/ directory"
         exit 1
@@ -34,7 +34,7 @@ for spec_file in spec/*.nn; do
     expected_output=$(tail -n 1 "$spec_file" | perl -pe 's/.*?# (.*)/$1/')
 
     # Run the spec file and capture output, stripping ANSI color codes
-    actual_output=$(./target/release/nnlang "$spec_file" 2>/dev/null | tail -n 1 | sed 's/\x1b\[[0-9;]*m//g')
+    actual_output=$(./target/release/suji "$spec_file" 2>/dev/null | tail -n 1 | sed 's/\x1b\[[0-9;]*m//g')
 
     # Compare actual vs expected
     if [ "$actual_output" = "$expected_output" ]; then

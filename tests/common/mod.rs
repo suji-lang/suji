@@ -1,18 +1,18 @@
 #![allow(dead_code)]
 
-//! Common test utilities for NN Language tests.
+//! Common test utilities for SUJI Language tests.
 
-use nnlang::ast::{Expr, Stmt};
-use nnlang::lexer::Lexer;
-use nnlang::parser::{ParseResult, Parser, parse_program};
-use nnlang::runtime::builtins::setup_global_env;
-use nnlang::runtime::env::Env;
-use nnlang::runtime::eval::{
+use std::rc::Rc;
+use suji_lang::ast::{Expr, Stmt};
+use suji_lang::lexer::Lexer;
+use suji_lang::parser::{ParseResult, Parser, parse_program};
+use suji_lang::runtime::builtins::setup_global_env;
+use suji_lang::runtime::env::Env;
+use suji_lang::runtime::eval::{
     eval_expr, eval_program_with_modules as eval_program_with_modules_impl, eval_stmt,
 };
-use nnlang::runtime::module::ModuleRegistry;
-use nnlang::runtime::value::Value;
-use std::rc::Rc;
+use suji_lang::runtime::module::ModuleRegistry;
+use suji_lang::runtime::value::Value;
 
 /// Parse a single expression from source code (test utility)
 pub fn parse_expression(input: &str) -> ParseResult<Expr> {

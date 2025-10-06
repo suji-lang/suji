@@ -1,8 +1,8 @@
-use nnlang::runtime::value::DecimalNumber;
+use suji_lang::runtime::value::DecimalNumber;
 mod common;
 
 use common::eval_program;
-use nnlang::runtime::value::Value;
+use suji_lang::runtime::value::Value;
 
 #[test]
 fn test_yaml_parse_and_generate() {
@@ -17,7 +17,7 @@ result = val:name
     let result = eval_program(program).unwrap();
     assert_eq!(result, Value::String("Alice".to_string()));
 
-    // Generate YAML from nn value (map)
+    // Generate YAML from SUJI value (map)
     let program2 = r#"
 import std:yaml
 
@@ -54,7 +54,7 @@ result = val:name
     let result = eval_program(program).unwrap();
     assert_eq!(result, Value::String("Alice".to_string()));
 
-    // Generate TOML from nn value (map)
+    // Generate TOML from SUJI value (map)
     let program2 = r#"
 import std:toml
 
@@ -91,7 +91,7 @@ result = val:name
     let result = eval_program(program).unwrap();
     assert_eq!(result, Value::String("Alice".to_string()));
 
-    // Generate JSON from nn value (map)
+    // Generate JSON from SUJI value (map)
     let program2 = r#"
 import std:json
 

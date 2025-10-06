@@ -1,4 +1,4 @@
-use nnlang::ast::*;
+use suji_lang::ast::*;
 
 #[test]
 fn test_loop_bindings() {

@@ -1,0 +1,10 @@
+[package]
+name = "suji-ast"
+version = "0.1.13"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+

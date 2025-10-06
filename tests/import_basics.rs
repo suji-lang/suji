@@ -1,7 +1,7 @@
 mod common;
 
 use common::{assert_eval_fails, assert_import_works, eval_program_with_modules};
-use nnlang::runtime::value::Value;
+use suji_lang::runtime::value::Value;
 
 #[test]
 fn test_import_whole_module() {
@@ -41,7 +41,7 @@ fn test_import_nonexistent_module_and_item() {
 
 #[test]
 fn test_import_parsing_variations() {
-    use nnlang::parser::parse_program;
+    use suji_lang::parser::parse_program;
     assert!(parse_program("import std").is_ok());
     assert!(parse_program("import std:println").is_ok());
     assert!(parse_program("import std:println as say").is_ok());

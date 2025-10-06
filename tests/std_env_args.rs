@@ -1,6 +1,6 @@
-use nnlang::runtime::builtins;
-use nnlang::runtime::env::Env;
-use nnlang::runtime::value::{MapKey, Value};
+use suji_lang::runtime::builtins;
+use suji_lang::runtime::env::Env;
+use suji_lang::runtime::value::{MapKey, Value};
 
 #[test]
 fn std_env_args_and_argv_present_and_shaped() {

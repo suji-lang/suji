@@ -1,5 +1,5 @@
-use nnlang::lexer::Lexer;
-use nnlang::token::Token;
+use suji_lang::lexer::Lexer;
+use suji_lang::token::Token;
 
 #[test]
 fn test_string_interpolation_simple() {
