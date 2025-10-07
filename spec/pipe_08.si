@@ -2,12 +2,10 @@ import std:println
 import std:io
 
 sink = || {
-    return || {
-        line = io:stdin::read_line()
-        match line {
-            nil => "none",
-            _ => line,
-        }
+    line = io:stdin::read_line()
+    match line {
+        nil => "none",
+        _ => line,
     }
 }
 

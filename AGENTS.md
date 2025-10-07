@@ -10,11 +10,13 @@ This document defines how AI coding agents (and human collaborators using them) 
 
 ### Repository Overview (quick map)
 - **Language and runtime**: Rust
-- **Entry points**: `src/main.rs` (CLI), `src/lib.rs` (library)
-- **Lexer**: `src/lexer/` (`core.rs`, `states/`, `token.rs`, `utils.rs`)
-- **Parser**: `src/parser/`
-- **Runtime/eval**: `src/runtime/`
-- **Diagnostics**: `src/diagnostics/`
+- **Workspace**: multi-crate under `crates/`
+- **Entry points**: `crates/suji-cli/src/main.rs` (CLI), `src/lib.rs` (workspace facade library)
+- **Lexer**: `crates/suji-lexer/src/lexer/` (`core.rs`, `states/`, `token.rs`, `utils.rs`)
+- **Parser**: `crates/suji-parser/src/parser/`
+- **Runtime/eval**: `crates/suji-runtime/src/runtime/`
+- **Diagnostics**: `crates/suji-diagnostics/src/diagnostics/`
+- **REPL**: implementation in `crates/suji-repl/src/lib.rs` (used by CLI)
 - **Tests**: `tests/` (Rust integration/unit tests)
 - **Language specs (suji)**: `spec/` (source-of-truth examples and expectations)
 - **Examples (suji)**: `examples/`
@@ -81,12 +83,12 @@ make lint
 - **No binary blobs or oversized literals**: never commit generated binaries or huge inlined data.
 
 ### Lexer and Parser Notes
-- **Lexer**: `src/lexer/core.rs` implements scanning; state machines live under `src/lexer/states/` (e.g., `string.rs`, `regex.rs`, `shell.rs`, `interpolation.rs`). `LexState` and `ScannerContext` carry control and position info.
+- **Lexer**: `crates/suji-lexer/src/lexer/core.rs` implements scanning; state machines live under `crates/suji-lexer/src/lexer/states/` (e.g., `string.rs`, `regex.rs`, `shell.rs`, `interpolation.rs`). `LexState` and `ScannerContext` carry control and position info.
 - **Regex disambiguation**: consult `ScannerContext::should_parse_as_regex` and nearby logic before changing operator/regex parsing.
-- **Parser**: precedence and constructs are under `src/parser/*`. Update precedence rules if new operators are introduced.
+- **Parser**: precedence and constructs are under `crates/suji-parser/src/parser/*`. Update precedence rules if new operators are introduced.
 
 ### Runtime/Eval Notes
-- Runtime implementation under `src/runtime/` mirrors language features. Changing evaluation often requires updating both the parser output and runtime handlers (expressions, statements, methods, etc.).
+- Runtime implementation under `crates/suji-runtime/src/runtime/` mirrors language features. Changing evaluation often requires updating both the parser output and runtime handlers (expressions, statements, methods, etc.).
 
 ### Performance Guidelines
 - Keep hot paths allocation-lean and branch-predictable (lexer, parser inner loops, runtime tight loops).
@@ -118,9 +120,9 @@ make lint
 - Do not run any git commands; git workflow is user-owned.
 
 ### Where to Add What
-- **New token or operator**: `src/lexer/*`, adjust states, add `tests/lexer_*`, update `parser/precedence.rs` and parser modules, then runtime handling.
-- **New standard function/module**: `src/runtime/builtins/`, add tests under `tests/` and examples/specs.
-- **Diagnostics**: prefer `src/diagnostics/*` helpers; keep user messages consistent.
+- **New token or operator**: `crates/suji-lexer/src/lexer/*`, adjust states, add `tests/lexer_*`, update `crates/suji-parser/src/parser/precedence.rs` and parser modules, then runtime handling.
+- **New standard function/module**: `crates/suji-stdlib/src/runtime/builtins/`, add tests under `tests/` and examples/specs.
+- **Diagnostics**: prefer `crates/suji-diagnostics/src/diagnostics/*` helpers; keep user messages consistent.
 
 ### CI/Verification (manual today)
 - Ensure all local checks pass:

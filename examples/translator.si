@@ -30,8 +30,7 @@ translate_string = |string| {
         ::join('')
 }
 
-
-out = match io:stdin::is_terminal() {
+match io:stdin::is_terminal() {
     true => "Pipe in a string to translate"
             |> translate_string,
     false => io:stdin
@@ -39,6 +38,4 @@ out = match io:stdin::is_terminal() {
             ::map(|line| line |> translate_string)
             ::join("\n"),
 
-}
-
-println <| out
+} |> println

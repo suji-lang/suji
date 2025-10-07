@@ -41,21 +41,8 @@ pub struct Builtin {
 }
 
 /// Call a built-in function by name
+///
+/// This function delegates to the runtime's builtin registry.
 pub fn call_builtin(name: &str, args: &[Value]) -> Result<Value, RuntimeError> {
-    match name {
-        "print" => builtin_print(args),
-        "println" => builtin_println(args),
-        "random_random" => builtin_random_random(args),
-        "random_seed" => builtin_random_seed(args),
-        "json_parse" => builtin_json_parse(args),
-        "json_generate" => builtin_json_generate(args),
-        "io_open" => builtin_io_open(args),
-        "toml_parse" => builtin_toml_parse(args),
-        "toml_generate" => builtin_toml_generate(args),
-        "yaml_parse" => builtin_yaml_parse(args),
-        "yaml_generate" => builtin_yaml_generate(args),
-        _ => Err(RuntimeError::InvalidOperation {
-            message: format!("Unknown built-in function: {}", name),
-        }),
-    }
+    suji_runtime::builtins::call_builtin(name, args)
 }

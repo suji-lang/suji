@@ -3,10 +3,35 @@ resolver = "3"
 members = [
     "crates/*",
 ]
+default-members = [
+    "crates/suji-cli",
+]
+
+[package]
+name = "suji_lang"
+version = "0.1.14"
+edition = "2024"
+default-run = "suji_root"
+
+[dependencies]
+suji-ast = { path = "crates/suji-ast" }
+suji-lexer = { path = "crates/suji-lexer" }
+suji-parser = { path = "crates/suji-parser" }
+suji-runtime = { path = "crates/suji-runtime" }
+suji-stdlib = { path = "crates/suji-stdlib" }
+suji-diagnostics = { path = "crates/suji-diagnostics" }
+suji-repl = { path = "crates/suji-repl" }
+
+[dev-dependencies]
+indexmap = { workspace = true }
+
+[[bin]]
+name = "suji_root"
+path = "crates/suji-cli/src/main.rs"
 
 [workspace.package]
 edition = "2024"
-version = "0.1.13"
+version = "0.1.14"
 authors = ["suji contributors"]
 
 [workspace.dependencies]

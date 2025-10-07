@@ -159,7 +159,7 @@ impl Parser {
 
     /// Parse forward apply pipelines (|>) - left-associative
     pub(super) fn parse_pipe_apply_forward(&mut self) -> ParseResult<Expr> {
-        self.parse_infix_left_layer(Parser::parse_composition_layer, |t| match t {
+        self.parse_infix_left_layer(Parser::parse_pipe_stream, |t| match t {
             Token::PipeForward => Some(suji_ast::ast::BinaryOp::PipeApplyFwd),
             _ => None,
         })
@@ -175,7 +175,7 @@ impl Parser {
 
     /// Parse stream pipe (|) built over apply-pipe layers - left-associative
     pub(super) fn parse_pipe_stream(&mut self) -> ParseResult<Expr> {
-        self.parse_infix_left_layer(Parser::parse_pipe_apply_backward, |t| match t {
+        self.parse_infix_left_layer(Parser::parse_composition_layer, |t| match t {
             Token::Pipe => Some(suji_ast::ast::BinaryOp::Pipe),
             _ => None,
         })
@@ -183,7 +183,7 @@ impl Parser {
 
     /// Parse assignment expressions (right-associative)
     pub(super) fn parse_assignment(&mut self) -> ParseResult<Expr> {
-        let mut expr = self.parse_pipe_stream()?;
+        let mut expr = self.parse_pipe_apply_backward()?;
 
         if self.check(Token::Comma) && self.looks_like_destructure_pattern() {
             expr = self.parse_destructure_pattern(expr)?;

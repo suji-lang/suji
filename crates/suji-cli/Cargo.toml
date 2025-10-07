@@ -1,7 +1,11 @@
 [package]
 name = "suji-cli"
-version = "0.1.13"
+version = "0.1.14"
 edition = "2024"
+
+[[bin]]
+name = "suji"
+path = "src/main.rs"
 
 [dependencies]
 suji-parser = { path = "../suji-parser" }

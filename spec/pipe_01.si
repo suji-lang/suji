@@ -8,12 +8,10 @@ source = || {
 }
 
 destination = || {
-    return || {
-        lines = io:stdin::read_lines()
-        match lines::length() > 0 {
-            true => { "output received" },
-            false => { "no output" },
-        }
+    lines = io:stdin::read_lines()
+    match lines::length() > 0 {
+        true => { "output received" },
+        false => { "no output" },
     }
 }
 

@@ -1,0 +1,17 @@
+import std:println
+import std:json
+
+user = '{"email":"dev@company.com","age":17}' |> json:parse
+
+kind = match user:email {
+    /^admin@/ => "admin",
+    /@company\.com$/ => "employee",
+    _ => "external",
+}
+
+status = match {
+    user:age >= 18 => "adult",
+    _ => "minor",
+}
+
+println("${kind}:${status}")  # employee:minor

@@ -1,0 +1,18 @@
+import std:println
+import std:io
+
+producer = || {
+    println("alpha")
+    println("beta")
+    println("gamma")
+}
+
+counter = || {
+    io:stdin::read_lines()::length()
+}
+
+format = |n| "Lines: ${n}"
+
+result = producer() | `grep beta` | counter() |> format
+
+println(result)  # Lines: 1

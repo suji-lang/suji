@@ -11,6 +11,10 @@ use suji_ast::ast::{BinaryOp, Expr};
 #[derive(Clone)]
 enum PipeStage {
     Function(Box<FunctionValue>),
+    Invocation {
+        function: Box<FunctionValue>,
+        args: Vec<Value>,
+    },
     ShellTemplate(Vec<suji_ast::ast::StringPart>),
 }
 
@@ -41,6 +45,31 @@ fn collect_pipe_stages(
             collect_pipe_stages(left, env.clone(), out)?;
             collect_pipe_stages(right, env, out)?;
             Ok(())
+        }
+        Expr::Grouping { expr: inner, .. } => {
+            // Unwrap grouping and continue collection
+            collect_pipe_stages(inner, env, out)
+        }
+        Expr::Call { callee, args, .. } => {
+            // Defer invocation to stage execution to run under redirected std/io
+            let callee_val = eval_expr(callee, env.clone())?;
+            match callee_val {
+                Value::Function(f) => {
+                    // Evaluate arguments left-to-right
+                    let mut arg_values = Vec::new();
+                    for arg in args {
+                        arg_values.push(eval_expr(arg, env.clone())?);
+                    }
+                    out.push(PipeStage::Invocation {
+                        function: Box::new(f),
+                        args: arg_values,
+                    });
+                    Ok(())
+                }
+                _ => Err(RuntimeError::PipeStageTypeError {
+                    message: "Pipe operator requires each stage to be either a function or a backtick command".to_string(),
+                }),
+            }
         }
         Expr::ShellCommandTemplate { parts, .. } => {
             out.push(PipeStage::ShellTemplate(parts.clone()));
@@ -89,9 +118,12 @@ pub fn eval_pipe_expression(left: &Expr, right: &Expr, env: Rc<Env>) -> EvalResu
         });
     }
 
-    // Base std module snapshot (from first function stage, if any)
+    // Base std module snapshot (from first function-like stage, if any)
     let base_std = match stages.first() {
         Some(PipeStage::Function(f)) => f.env.get("std").unwrap_or(Value::Nil),
+        Some(PipeStage::Invocation { function, .. }) => {
+            function.env.get("std").unwrap_or(Value::Nil)
+        }
         _ => Value::Nil,
     };
 
@@ -160,6 +192,103 @@ pub fn eval_pipe_expression(left: &Expr, right: &Expr, env: Rc<Env>) -> EvalResu
                     env_overrides,
                 ) {
                     Ok(val) => {
+                        last_result = Some(val);
+                        if let Some(stdout_handle) = capture_stdout {
+                            current_input = stdout_handle.take_memory_output();
+                        }
+                    }
+                    Err(e) => {
+                        return Err(RuntimeError::PipeExecutionError {
+                            stage: "closure".to_string(),
+                            message: e.to_string(),
+                        });
+                    }
+                }
+            }
+            PipeStage::Invocation {
+                function: func,
+                args,
+            } => {
+                // Start from a std map snapshot
+                let mut std_map = pipe_std_map_from(base_std.clone());
+
+                // Get io submodule map
+                let io_key = crate::runtime::value::MapKey::String("io".to_string());
+                let mut io_map = match std_map.get(&io_key) {
+                    Some(Value::Map(m)) => m.clone(),
+                    _ => match create_std_module() {
+                        Value::Map(std_m) => match std_m.get(&io_key) {
+                            Some(Value::Map(m)) => m.clone(),
+                            _ => indexmap::IndexMap::new(),
+                        },
+                        _ => indexmap::IndexMap::new(),
+                    },
+                };
+
+                // Replace stdin if there is input
+                if let Some(bytes) = current_input.take() {
+                    let stdin_key = crate::runtime::value::MapKey::String("stdin".to_string());
+                    let stdin_stream = Rc::new(
+                        crate::runtime::value::StreamHandle::new_memory_readable(bytes),
+                    );
+                    io_map.insert(stdin_key, Value::Stream(stdin_stream));
+                }
+
+                // Replace stdout for non-last stages to capture output
+                let mut capture_stdout = None;
+                if i != last_index {
+                    let stdout_key = crate::runtime::value::MapKey::String("stdout".to_string());
+                    let stdout_handle =
+                        Rc::new(crate::runtime::value::StreamHandle::new_memory_writable());
+                    capture_stdout = Some(stdout_handle.clone());
+                    io_map.insert(stdout_key, Value::Stream(stdout_handle));
+                }
+
+                // Put io back into std (keep a clone for env override)
+                let io_map_clone = io_map.clone();
+                std_map.insert(io_key.clone(), Value::Map(io_map));
+
+                // Build overridden std value and module registry
+                let overridden_std = Value::Map(std_map.clone());
+                let registry = ModuleRegistry::new().with_custom_std(overridden_std);
+
+                // Also inject overridden std and io directly into the call environment
+                let env_overrides_vec = vec![
+                    ("std".to_string(), Value::Map(std_map)),
+                    ("io".to_string(), Value::Map(io_map_clone)),
+                ];
+                let env_overrides = Some(env_overrides_vec.clone());
+
+                // Call function with captured args
+                match crate::runtime::eval::call_function_with_modules(
+                    &func,
+                    args.clone(),
+                    Some(env.clone()),
+                    &registry,
+                    env_overrides.clone(),
+                ) {
+                    Ok(mut val) => {
+                        // If builder pattern: returned a function, immediately invoke with zero args
+                        if let Value::Function(f2) = val {
+                            match crate::runtime::eval::call_function_with_modules(
+                                &f2,
+                                Vec::new(),
+                                Some(env.clone()),
+                                &registry,
+                                env_overrides,
+                            ) {
+                                Ok(v2) => {
+                                    val = v2;
+                                }
+                                Err(e) => {
+                                    return Err(RuntimeError::PipeExecutionError {
+                                        stage: "closure".to_string(),
+                                        message: e.to_string(),
+                                    });
+                                }
+                            }
+                        }
+
                         last_result = Some(val);
                         if let Some(stdout_handle) = capture_stdout {
                             current_input = stdout_handle.take_memory_output();

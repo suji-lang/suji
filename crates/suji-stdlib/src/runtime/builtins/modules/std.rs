@@ -4,7 +4,7 @@ use super::{
     json::create_json_module, random::create_random_module, toml::create_toml_module,
     yaml::create_yaml_module,
 };
-use crate::runtime::builtins::suji_loader::{load_print, load_println};
+use crate::runtime::builtins::suji_loader::{load_print_with_env, load_println_with_env};
 use indexmap::IndexMap;
 use std::rc::Rc;
 use suji_runtime::env_overlay::EnvProxy;
@@ -76,13 +76,8 @@ pub fn create_env_module() -> Value {
 pub fn create_std_module() -> Value {
     let mut std_map = IndexMap::new();
 
-    // Load SUJI-language print and println (pure SUJI definitions)
-    let print_fn = load_print().unwrap_or_else(|_| create_builtin_function_value("print"));
-    let println_fn = load_println().unwrap_or_else(|_| create_builtin_function_value("println"));
-
-    // Insert print/println
-    std_map.insert(MapKey::String("print".to_string()), print_fn);
-    std_map.insert(MapKey::String("println".to_string()), println_fn);
+    // First, add all non-print/println modules to create a partial std
+    // This partial std will be used as the closure environment for print/println
 
     // Add json module to std module
     std_map.insert(MapKey::String("json".to_string()), create_json_module());
@@ -134,6 +129,21 @@ pub fn create_std_module() -> Value {
     env_map.insert(MapKey::String("argv".to_string()), Value::Map(args_map));
 
     std_map.insert(MapKey::String("env".to_string()), Value::Map(env_map));
+
+    // Now load SUJI-language print and println with the partial std module as their environment
+    // This allows them to import other std:* functions (like println importing std:print)
+    let partial_std = Value::Map(std_map.clone());
+
+    let print_fn = load_print_with_env(Some(partial_std.clone()))
+        .unwrap_or_else(|_| create_builtin_function_value("print"));
+    std_map.insert(MapKey::String("print".to_string()), print_fn);
+
+    // Update partial_std with print included for println
+    let partial_std_with_print = Value::Map(std_map.clone());
+
+    let println_fn = load_println_with_env(Some(partial_std_with_print))
+        .unwrap_or_else(|_| create_builtin_function_value("println"));
+    std_map.insert(MapKey::String("println".to_string()), println_fn);
 
     Value::Map(std_map)
 }

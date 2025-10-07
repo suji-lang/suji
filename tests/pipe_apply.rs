@@ -116,3 +116,28 @@ fn type_errors_for_non_functions() {
         "Pipe apply (<|) requires a function on the left-hand side",
     );
 }
+
+#[test]
+fn mixed_precedence_stream_then_apply() {
+    let program = r#"
+import std:println
+import std:io
+
+producer = || {
+    println("foo")
+    println("bar")
+    println("baz")
+}
+
+counter = || {
+    io:stdin::read_lines()::length()
+}
+
+format = |n| "Count: ${n}"
+
+result = producer() | `grep bar` | counter() |> format
+result
+"#;
+    let result = eval_program(program).unwrap();
+    assert_eq!(format!("{}", result), "Count: 1");
+}

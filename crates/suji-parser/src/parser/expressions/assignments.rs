@@ -49,7 +49,7 @@ impl Parser {
                 });
             }
 
-            let next_expr = self.parse_pipe_stream()?;
+            let next_expr = self.parse_pipe_apply_backward()?;
             let validated = self.ensure_destructure_element(next_expr)?;
             last_span = validated.span().clone();
             elements.push(validated);

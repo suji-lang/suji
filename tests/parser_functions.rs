@@ -1,6 +1,6 @@
 use suji_lang::ast::{BinaryOp, Expr, Literal, Stmt};
 mod common;
-use common::parse_expression;
+use common::{eval_program, parse_expression};
 
 #[test]
 fn test_parse_function_single_expression() {
@@ -181,4 +181,14 @@ fn test_parse_function_with_default_params_single_expression() {
     } else {
         panic!("Expected function literal");
     }
+}
+
+#[test]
+fn function_defaults_with_pipe_terminator() {
+    let src = r#"
+f = |x, y = 10| x + y
+f(3)
+"#;
+    let v = eval_program(src).unwrap();
+    assert_eq!(format!("{}", v), "13");
 }

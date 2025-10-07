@@ -10,11 +10,9 @@ source = || {
 }
 
 sink = || {
-    return || {
-        loop through io:stdin::read_lines() with line {
-            match {
-                line ~ /beta/ => return "beta received",
-            }
+    loop through io:stdin::read_lines() with line {
+        match {
+            line ~ /beta/ => return "beta received",
         }
     }
 }

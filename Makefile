@@ -8,12 +8,12 @@ all: build
 # Build the project
 build:
 	@echo "Building suji-lang..."
-	cargo build
+	cargo build -p suji-cli
 
 # Build release version
 release:
 	@echo "Building suji-lang release..."
-	cargo build --release
+	cargo build --release -p suji-cli
 
 # Run Rust unit/integration tests only
 rust_tests:

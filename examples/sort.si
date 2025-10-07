@@ -1,10 +1,6 @@
-# Quicksort implementation in SUJI language
-# Demonstrates recursive functions, list manipulation, and functional programming
-
 import std:println
 
-# Quicksort function - sorts a list of numbers in ascending order
-quicksort = |list| {
+sort = |list| {
     match list::length() {
         0 => [],
         1 => list,
@@ -23,14 +19,14 @@ quicksort = |list| {
                 }
             }
 
-            quicksort(less) + equal + quicksort(greater)
+            sort(less) + equal + sort(greater)
         },
     }
 }
 
 
 list = [85, 12, 59, 45, 72, 51, 80, 75, 89, 9, 71, 81, 33, 1, 84, 28, 97, 94, 57, 8]
-sorted_list = quicksort(list)
+sorted_list = sort(list)
 
 println("Original: " + list::join(", "))
 println("Sorted:   " + sorted_list::join(", "))

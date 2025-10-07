@@ -7,17 +7,15 @@ fn backtick_left_to_closure() {
     let program = r#"
 import std:io
 
-make_destination = || {
-    return || {
-        loop through io:stdin::read_lines() with line {
-            match {
-                line ~ /test/ => return "output received",
-            }
+destination = || {
+    loop through io:stdin::read_lines() with line {
+        match {
+            line ~ /test/ => return "output received",
         }
     }
 }
 
-out = `echo test` | make_destination()
+out = `echo test` | destination()
 out
 "#;
     let result = eval_program(program).unwrap();
@@ -59,11 +57,9 @@ make_source = || {
 }
 
 make_sink = || {
-    return || {
-        loop through io:stdin::read_lines() with line {
-            match {
-                line ~ /beta/ => return "beta received",
-            }
+    loop through io:stdin::read_lines() with line {
+        match {
+            line ~ /beta/ => return "beta received",
         }
     }
 }
