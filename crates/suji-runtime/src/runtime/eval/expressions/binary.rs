@@ -222,9 +222,9 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
     }
 }
 
-/// Create an identifier expression with a default span
-fn make_identifier_expr(name: &str) -> Expr {
-    Expr::Literal(Literal::Identifier(name.to_string(), Span::default()))
+/// Create an identifier expression with a provided span
+fn make_identifier_expr_with_span(name: &str, span: Span) -> Expr {
+    Expr::Literal(Literal::Identifier(name.to_string(), span))
 }
 
 /// Evaluate function composition operators (>> and <<)
@@ -254,7 +254,9 @@ pub fn eval_composition_expression(
 
     // Build AST for composed function body with a single parameter `x`
     let param_name = "x".to_string();
-    let x_expr = make_identifier_expr(&param_name);
+    let left_span = left.covering_span();
+    let right_span = right.covering_span();
+    let x_expr = make_identifier_expr_with_span(&param_name, left_span.clone());
 
     let (inner_callee, outer_callee) = match op {
         BinaryOp::ComposeRight => ("__f", "__g"),
@@ -262,16 +264,32 @@ pub fn eval_composition_expression(
         _ => unreachable!(),
     };
 
+    let inner_callee_span = if inner_callee == "__f" {
+        left_span.clone()
+    } else {
+        right_span.clone()
+    };
     let inner_call = Expr::Call {
-        callee: Box::new(make_identifier_expr(inner_callee)),
+        callee: Box::new(make_identifier_expr_with_span(
+            inner_callee,
+            inner_callee_span.clone(),
+        )),
         args: vec![x_expr],
-        span: Span::default(),
+        span: inner_callee_span,
     };
 
+    let outer_callee_span = if outer_callee == "__f" {
+        left_span.clone()
+    } else {
+        right_span.clone()
+    };
     let outer_call = Expr::Call {
-        callee: Box::new(make_identifier_expr(outer_callee)),
+        callee: Box::new(make_identifier_expr_with_span(
+            outer_callee,
+            outer_callee_span.clone(),
+        )),
         args: vec![inner_call],
-        span: Span::default(),
+        span: outer_callee_span,
     };
 
     let params = vec![ParamSpec {
@@ -332,35 +350,39 @@ pub fn eval_compound_assignment(
 
     // Assign the result back to the target
     // We need to create a temporary expression with the result value
+    let value_span = value.covering_span();
     let temp_expr = match &result_value {
-        Value::Number(n) => Expr::Literal(Literal::Number(n.to_string(), Span::default())),
-        Value::Boolean(b) => Expr::Literal(Literal::Boolean(*b, Span::default())),
+        Value::Number(n) => Expr::Literal(Literal::Number(n.to_string(), value_span.clone())),
+        Value::Boolean(b) => Expr::Literal(Literal::Boolean(*b, value_span.clone())),
         Value::String(s) => Expr::Literal(Literal::StringTemplate(
             vec![suji_ast::ast::StringPart::Text(s.clone())],
-            Span::default(),
+            value_span.clone(),
         )),
         Value::List(items) => {
             let mut exprs = Vec::new();
             for item in items {
-                exprs.push(value_to_expr(item));
+                exprs.push(value_to_expr_with_span(item, value_span.clone()));
             }
-            Expr::Literal(Literal::List(exprs, Span::default()))
+            Expr::Literal(Literal::List(exprs, value_span.clone()))
         }
         Value::Map(map) => {
             let mut pairs = Vec::new();
-            for (key, value) in map {
-                pairs.push((map_key_to_expr(key), value_to_expr(value)));
+            for (key, value_item) in map {
+                pairs.push((
+                    map_key_to_expr_with_span(key, value_span.clone()),
+                    value_to_expr_with_span(value_item, value_span.clone()),
+                ));
             }
-            Expr::Literal(Literal::Map(pairs, Span::default()))
+            Expr::Literal(Literal::Map(pairs, value_span.clone()))
         }
         Value::Tuple(items) => {
             let mut exprs = Vec::new();
             for item in items {
-                exprs.push(value_to_expr(item));
+                exprs.push(value_to_expr_with_span(item, value_span.clone()));
             }
-            Expr::Literal(Literal::Tuple(exprs, Span::default()))
+            Expr::Literal(Literal::Tuple(exprs, value_span.clone()))
         }
-        Value::Nil => Expr::Literal(Literal::Nil(Span::default())),
+        Value::Nil => Expr::Literal(Literal::Nil(value_span.clone())),
         _ => {
             return Err(RuntimeError::InvalidOperation {
                 message: "Cannot assign complex value type".to_string(),
@@ -439,59 +461,62 @@ fn eval_map_access_value(target: &Value, key: &str) -> EvalResult<Value> {
 }
 
 /// Helper function to convert a Value to an Expr
-fn value_to_expr(value: &Value) -> Expr {
+fn value_to_expr_with_span(value: &Value, span: Span) -> Expr {
     match value {
-        Value::Number(n) => Expr::Literal(Literal::Number(n.to_string(), Span::default())),
-        Value::Boolean(b) => Expr::Literal(Literal::Boolean(*b, Span::default())),
+        Value::Number(n) => Expr::Literal(Literal::Number(n.to_string(), span.clone())),
+        Value::Boolean(b) => Expr::Literal(Literal::Boolean(*b, span.clone())),
         Value::String(s) => Expr::Literal(Literal::StringTemplate(
             vec![suji_ast::ast::StringPart::Text(s.clone())],
-            Span::default(),
+            span.clone(),
         )),
         Value::List(items) => {
             let mut exprs = Vec::new();
             for item in items {
-                exprs.push(value_to_expr(item));
+                exprs.push(value_to_expr_with_span(item, span.clone()));
             }
-            Expr::Literal(Literal::List(exprs, Span::default()))
+            Expr::Literal(Literal::List(exprs, span.clone()))
         }
         Value::Map(map) => {
             let mut pairs = Vec::new();
             for (key, value) in map {
-                pairs.push((map_key_to_expr(key), value_to_expr(value)));
+                pairs.push((
+                    map_key_to_expr_with_span(key, span.clone()),
+                    value_to_expr_with_span(value, span.clone()),
+                ));
             }
-            Expr::Literal(Literal::Map(pairs, Span::default()))
+            Expr::Literal(Literal::Map(pairs, span.clone()))
         }
         Value::Tuple(items) => {
             let mut exprs = Vec::new();
             for item in items {
-                exprs.push(value_to_expr(item));
+                exprs.push(value_to_expr_with_span(item, span.clone()));
             }
-            Expr::Literal(Literal::Tuple(exprs, Span::default()))
+            Expr::Literal(Literal::Tuple(exprs, span.clone()))
         }
-        Value::Nil => Expr::Literal(Literal::Nil(Span::default())),
-        _ => Expr::Literal(Literal::Nil(Span::default())), // Fallback for complex types
+        Value::Nil => Expr::Literal(Literal::Nil(span.clone())),
+        _ => Expr::Literal(Literal::Nil(span.clone())), // Fallback for complex types
     }
 }
 
 /// Helper function to convert a MapKey to an Expr
-fn map_key_to_expr(key: &crate::runtime::value::MapKey) -> Expr {
+fn map_key_to_expr_with_span(key: &crate::runtime::value::MapKey, span: Span) -> Expr {
     match key {
         crate::runtime::value::MapKey::String(s) => Expr::Literal(Literal::StringTemplate(
             vec![suji_ast::ast::StringPart::Text(s.clone())],
-            Span::default(),
+            span.clone(),
         )),
         crate::runtime::value::MapKey::Number(n) => {
-            Expr::Literal(Literal::Number(n.0.to_string(), Span::default()))
+            Expr::Literal(Literal::Number(n.0.to_string(), span.clone()))
         }
         crate::runtime::value::MapKey::Boolean(b) => {
-            Expr::Literal(Literal::Boolean(*b, Span::default()))
+            Expr::Literal(Literal::Boolean(*b, span.clone()))
         }
         crate::runtime::value::MapKey::Tuple(items) => {
             let mut exprs = Vec::new();
             for item in items {
-                exprs.push(value_to_expr(&item.to_value()));
+                exprs.push(value_to_expr_with_span(&item.to_value(), span.clone()));
             }
-            Expr::Literal(Literal::Tuple(exprs, Span::default()))
+            Expr::Literal(Literal::Tuple(exprs, span.clone()))
         }
     }
 }

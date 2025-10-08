@@ -10,6 +10,14 @@ use suji_lexer::token::{Span, Token, TokenWithSpan};
 use suji_lexer::{LexError, Lexer};
 use thiserror::Error;
 
+/// Controls whether postfix operators (calls, indexing, field access, ++/--) are allowed
+/// in the current expression parsing context.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum ExpressionContext {
+    Default,
+    NoPostfix,
+}
+
 #[derive(Error, Debug, Clone)]
 pub enum ParseError {
     #[error("Lexical error: {0}")]
@@ -20,6 +28,16 @@ pub enum ParseError {
     UnexpectedEof,
     #[error("Parse error: {message}")]
     Generic { message: String },
+    #[error("Expected token {expected:?} but found {found:?} at {span:?}")]
+    ExpectedToken {
+        expected: Token,
+        found: Token,
+        span: Span,
+    },
+    #[error("Expected item name after ':'")]
+    InvalidImportPath { span: Span },
+    #[error("Expected alias name after 'as'")]
+    InvalidAlias { span: Span },
     #[error("Multiple export statements found. Only one export statement is allowed per file.")]
     MultipleExports { span: Span },
 }
@@ -32,6 +50,8 @@ pub struct Parser {
     tokens: Vec<TokenWithSpan>,
     current: usize,
     export_count: usize,
+    // Current expression parsing context controlling postfix handling
+    expression_context: ExpressionContext,
 }
 
 impl Parser {
@@ -40,6 +60,7 @@ impl Parser {
             tokens,
             current: 0,
             export_count: 0,
+            expression_context: ExpressionContext::Default,
         };
         parser.skip_newlines_and_comments();
         parser

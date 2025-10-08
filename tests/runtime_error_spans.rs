@@ -1,8 +1,4 @@
 //! Tests for runtime error spans and positions
-//!
-//! This module tests that runtime errors carry precise source location spans
-//! that can be used for accurate error reporting.
-
 mod common;
 
 use std::rc::Rc;
@@ -206,6 +202,51 @@ m:b"#;
     assert!(
         error_text.contains("m:b"),
         "Span should cover the map access, got: '{}'",
+        error_text
+    );
+}
+
+#[test]
+fn test_import_nonexistent_has_span() {
+    let source = "import nonexistent";
+    let result = eval_program_for_error(source);
+
+    assert!(result.is_err(), "Expected an import resolution error");
+
+    let error = result.unwrap_err();
+    let span = error.span();
+
+    assert!(span.is_some(), "Error should have a span");
+
+    let span = span.unwrap();
+    let error_text = &source[span.start..span.end];
+    assert!(
+        error_text.contains("import") || error_text.contains("nonexistent"),
+        "Span should cover the import statement, got: '{}'",
+        error_text
+    );
+}
+
+#[test]
+fn test_loop_through_wrong_iterable_has_span() {
+    let source = "x = 1\nloop through x { y = y }";
+    let result = eval_program_for_error(source);
+
+    assert!(
+        result.is_err(),
+        "Expected a type error for non-iterable loop target"
+    );
+
+    let error = result.unwrap_err();
+    let span = error.span();
+
+    assert!(span.is_some(), "Error should have a span");
+
+    let span = span.unwrap();
+    let error_text = &source[span.start..span.end];
+    assert!(
+        error_text.contains("loop through") || error_text.contains("x"),
+        "Span should cover the loop-through statement or iterable, got: '{}'",
         error_text
     );
 }

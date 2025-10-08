@@ -37,8 +37,10 @@ impl Parser {
             return Ok(Expr::Literal(Literal::Identifier(name, span)));
         }
 
-        Err(ParseError::Generic {
-            message: "Not a literal".to_string(),
+        let current = self.peek();
+        Err(ParseError::UnexpectedToken {
+            token: current.token,
+            span: current.span,
         })
     }
 }

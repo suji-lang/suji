@@ -1,10 +1,15 @@
+use super::error_codes::*;
 use super::error_template::ErrorTemplate;
 use suji_lexer::token::Token;
 
 // Parser error templates
 pub fn unexpected_token() -> ErrorTemplate {
     // Base template with no suggestions; suggestions are composed per token
-    ErrorTemplate::new(2, "Unexpected token", "Unexpected token")
+    ErrorTemplate::new(
+        PARSE_UNEXPECTED_TOKEN,
+        "Unexpected token",
+        "Unexpected token",
+    )
 }
 
 /// Provide a suggestion message tailored to a specific unexpected token.
@@ -57,20 +62,46 @@ pub fn unexpected_token_suggestion(token: &Token) -> String {
 }
 
 pub fn unexpected_eof() -> ErrorTemplate {
-    ErrorTemplate::new(3, "Unexpected end of input", "Unexpected end of input").with_suggestion(
+    ErrorTemplate::new(
+        PARSE_UNEXPECTED_EOF,
+        "Unexpected end of input",
+        "Unexpected end of input",
+    )
+    .with_suggestion(
         "The input ended unexpectedly. Check for missing closing brackets, quotes, or other syntax",
     )
 }
 
 pub fn generic_parse_error(message: &str) -> ErrorTemplate {
-    ErrorTemplate::new(4, "Parse error", message)
+    ErrorTemplate::new(PARSE_GENERIC_ERROR, "Parse error", message)
 }
 
 pub fn multiple_exports() -> ErrorTemplate {
     ErrorTemplate::new(
-        5,
+        PARSE_MULTIPLE_EXPORTS,
         "Multiple export statements found",
         "Multiple export statements found",
     )
     .with_suggestion("Only one export statement is allowed per file")
+}
+
+pub fn expected_token(expected: &Token, found: &Token) -> ErrorTemplate {
+    let message = format!("Expected {:?}, found {:?}", expected, found);
+    ErrorTemplate::new(PARSE_EXPECTED_TOKEN, "Expected token", &message)
+}
+
+pub fn invalid_import_path() -> ErrorTemplate {
+    ErrorTemplate::new(
+        PARSE_INVALID_IMPORT_PATH,
+        "Expected item name after ':'",
+        "Expected item name after ':'",
+    )
+}
+
+pub fn invalid_alias() -> ErrorTemplate {
+    ErrorTemplate::new(
+        PARSE_INVALID_ALIAS,
+        "Expected alias name after 'as'",
+        "Expected alias name after 'as'",
+    )
 }

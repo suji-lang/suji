@@ -40,8 +40,11 @@ impl Parser {
                 self.consume(Token::RegexEnd, "Expected end of regex pattern")?;
                 return Ok(suji_ast::ast::Pattern::Regex { pattern, span });
             } else {
-                return Err(ParseError::Generic {
-                    message: "Expected regex content".to_string(),
+                let current = self.peek();
+                return Err(ParseError::ExpectedToken {
+                    expected: Token::RegexContent(String::new()),
+                    found: current.token,
+                    span: current.span,
                 });
             }
         }
@@ -95,8 +98,10 @@ impl Parser {
                     parts.push(suji_ast::ast::StringPart::Expr(expr));
                     self.consume(Token::InterpEnd, "Expected '}' after string interpolation")?;
                 } else {
-                    return Err(ParseError::Generic {
-                        message: "Expected string content or interpolation".to_string(),
+                    let current = self.peek();
+                    return Err(ParseError::UnexpectedToken {
+                        token: current.token,
+                        span: current.span,
                     });
                 }
             }

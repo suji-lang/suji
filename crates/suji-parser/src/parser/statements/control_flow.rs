@@ -37,9 +37,8 @@ impl Parser {
     /// Parse break statement: break label?
     pub(super) fn parse_break_statement(&mut self) -> ParseResult<Stmt> {
         let span = self.previous().span.clone();
-        let label = if let Token::Identifier(name) = &self.peek().token {
-            let name = name.clone();
-            self.advance();
+        let label = if let Token::Identifier(_) = &self.peek().token {
+            let (name, _span) = self.consume_identifier()?;
             Some(name)
         } else {
             None
@@ -50,9 +49,8 @@ impl Parser {
     /// Parse continue statement: continue label?
     pub(super) fn parse_continue_statement(&mut self) -> ParseResult<Stmt> {
         let span = self.previous().span.clone();
-        let label = if let Token::Identifier(name) = &self.peek().token {
-            let name = name.clone();
-            self.advance();
+        let label = if let Token::Identifier(_) = &self.peek().token {
+            let (name, _span) = self.consume_identifier()?;
             Some(name)
         } else {
             None
@@ -71,15 +69,8 @@ impl Parser {
 
         // Parse optional label: loop as label { ... }
         let label = if self.match_token(Token::As) {
-            if let Token::Identifier(name) = &self.peek().token {
-                let name = name.clone();
-                self.advance();
-                Some(name)
-            } else {
-                return Err(ParseError::Generic {
-                    message: "Expected label after 'as'".to_string(),
-                });
-            }
+            let (name, _span) = self.consume_identifier()?;
+            Some(name)
         } else {
             None
         };
@@ -101,27 +92,12 @@ impl Parser {
 
         // Parse optional bindings: with var1, var2
         let bindings = if self.match_token(Token::With) {
-            if let Token::Identifier(var1) = &self.peek().token {
-                let var1 = var1.clone();
-                self.advance();
-
-                if self.match_token(Token::Comma) {
-                    if let Token::Identifier(var2) = &self.peek().token {
-                        let var2 = var2.clone();
-                        self.advance();
-                        suji_ast::ast::LoopBindings::Two(var1, var2)
-                    } else {
-                        return Err(ParseError::Generic {
-                            message: "Expected second variable after comma".to_string(),
-                        });
-                    }
-                } else {
-                    suji_ast::ast::LoopBindings::One(var1)
-                }
+            let (var1, _span1) = self.consume_identifier()?;
+            if self.match_token(Token::Comma) {
+                let (var2, _span2) = self.consume_identifier()?;
+                suji_ast::ast::LoopBindings::Two(var1, var2)
             } else {
-                return Err(ParseError::Generic {
-                    message: "Expected variable name after 'with'".to_string(),
-                });
+                suji_ast::ast::LoopBindings::One(var1)
             }
         } else {
             suji_ast::ast::LoopBindings::None
@@ -129,15 +105,8 @@ impl Parser {
 
         // Parse optional label: as label
         let label = if self.match_token(Token::As) {
-            if let Token::Identifier(name) = &self.peek().token {
-                let name = name.clone();
-                self.advance();
-                Some(name)
-            } else {
-                return Err(ParseError::Generic {
-                    message: "Expected label after 'as'".to_string(),
-                });
-            }
+            let (name, _span) = self.consume_identifier()?;
+            Some(name)
         } else {
             None
         };

@@ -21,8 +21,10 @@ impl Parser {
             return self.parse_regex();
         }
 
-        Err(ParseError::Generic {
-            message: "Not a collection".to_string(),
+        let current = self.peek();
+        Err(ParseError::UnexpectedToken {
+            token: current.token,
+            span: current.span,
         })
     }
 
@@ -152,8 +154,10 @@ impl Parser {
                     "Expected '}' after interpolated expression",
                 )?;
             } else {
-                return Err(ParseError::Generic {
-                    message: "Unexpected token in string template".to_string(),
+                let current = self.peek();
+                return Err(ParseError::UnexpectedToken {
+                    token: current.token,
+                    span: current.span,
                 });
             }
         }
@@ -172,8 +176,11 @@ impl Parser {
             self.consume(Token::RegexEnd, "Expected end of regex")?;
             Ok(Expr::Literal(Literal::RegexLiteral(pattern, start_span)))
         } else {
-            Err(ParseError::Generic {
-                message: "Expected regex pattern".to_string(),
+            let current = self.peek();
+            Err(ParseError::ExpectedToken {
+                expected: Token::RegexContent(String::new()),
+                found: current.token,
+                span: current.span,
             })
         }
     }

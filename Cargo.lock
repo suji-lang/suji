@@ -774,11 +774,11 @@ dependencies = [
 
 [[package]]
 name = "suji-ast"
-version = "0.1.14"
+version = "0.1.15"
 
 [[package]]
 name = "suji-cli"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "suji-diagnostics",
  "suji-parser",
@@ -789,7 +789,7 @@ dependencies = [
 
 [[package]]
 name = "suji-diagnostics"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "ariadne",
  "regex",
@@ -802,7 +802,7 @@ dependencies = [
 
 [[package]]
 name = "suji-lexer"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "regex",
  "suji-ast",
@@ -811,7 +811,7 @@ dependencies = [
 
 [[package]]
 name = "suji-parser"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "chumsky",
  "suji-ast",
@@ -821,7 +821,7 @@ dependencies = [
 
 [[package]]
 name = "suji-repl"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "ariadne",
  "rustyline",
@@ -833,7 +833,7 @@ dependencies = [
 
 [[package]]
 name = "suji-runtime"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "indexmap",
  "once_cell",
@@ -847,7 +847,7 @@ dependencies = [
 
 [[package]]
 name = "suji-stdlib"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "indexmap",
  "once_cell",
@@ -867,7 +867,7 @@ dependencies = [
 
 [[package]]
 name = "suji_lang"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "indexmap",
  "suji-ast",

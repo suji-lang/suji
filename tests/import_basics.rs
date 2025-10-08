@@ -55,5 +55,8 @@ fn test_error_recovery_and_messages_for_imports() {
     use common::assert_parse_fails;
     assert_parse_fails("import std:", "Expected item name after ':'");
     assert_parse_fails("import std:println as", "Expected alias name after 'as'");
-    assert_parse_fails("import", "Expected module name after import");
+    assert_parse_fails(
+        "import",
+        "Expected module name after import || Expected token",
+    );
 }

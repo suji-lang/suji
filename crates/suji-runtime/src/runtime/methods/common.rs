@@ -32,8 +32,8 @@ impl<'a> ValueRef<'a> {
 pub fn eval_closure(closure: &Value, args: Vec<Value>) -> Result<Value, RuntimeError> {
     match closure {
         Value::Function(func) => {
-            // Use the unified function call implementation with simple closure semantics
-            super::super::eval::call_closure_simple(func, args)
+            // Use canonical function call API so methods honor arity/defaults
+            super::super::eval::call_function(func, args, None)
         }
         _ => Err(RuntimeError::TypeError {
             message: "Expected a function for closure evaluation".to_string(),

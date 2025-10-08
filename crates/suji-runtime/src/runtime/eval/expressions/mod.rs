@@ -21,8 +21,8 @@ use suji_ast::ast::Expr;
 
 // Import functions that are used in eval_expr but defined in other modules
 use super::assignments::eval_assignment;
+use super::data_structures::{eval_index, eval_map_access_by_name, eval_slice};
 use super::eval_match_expression;
-use super::indexing::{eval_index, eval_map_access_by_name, eval_slice};
 use super::postfix::{eval_postfix_decrement, eval_postfix_increment};
 
 /// Result type for evaluation that can return control flow signals

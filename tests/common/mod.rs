@@ -91,12 +91,17 @@ pub fn assert_import_works(input: &str) {
 pub fn assert_parse_fails(input: &str, expected_error_fragment: &str) {
     match parse_program(input) {
         Ok(_) => panic!("Expected parsing to fail for: {}", input),
-        Err(e) => assert!(
-            e.to_string().contains(expected_error_fragment),
-            "Error '{}' should contain '{}'",
-            e,
-            expected_error_fragment
-        ),
+        Err(e) => {
+            let msg = e.to_string();
+            // Support multiple acceptable fragments separated by '||' to ease message transitions
+            let options: Vec<&str> = expected_error_fragment.split("||").collect();
+            let matched = options.iter().any(|frag| msg.contains(frag.trim()));
+            assert!(
+                matched,
+                "Error '{}' should contain one of '{}'",
+                msg, expected_error_fragment
+            );
+        }
     }
 }
 

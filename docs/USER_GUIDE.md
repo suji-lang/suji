@@ -1074,3 +1074,4 @@ cargo test
 - **v0.1.12**: Function composition operators (`>>`, `<<`); pattern alternation in match arms; `|>`/`<|` accept expressions on the applicable side
 - **v0.1.13**: Official name: suji. Logical split into crates.
 - **v0.1.14**: Stream pipe fixes and precedence. `|` pipelines require invoked closures and bind tighter than `|>`/`<|`.
+- **v0.1.15**: Error codes for all error types and better error handling. Various bugfixes.

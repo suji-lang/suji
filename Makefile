@@ -18,7 +18,7 @@ release:
 # Run Rust unit/integration tests only
 rust_tests:
 	@echo "Running Rust tests..."
-	cargo test
+	cargo test --workspace
 
 # Run full test suite: Rust tests + spec verification + example verification
 test:

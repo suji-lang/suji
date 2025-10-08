@@ -11,7 +11,6 @@ mod function_call;
 mod functions;
 mod helpers;
 mod imports;
-mod indexing;
 mod literals;
 mod operators;
 mod patterns;
@@ -23,7 +22,7 @@ mod expressions;
 
 // Re-export the main evaluation functions
 pub use exports::eval_export;
-pub use function_call::{call_closure_simple, call_function, call_function_with_modules};
+pub use function_call::{call_function, call_function_with_modules};
 pub use functions::*;
 pub use helpers::*;
 pub use imports::*;
@@ -58,7 +57,7 @@ pub fn eval_stmt_with_modules(
     loop_stack: &mut Vec<String>,
     module_registry: &ModuleRegistry,
 ) -> EvalResult<Option<Value>> {
-    match stmt {
+    let result = match stmt {
         Stmt::Expr(expr) => {
             let value = eval_expr(expr, env)?;
             Ok(Some(value))
@@ -107,26 +106,33 @@ pub fn eval_stmt_with_modules(
             bindings,
             body,
             ..
-        } => eval_loop_through_with_modules(
-            label.as_deref(),
-            iterable,
-            bindings,
-            body,
-            env,
-            loop_stack,
-            module_registry,
-        ),
-
-        Stmt::Import { spec, .. } => {
-            eval_import(spec, env, module_registry)?;
-            Ok(Some(Value::Nil))
+        } => {
+            // Prefer pointing at the iterable expression for iteration type errors
+            let result = eval_loop_through_with_modules(
+                label.as_deref(),
+                iterable,
+                bindings,
+                body,
+                env,
+                loop_stack,
+                module_registry,
+            );
+            result.map_err(|e| e.with_span(iterable.covering_span()))
         }
 
-        Stmt::Export { spec, .. } => {
-            let export_result = eval_export(spec, env)?;
-            Ok(Some(export_result.module))
-        }
-    }
+        Stmt::Import { spec, .. } => match eval_import(spec, env, module_registry) {
+            Ok(()) => Ok(Some(Value::Nil)),
+            Err(e) => Err(e),
+        },
+
+        Stmt::Export { spec, .. } => match eval_export(spec, env) {
+            Ok(export_result) => Ok(Some(export_result.module)),
+            Err(e) => Err(e),
+        },
+    };
+
+    // Attach the statement's span to errors that lack one
+    result.map_err(|e| e.with_span(stmt.span().clone()))
 }
 
 /// Wrapper functions to handle module registry
@@ -143,7 +149,7 @@ fn eval_block_with_modules(
     for stmt in statements {
         match eval_stmt_with_modules(stmt, block_env.clone(), loop_stack, module_registry) {
             Ok(value) => last_value = value,
-            Err(e) => return Err(e),
+            Err(e) => return Err(e.with_span(stmt.span().clone())),
         }
     }
 
@@ -162,7 +168,7 @@ pub fn eval_program_with_modules(
     for stmt in statements {
         match eval_stmt_with_modules(stmt, env.clone(), &mut loop_stack, module_registry) {
             Ok(value) => last_value = value,
-            Err(e) => return Err(e),
+            Err(e) => return Err(e.with_span(stmt.span().clone())),
         }
     }
 

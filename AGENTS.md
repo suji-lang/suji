@@ -8,19 +8,82 @@ This document defines how AI coding agents (and human collaborators using them) 
 - **Document intent**: when behavior changes, update docs and tests in the same change.
 - **No silent behavior changes**: if public behavior changes, call it out.
 
-### Repository Overview (quick map)
-- **Language and runtime**: Rust
-- **Workspace**: multi-crate under `crates/`
-- **Entry points**: `crates/suji-cli/src/main.rs` (CLI), `src/lib.rs` (workspace facade library)
-- **Lexer**: `crates/suji-lexer/src/lexer/` (`core.rs`, `states/`, `token.rs`, `utils.rs`)
-- **Parser**: `crates/suji-parser/src/parser/`
-- **Runtime/eval**: `crates/suji-runtime/src/runtime/`
-- **Diagnostics**: `crates/suji-diagnostics/src/diagnostics/`
-- **REPL**: implementation in `crates/suji-repl/src/lib.rs` (used by CLI)
-- **Tests**: `tests/` (Rust integration/unit tests)
-- **Language specs (suji)**: `spec/` (source-of-truth examples and expectations)
-- **Examples (suji)**: `examples/`
-- **Docs**: `docs/` (`SUJI_LANG.md`, implementation plans)
+### Crate map and key files
+
+- **suji-ast**: AST data structures and spans
+  - `crates/suji-ast/src/lib.rs` (crate exports)
+  - `crates/suji-ast/src/ast/` (AST node definitions)
+  - `crates/suji-ast/src/span.rs` (source span types and helpers)
+
+- **suji-cli**: CLI entry and execution
+  - `crates/suji-cli/src/main.rs` (binary entry point; parses args, runs REPL or file)
+
+- **suji-diagnostics**: diagnostics and error reporting utilities
+  - `crates/suji-diagnostics/src/lib.rs` (crate exports)
+  - `crates/suji-diagnostics/src/diagnostics/` (diagnostic builders, messages, span formatting)
+
+- **suji-lexer**: lexical scanner for Suji source
+  - `crates/suji-lexer/src/lib.rs` (crate exports)
+  - `crates/suji-lexer/src/lexer/core.rs` (scanner core; drives state machine)
+  - `crates/suji-lexer/src/lexer/states/` (state handlers: `string.rs`, `regex.rs`, `shell.rs`, `interpolation.rs`)
+  - `crates/suji-lexer/src/lexer/token.rs` (token kinds and token data)
+  - `crates/suji-lexer/src/lexer/utils.rs` (helpers for scanning)
+
+- **suji-parser**: parser and precedence rules
+  - `crates/suji-parser/src/lib.rs` (crate exports)
+  - `crates/suji-parser/src/parser/` (parsing modules)
+  - `crates/suji-parser/src/parser/precedence.rs` (operator precedence and associativity)
+
+- **suji-repl**: interactive REPL engine (used by CLI)
+  - `crates/suji-repl/src/lib.rs` (REPL loop, line evaluation)
+
+- **suji-runtime**: evaluator/runtime for executing AST
+  - `crates/suji-runtime/src/lib.rs` (crate exports)
+  - `crates/suji-runtime/src/runtime/eval/` (expression/statement evaluators)
+    - Notable: `function_call.rs` (call invocation), `expressions/binary.rs` (binary ops)
+  - `crates/suji-runtime/src/runtime/methods/` (methods on values; `common.rs` shared helpers)
+  - Other runtime modules under `crates/suji-runtime/src/runtime/` (values, env, helpers)
+
+- **suji-stdlib**: standard library builtins
+  - `crates/suji-stdlib/src/lib.rs` (crate exports)
+  - `crates/suji-stdlib/src/runtime/builtins/modules/` (module aggregators, e.g., `std.rs`, `json.rs`)
+  - `crates/suji-stdlib/src/runtime/builtins/functions/` (builtin functions, e.g., `json_generate.rs`, `yaml_generate.rs`)
+  - `crates/suji-stdlib/src/runtime/**/*.si` (stdlib Suji source files, when present)
+
+- **Workspace facade**
+  - `src/lib.rs` (workspace-level facade library)
+
+- **Top-level supporting dirs**
+  - `tests/` (Rust integration/unit tests)
+  - `spec/` (single-assertion spec programs)
+  - `examples/` (runnable examples)
+  - `docs/`, `internal_docs/` (user and design docs)
+  - `scripts/` (spec/examples verification scripts)
+  - `Makefile` (common tasks)
+
+### Where to find X (quick index)
+
+- **Token kinds and tokens**: `crates/suji-lexer/src/lexer/token.rs`
+- **Scanning rules by construct**:
+  - Strings: `crates/suji-lexer/src/lexer/states/string.rs`
+  - Regex: `crates/suji-lexer/src/lexer/states/regex.rs` (disambiguation via `ScannerContext::should_parse_as_regex` in `lexer/core.rs`)
+  - Shell templates: `crates/suji-lexer/src/lexer/states/shell.rs`
+  - Interpolation: `crates/suji-lexer/src/lexer/states/interpolation.rs`
+- **Operator precedence/associativity**: `crates/suji-parser/src/parser/precedence.rs`
+- **Expression/statement parsing**: under `crates/suji-parser/src/parser/`
+- **Function/method invocation (runtime)**: `crates/suji-runtime/src/runtime/eval/function_call.rs`
+- **Binary expression evaluation**: `crates/suji-runtime/src/runtime/eval/expressions/binary.rs`
+- **Value methods (runtime)**: `crates/suji-runtime/src/runtime/methods/` (see `common.rs`)
+- **Diagnostics helpers/messages**: `crates/suji-diagnostics/src/diagnostics/`
+- **Built-in modules and functions**:
+  - Modules: `crates/suji-stdlib/src/runtime/builtins/modules/` (e.g., `std.rs`, `json.rs`)
+  - Functions: `crates/suji-stdlib/src/runtime/builtins/functions/`
+- **REPL loop**: `crates/suji-repl/src/lib.rs`
+- **CLI entry point**: `crates/suji-cli/src/main.rs`
+- **Workspace facade library**: `src/lib.rs`
+- **Spec tests and conventions**: `spec/*.si` (one expectation per file; import `std:println`; last line `println(...)  # expected`)
+- **Verification scripts**: `scripts/verify_spec.sh`, `scripts/verify_examples.sh`
+- **Examples**: `examples/*.si`
 
 ### Local Dev Basics
 - **Build**:
@@ -116,13 +179,9 @@ make lint
 - Do not change public-facing behavior without tests demonstrating the change.
 - Avoid cross-cutting refactors in the same PR as feature work.
 - Avoid adding new dependencies without justification.
+- If a change spans lexer, parser, and runtime, break it into reviewable steps where possible.
 - Keep unsafe Rust out unless strictly necessary and reviewed.
 - Do not run any git commands; git workflow is user-owned.
-
-### Where to Add What
-- **New token or operator**: `crates/suji-lexer/src/lexer/*`, adjust states, add `tests/lexer_*`, update `crates/suji-parser/src/parser/precedence.rs` and parser modules, then runtime handling.
-- **New standard function/module**: `crates/suji-stdlib/src/runtime/builtins/`, add tests under `tests/` and examples/specs.
-- **Diagnostics**: prefer `crates/suji-diagnostics/src/diagnostics/*` helpers; keep user messages consistent.
 
 ### CI/Verification (manual today)
 - Ensure all local checks pass:
@@ -130,10 +189,6 @@ make lint
 make lint
 make test
 ```
-
-### Contact and Ownership
-- If a change spans lexer, parser, and runtime, break it into reviewable steps where possible.
-- Unsure about language design? Propose the change in a doc under `docs/` and link it from your PR.
 
 ---
 If anything here conflicts with existing code conventions or tests, prefer existing behavior and update this document in a follow-up.

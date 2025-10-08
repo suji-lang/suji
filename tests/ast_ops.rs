@@ -26,7 +26,7 @@ fn test_binary_op_variants() {
     // Ensure all operators implement required traits
     for op in ops {
         let _ = format!("{:?}", op);
-        let _ = op.clone();
+        let _ = op;
         let _ = op == BinaryOp::Add;
     }
 }
@@ -37,7 +37,7 @@ fn test_unary_op_variants() {
 
     for op in ops {
         let _ = format!("{:?}", op);
-        let _ = op.clone();
+        let _ = op;
         let _ = op == UnaryOp::Negate;
     }
 }

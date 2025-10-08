@@ -9,57 +9,36 @@ impl Parser {
 
         if let Token::Identifier(module_name) = &self.peek().token {
             let module_name = module_name.clone();
-            self.advance();
+            let module_span = self.advance().span.clone();
 
             // Check for colon (import module:item or module:submodule:item)
-            if self.match_token(Token::Colon) {
-                // Parse the module path (can be nested like "json:parse" or just "parse")
-                let mut module_path = module_name.clone();
-
-                // Keep parsing identifiers separated by colons
-                while let Token::Identifier(part) = &self.peek().token {
-                    let part = part.clone();
-                    self.advance();
-                    module_path.push(':');
-                    module_path.push_str(&part);
-
-                    if !self.match_token(Token::Colon) {
-                        break;
-                    }
-                }
-
-                // Check if we have at least one item after the colon
-                if module_path == module_name {
-                    return Err(ParseError::Generic {
-                        message: "Expected item name after ':'".to_string(),
-                    });
-                }
-
-                // The last part is the item name
-                let item_name = module_path.split(':').next_back().unwrap().to_string();
-                let module_path = module_path
-                    .trim_end_matches(&format!(":{}", item_name))
-                    .to_string();
+            if self.check(Token::Colon) {
+                // Parse colon-separated path segments, requiring at least one additional segment
+                // after the first (module) name.
+                let (segments, _path_span) =
+                    self.parse_colon_path_from(module_name.clone(), module_span, true)?;
+                let (module_path, item_name) = segments
+                    .split_last()
+                    .map(|(last, rest)| (rest.join(":"), last.to_string()))
+                    .unwrap_or_default();
 
                 // Check for 'as' alias
                 if self.match_token(Token::As) {
-                    if let Token::Identifier(alias) = &self.peek().token {
-                        let alias = alias.clone();
-                        self.advance();
-
-                        Ok(Stmt::Import {
-                            spec: suji_ast::ast::ImportSpec::ItemAs {
-                                module: module_path,
-                                name: item_name,
-                                alias,
-                            },
-                            span,
-                        })
-                    } else {
-                        Err(ParseError::Generic {
-                            message: "Expected alias name after 'as'".to_string(),
-                        })
-                    }
+                    let (alias, _alias_span) = match self.consume_identifier() {
+                        Ok(v) => v,
+                        Err(_) => {
+                            let current = self.peek();
+                            return Err(ParseError::InvalidAlias { span: current.span });
+                        }
+                    };
+                    Ok(Stmt::Import {
+                        spec: suji_ast::ast::ImportSpec::ItemAs {
+                            module: module_path,
+                            name: item_name,
+                            alias,
+                        },
+                        span,
+                    })
                 } else {
                     // import module:item
                     Ok(Stmt::Import {
@@ -98,23 +77,16 @@ impl Parser {
         let mut exports = Vec::new();
 
         while !self.check(Token::RightBrace) && !self.is_at_end() {
-            if let Token::Identifier(name) = &self.peek().token {
-                let name = name.clone();
-                self.advance();
-                self.consume(Token::Colon, "Expected ':' after export name")?;
-                let value = self.expression()?;
-                exports.push((name, value));
+            let (name, _name_span) = self.consume_identifier()?;
+            self.consume(Token::Colon, "Expected ':' after export name")?;
+            let value = self.expression()?;
+            exports.push((name, value));
 
-                if !self.match_token(Token::Comma) {
-                    break;
-                }
-                if self.check(Token::RightBrace) {
-                    break;
-                }
-            } else {
-                return Err(ParseError::Generic {
-                    message: "Expected export name".to_string(),
-                });
+            if !self.match_token(Token::Comma) {
+                break;
+            }
+            if self.check(Token::RightBrace) {
+                break;
             }
         }
 

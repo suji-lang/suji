@@ -1,4 +1,5 @@
-use super::{ParseResult, Parser};
+use super::ExpressionContext;
+use super::{ParseError, ParseResult, Parser};
 use suji_ast::ast::{Expr, Literal};
 use suji_lexer::token::Token;
 
@@ -54,7 +55,12 @@ impl Parser {
             let op = match &self.previous().token {
                 Token::Not => suji_ast::ast::UnaryOp::Not,
                 Token::Minus => suji_ast::ast::UnaryOp::Negate,
-                _ => unreachable!(),
+                other => {
+                    return Err(ParseError::UnexpectedToken {
+                        token: other.clone(),
+                        span: self.previous().span.clone(),
+                    });
+                }
             };
             let span = self.previous().span.clone();
             let expr = self.parse_unary()?;
@@ -70,7 +76,12 @@ impl Parser {
 
     /// Parse power expressions (^) - right associative
     pub(super) fn parse_power(&mut self) -> ParseResult<Expr> {
-        self.parse_infix_right_layer(Parser::postfix, |t| match t {
+        // Choose the atomic base depending on whether postfix is allowed
+        let next: fn(&mut Parser) -> ParseResult<Expr> = match self.expression_context {
+            ExpressionContext::Default => Parser::postfix,
+            ExpressionContext::NoPostfix => Parser::primary,
+        };
+        self.parse_infix_right_layer(next, |t| match t {
             Token::Power => Some(suji_ast::ast::BinaryOp::Power),
             _ => None,
         })
@@ -265,9 +276,18 @@ impl Parser {
         Ok(expr)
     }
 
-    /// Parse an expression
+    /// Parse an expression according to the current `expression_context`.
     pub fn expression(&mut self) -> ParseResult<Expr> {
         self.parse_assignment()
+    }
+
+    /// Parse an expression under a specific `ExpressionContext`, temporarily overriding the current one.
+    pub(super) fn expression_in_context(&mut self, ctx: ExpressionContext) -> ParseResult<Expr> {
+        let prev = self.expression_context;
+        self.expression_context = ctx;
+        let result = self.parse_assignment();
+        self.expression_context = prev;
+        result
     }
 
     /// Parse an expression but without considering the pipe operator layer.

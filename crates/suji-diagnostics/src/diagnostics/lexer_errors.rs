@@ -1,9 +1,10 @@
+use super::error_codes::*;
 use super::error_template::ErrorTemplate;
 
 // Lexer error templates
 pub fn unterminated_string() -> ErrorTemplate {
     ErrorTemplate::new(
-        1,
+        LEX_UNTERMINATED_STRING,
         "Unterminated string literal",
         "Unterminated string literal",
     )
@@ -12,7 +13,7 @@ pub fn unterminated_string() -> ErrorTemplate {
 
 pub fn unterminated_shell_command() -> ErrorTemplate {
     ErrorTemplate::new(
-        1,
+        LEX_UNTERMINATED_SHELL_COMMAND,
         "Unterminated shell command",
         "Unterminated shell command",
     )
@@ -21,7 +22,7 @@ pub fn unterminated_shell_command() -> ErrorTemplate {
 
 pub fn unterminated_regex() -> ErrorTemplate {
     ErrorTemplate::new(
-        1,
+        LEX_UNTERMINATED_REGEX,
         "Unterminated regex literal",
         "Unterminated regex literal",
     )
@@ -37,7 +38,7 @@ pub fn invalid_escape(escape: char) -> ErrorTemplate {
         _ => "Valid escape sequences are: \\n, \\t, \\\", \\\\",
     };
     ErrorTemplate::new(
-        1,
+        LEX_INVALID_ESCAPE,
         "Invalid escape sequence",
         &format!("Invalid escape sequence '\\{}'", escape),
     )
@@ -46,7 +47,7 @@ pub fn invalid_escape(escape: char) -> ErrorTemplate {
 
 pub fn invalid_number(literal: &str) -> ErrorTemplate {
     ErrorTemplate::new(
-        1,
+        LEX_INVALID_NUMBER,
         "Invalid number literal",
         &format!("Invalid number literal '{}'", literal),
     )
@@ -69,7 +70,7 @@ pub fn unexpected_character(ch: char) -> ErrorTemplate {
         _ => "This character is not valid in this context. Check for typos or missing quotes",
     };
     ErrorTemplate::new(
-        1,
+        LEX_UNEXPECTED_CHARACTER,
         "Unexpected character",
         &format!("Unexpected character '{}'", ch),
     )

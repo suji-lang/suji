@@ -16,8 +16,10 @@ impl Parser {
             return self.parse_match_expression_impl();
         }
 
-        Err(ParseError::Generic {
-            message: "Not a match expression".to_string(),
+        let current = self.peek();
+        Err(ParseError::UnexpectedToken {
+            token: current.token,
+            span: current.span,
         })
     }
 
@@ -77,8 +79,10 @@ impl Parser {
                     let next_pattern = match self.parse_pattern() {
                         Ok(p) => p,
                         Err(_) => {
-                            return Err(ParseError::Generic {
-                                message: "Expected pattern after '|' in match arm".to_string(),
+                            let current = self.peek();
+                            return Err(ParseError::UnexpectedToken {
+                                token: current.token,
+                                span: current.span,
                             });
                         }
                     };

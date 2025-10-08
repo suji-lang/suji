@@ -9,8 +9,10 @@ impl Parser {
             return self.parse_shell_command_template();
         }
 
-        Err(ParseError::Generic {
-            message: "Not a shell command".to_string(),
+        let current = self.peek();
+        Err(ParseError::UnexpectedToken {
+            token: current.token,
+            span: current.span,
         })
     }
 
@@ -33,8 +35,10 @@ impl Parser {
                     "Expected '}' after interpolated expression",
                 )?;
             } else {
-                return Err(ParseError::Generic {
-                    message: "Unexpected token in shell command template".to_string(),
+                let current = self.peek();
+                return Err(ParseError::UnexpectedToken {
+                    token: current.token,
+                    span: current.span,
                 });
             }
         }

@@ -5,11 +5,12 @@ members = [
 ]
 default-members = [
     "crates/suji-cli",
+    ".",
 ]
 
 [package]
 name = "suji_lang"
-version = "0.1.14"
+version = "0.1.15"
 edition = "2024"
 default-run = "suji_root"
 
@@ -31,7 +32,7 @@ path = "crates/suji-cli/src/main.rs"
 
 [workspace.package]
 edition = "2024"
-version = "0.1.14"
+version = "0.1.15"
 authors = ["suji contributors"]
 
 [workspace.dependencies]

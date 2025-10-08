@@ -52,25 +52,30 @@ impl Env {
         })
     }
 
+    /// Try to set an existing variable somewhere in the parent chain.
+    /// Returns true if the variable was found and updated, false otherwise.
+    fn try_set_in_chain(&self, name: &str, value: &Value) -> bool {
+        if self.bindings.borrow().contains_key(name) {
+            self.bindings
+                .borrow_mut()
+                .insert(name.to_string(), value.clone());
+            return true;
+        }
+
+        if let Some(ref parent) = self.parent {
+            return parent.try_set_in_chain(name, value);
+        }
+
+        false
+    }
+
     /// Set an existing variable, searching up the parent chain
     /// If the variable doesn't exist anywhere, define it in the current scope
     pub fn set_existing(&self, name: &str, value: Value) -> Result<(), RuntimeError> {
-        // Check if variable exists in current scope
-        if self.bindings.borrow().contains_key(name) {
+        if !self.try_set_in_chain(name, &value) {
+            // Variable doesn't exist anywhere, define in current scope
             self.bindings.borrow_mut().insert(name.to_string(), value);
-            return Ok(());
         }
-
-        // Check parent scopes
-        if let Some(ref parent) = self.parent {
-            // If it exists in a parent scope, try to set it there
-            if parent.contains(name) {
-                return parent.set_existing(name, value);
-            }
-        }
-
-        // Variable doesn't exist anywhere, define in current scope
-        self.bindings.borrow_mut().insert(name.to_string(), value);
         Ok(())
     }
 

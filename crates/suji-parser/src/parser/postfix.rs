@@ -1,3 +1,4 @@
+use super::ExpressionContext;
 use super::{ParseError, ParseResult, Parser};
 use suji_ast::ast::Expr;
 use suji_lexer::token::Token;
@@ -34,6 +35,10 @@ impl Parser {
         let mut expr = self.primary()?;
 
         loop {
+            // If postfix is disabled in the current context, stop immediately
+            if self.expression_context == ExpressionContext::NoPostfix {
+                break;
+            }
             if self.match_token(Token::LeftParen) {
                 // Function call
                 expr = self.finish_call(expr)?;
@@ -141,9 +146,8 @@ impl Parser {
 
     /// Finish parsing a method call
     pub(super) fn finish_method_call(&mut self, receiver: Expr) -> ParseResult<Expr> {
-        if let Token::Identifier(method_name) = &self.peek().token {
-            let method_name = method_name.clone();
-            self.advance();
+        if let Token::Identifier(_) = &self.peek().token {
+            let (method_name, _span) = self.consume_identifier()?;
 
             self.consume(Token::LeftParen, "Expected '(' after method name")?;
 
@@ -161,25 +165,30 @@ impl Parser {
                 span,
             })
         } else {
-            Err(ParseError::Generic {
-                message: "Expected method name after '::'".to_string(),
+            let current = self.peek();
+            Err(ParseError::ExpectedToken {
+                expected: Token::Identifier(String::new()),
+                found: current.token,
+                span: current.span,
             })
         }
     }
 
     /// Finish parsing map access by name
     pub(super) fn finish_map_access(&mut self, target: Expr) -> ParseResult<Expr> {
-        if let Token::Identifier(key) = &self.peek().token {
-            let key = key.clone();
-            let span = self.advance().span.clone();
+        if let Token::Identifier(_) = &self.peek().token {
+            let (key, span) = self.consume_identifier()?;
             Ok(Expr::MapAccessByName {
                 target: Box::new(target),
                 key,
                 span,
             })
         } else {
-            Err(ParseError::Generic {
-                message: "Expected identifier after ':'".to_string(),
+            let current = self.peek();
+            Err(ParseError::ExpectedToken {
+                expected: Token::Identifier(String::new()),
+                found: current.token,
+                span: current.span,
             })
         }
     }

@@ -42,15 +42,8 @@ pub fn call_function(
     caller_env: Option<Rc<Env>>,
 ) -> Result<Value, RuntimeError> {
     let mut context = CallContext::new(func.clone(), args, caller_env);
-
-    // Phase 1: Argument validation and default resolution
-    resolve_arguments(&mut context)?;
-
-    // Phase 2: Parameter binding
-    bind_parameters(&context)?;
-
-    // Phase 3: Body execution with proper return handling
-    execute_function_body(&context)
+    // Delegate to internal executor with no module registry and no env overrides
+    execute_function(&mut context, None, None)
 }
 
 /// Function call variant that allows supplying a custom module registry
@@ -62,37 +55,8 @@ pub fn call_function_with_modules(
     env_overrides: Option<Vec<(String, Value)>>,
 ) -> Result<Value, RuntimeError> {
     let mut context = CallContext::new(func.clone(), args, caller_env);
-
-    // Apply environment overrides (e.g., std/io for pipe) before binding params
-    if let Some(overrides) = env_overrides {
-        for (name, value) in overrides {
-            context.call_env.define_or_set(&name, value);
-        }
-    }
-
-    // Resolve arguments (defaults, arity)
-    resolve_arguments(&mut context)?;
-
-    // Bind parameters
-    bind_parameters(&context)?;
-
-    // Execute body with module registry and implicit returns
-    let mut loop_stack = Vec::new();
-    match eval_stmt_with_modules(
-        &context.func.body,
-        context.call_env.clone(),
-        &mut loop_stack,
-        module_registry,
-    ) {
-        Ok(result) => match result {
-            Some(value) => Ok(value),
-            None => handle_implicit_return(&context.func.body, context.call_env.clone()),
-        },
-        Err(RuntimeError::ControlFlow {
-            flow: ControlFlow::Return(value),
-        }) => Ok(*value),
-        Err(other) => Err(other),
-    }
+    // Delegate to internal executor with provided module registry and any env overrides
+    execute_function(&mut context, Some(module_registry), env_overrides)
 }
 
 /// Phase 1: Resolve arguments with default parameter handling and arity checking
@@ -163,17 +127,58 @@ fn execute_function_body(context: &CallContext) -> Result<Value, RuntimeError> {
         Ok(result) => {
             // Handle implicit returns
             match result {
-                Some(value) => Ok(value), // Statement returned a value
-                None => {
-                    // No explicit return, check if function body was a single expression
-                    handle_implicit_return(&context.func.body, context.call_env.clone())
-                }
+                Some(value) => Ok(value),
+                None => handle_implicit_return(&context.func.body, context.call_env.clone()),
             }
         }
         Err(RuntimeError::ControlFlow {
             flow: ControlFlow::Return(value),
         }) => Ok(*value),
         Err(other_error) => Err(other_error),
+    }
+}
+
+/// Internal unified executor used by both public call paths
+fn execute_function(
+    context: &mut CallContext,
+    module_registry: Option<&ModuleRegistry>,
+    env_overrides: Option<Vec<(String, Value)>>,
+) -> Result<Value, RuntimeError> {
+    // Apply environment overrides (e.g., std/io for pipe) before binding params
+    if let Some(overrides) = env_overrides {
+        for (name, value) in overrides {
+            context.call_env.define_or_set(&name, value);
+        }
+    }
+
+    // Phase 1: Argument validation and default resolution
+    resolve_arguments(context)?;
+
+    // Phase 2: Parameter binding
+    bind_parameters(context)?;
+
+    // Phase 3: Body execution
+    if let Some(registry) = module_registry {
+        // Execute body with module registry and implicit returns
+        let mut loop_stack = Vec::new();
+        match eval_stmt_with_modules(
+            &context.func.body,
+            context.call_env.clone(),
+            &mut loop_stack,
+            registry,
+        ) {
+            Ok(result) => match result {
+                Some(value) => Ok(value),
+                None => handle_implicit_return(&context.func.body, context.call_env.clone()),
+            },
+            Err(RuntimeError::ControlFlow {
+                flow: ControlFlow::Return(value),
+            }) => Ok(*value),
+            Err(other) => Err(other),
+        }
+    } else {
+        // Execute without module registry (standard path)
+        execute_function_body(context)
     }
 }
 
@@ -196,28 +201,6 @@ fn handle_implicit_return(body: &Stmt, call_env: Rc<Env>) -> Result<Value, Runti
             }
         }
         _ => Ok(Value::Nil), // Other statement types
-    }
-}
-
-/// Simplified function call for closures (backward compatibility with eval_closure)
-/// This version doesn't perform arity checking or default parameter resolution
-pub fn call_closure_simple(func: &FunctionValue, args: Vec<Value>) -> Result<Value, RuntimeError> {
-    // Create new environment for function execution
-    let call_env = Rc::new(Env::new_child(func.env.clone()));
-
-    // Bind arguments to parameters (no arity checking for backward compatibility)
-    for (param, arg_value) in func.params.iter().zip(args) {
-        call_env.define_or_set(&param.name, arg_value);
-    }
-
-    // Execute function body with simple return handling
-    let mut loop_stack = Vec::new();
-    match eval_stmt(&func.body, call_env, &mut loop_stack) {
-        Ok(result) => Ok(result.unwrap_or(Value::Nil)),
-        Err(RuntimeError::ControlFlow {
-            flow: ControlFlow::Return(value),
-        }) => Ok(*value),
-        Err(other_error) => Err(other_error),
     }
 }
 
@@ -394,33 +377,5 @@ mod tests {
         assert_eq!(result, Value::Number(DecimalNumber::from_i64(99)));
     }
 
-    #[test]
-    fn test_closure_simple_backward_compatibility() {
-        let env = create_test_env();
-
-        // Create function: fn(x) { x * 2 }
-        let params = vec![ParamSpec {
-            name: "x".to_string(),
-            default: None,
-        }];
-
-        let body = Stmt::Expr(Expr::Binary {
-            left: Box::new(Expr::Literal(Literal::Identifier(
-                "x".to_string(),
-                Span::default(),
-            ))),
-            op: suji_ast::ast::BinaryOp::Multiply,
-            right: Box::new(Expr::Literal(Literal::Number(
-                "2".to_string(),
-                Span::default(),
-            ))),
-            span: Span::default(),
-        });
-
-        let func = create_test_function(params, body, env);
-        let args = vec![Value::Number(DecimalNumber::from_i64(7))];
-
-        let result = call_closure_simple(&func, args).unwrap();
-        assert_eq!(result, Value::Number(DecimalNumber::from_i64(14)));
-    }
+    // Removed legacy call_closure_simple test; behavior now covered by call_function tests
 }
