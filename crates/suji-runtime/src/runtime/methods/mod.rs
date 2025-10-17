@@ -33,6 +33,7 @@ pub fn call_method(
         Value::Regex(_) => regex_methods::call_regex_method(receiver, method, args),
         Value::Function(_) => function_methods::call_function_method(receiver, method, args),
         Value::Stream(_) => stream_methods::call_stream_method(receiver, method, args),
+        Value::StreamProxy(_) => stream_methods::call_stream_method(receiver, method, args),
         Value::Nil => nil_methods::call_nil_method(receiver, method, args),
     }
 }

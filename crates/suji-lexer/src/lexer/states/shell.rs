@@ -6,7 +6,6 @@ use crate::token::{Span, Token, TokenWithSpan};
 pub struct ShellScanner;
 
 impl ShellScanner {
-    /// Scan shell command content
     pub fn scan_content(
         context: &mut ScannerContext,
         state: &mut LexState,
@@ -58,8 +57,13 @@ impl ShellScanner {
                 }
             } else if ch == '\\' {
                 // Handle escape sequences (same as strings)
-                let escaped_char =
-                    LexerUtils::handle_escape_sequence(context, &['`', '\\', '$', 'n', 't', 'r'])?;
+                let escaped_char = LexerUtils::handle_escape_sequence(
+                    context,
+                    &['`', '\\', '$', 'n', 't', 'r'],
+                    start_pos,
+                    start_line,
+                    start_column,
+                )?;
                 content.push(escaped_char);
             } else {
                 content.push(context.advance());
@@ -67,8 +71,7 @@ impl ShellScanner {
         }
 
         Err(LexError::UnterminatedShellCommand {
-            line: context.line,
-            column: context.column,
+            span: Span::new(start_pos, context.position, start_line, start_column),
         })
     }
 }

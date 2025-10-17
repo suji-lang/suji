@@ -1,7 +1,7 @@
 // Core types
 pub use types::{
     ControlFlow, DecimalNumber, FunctionValue, MapKey, OrderedDecimal, ParamSpec, StreamBackend,
-    StreamHandle, Value,
+    StreamHandle, StreamProxyKind, Value,
 };
 
 // Environment overlay types and functions

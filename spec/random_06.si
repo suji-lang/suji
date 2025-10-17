@@ -1,0 +1,10 @@
+import std:println
+import std:random
+
+# Set a seed for deterministic output
+random:seed(12345)
+result = random:random()
+
+# Random will produce a deterministic value with the seed
+# For now, just verify the function is callable
+println("ok")  # ok

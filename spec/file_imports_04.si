@@ -1,0 +1,4 @@
+import std:println
+import modules:nested:value
+
+println(value)  # 999

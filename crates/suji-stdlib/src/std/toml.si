@@ -1,0 +1,9 @@
+# std:toml module - TOML parsing and generation
+import __builtins__:toml_parse
+import __builtins__:toml_generate
+
+export {
+    parse: toml_parse,
+    generate: toml_generate,
+}
+

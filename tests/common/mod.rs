@@ -9,7 +9,7 @@ use suji_lang::parser::{ParseResult, Parser, parse_program};
 use suji_lang::runtime::builtins::setup_global_env;
 use suji_lang::runtime::env::Env;
 use suji_lang::runtime::eval::{
-    eval_expr, eval_program_with_modules as eval_program_with_modules_impl, eval_stmt,
+    eval_expr, eval_program_with_modules as eval_program_with_modules_impl,
 };
 use suji_lang::runtime::module::ModuleRegistry;
 use suji_lang::runtime::value::Value;
@@ -46,15 +46,10 @@ pub fn eval_string_expr(input: &str) -> Result<Value, Box<dyn std::error::Error>
 pub fn eval_program(input: &str) -> Result<Value, Box<dyn std::error::Error>> {
     let statements = parse_program(input)?;
     let env = create_test_env();
-    let mut loop_stack = Vec::new();
+    let module_registry = ModuleRegistry::new();
 
-    let mut result = Value::Nil;
-    for stmt in statements {
-        if let Some(value) = eval_stmt(&stmt, env.clone(), &mut loop_stack)? {
-            result = value;
-        }
-    }
-    Ok(result)
+    let result = eval_program_with_modules_impl(&statements, env, &module_registry)?;
+    Ok(result.unwrap_or(Value::Nil))
 }
 
 /// Helper to evaluate a program with module support
@@ -95,7 +90,11 @@ pub fn assert_parse_fails(input: &str, expected_error_fragment: &str) {
             let msg = e.to_string();
             // Support multiple acceptable fragments separated by '||' to ease message transitions
             let options: Vec<&str> = expected_error_fragment.split("||").collect();
-            let matched = options.iter().any(|frag| msg.contains(frag.trim()));
+            // Support general matching (substring) or exact error enum message text
+            let matched = options
+                .iter()
+                .map(|frag| frag.trim())
+                .any(|frag| msg.contains(frag) || msg == frag);
             assert!(
                 matched,
                 "Error '{}' should contain one of '{}'",

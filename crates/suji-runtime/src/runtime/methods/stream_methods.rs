@@ -1,7 +1,28 @@
+use super::super::io_context::IoContext;
 use super::super::value::{DecimalNumber, RuntimeError, StreamBackend, StreamHandle, Value};
 use super::common::ValueRef;
 use std::io::IsTerminal;
 use std::io::{BufRead, Read, Write};
+use std::rc::Rc;
+
+/// Resolve a Value to a concrete StreamHandle (handles both Stream and StreamProxy)
+fn resolve_stream(value: &Value) -> Result<Rc<StreamHandle>, RuntimeError> {
+    match value {
+        Value::Stream(handle) => Ok(handle.clone()),
+        Value::StreamProxy(kind) => {
+            // Resolve proxy dynamically from IO context
+            use super::super::value::StreamProxyKind;
+            Ok(match kind {
+                StreamProxyKind::Stdin => IoContext::effective_stdin(),
+                StreamProxyKind::Stdout => IoContext::effective_stdout(),
+                StreamProxyKind::Stderr => IoContext::effective_stderr(),
+            })
+        }
+        _ => Err(RuntimeError::TypeError {
+            message: format!("Expected stream, got {}", value.type_name()),
+        }),
+    }
+}
 
 /// Stream methods: read(chunk_kb=8), write(text), read_all(), read_lines(), close(), to_string()
 pub fn call_stream_method(
@@ -9,182 +30,183 @@ pub fn call_stream_method(
     method: &str,
     args: Vec<Value>,
 ) -> Result<Value, RuntimeError> {
-    match receiver.get() {
-        Value::Stream(stream_handle) => {
-            // Check if stream is closed first
-            if stream_handle.is_closed.get() {
-                return Err(RuntimeError::StreamError {
-                    message: "Operation on closed stream".to_string(),
-                });
-            }
+    // Resolve the stream (handles both Stream and StreamProxy)
+    let stream_handle = resolve_stream(receiver.get())?;
 
-            match method {
-                "read" => {
-                    // Optional arg: chunk_kb (default 8)
-                    let chunk_kb = match args.as_slice() {
-                        [] => DecimalNumber::from_i64(8),
-                        [Value::Number(n)] => n.clone(),
-                        _ => {
-                            return Err(RuntimeError::ArityMismatch {
-                                message: "stream::read(chunk_kb=8) takes 0 or 1 numeric argument"
-                                    .to_string(),
-                            });
-                        }
-                    };
-
-                    let zero = DecimalNumber::from_i64(0);
-                    if chunk_kb <= zero {
-                        return Err(RuntimeError::StreamError {
-                            message: "chunk_kb must be a positive number".to_string(),
-                        });
-                    }
-
-                    // Check if stream is readable
-                    if !stream_handle.is_readable() {
-                        return Err(RuntimeError::StreamError {
-                            message: format!(
-                                "Cannot read from write-only stream: {}",
-                                stream_handle.name
-                            ),
-                        });
-                    }
-
-                    // Convert chunk_kb to bytes (multiply by 1024)
-                    let kb_1024 = DecimalNumber::from_i64(1024);
-                    let chunk_bytes = chunk_kb.mul(&kb_1024);
-                    let chunk_bytes_i64 =
-                        chunk_bytes
-                            .to_i64_checked()
-                            .ok_or_else(|| RuntimeError::StreamError {
-                                message: "chunk size too large".to_string(),
-                            })?;
-                    stream_read_chunk(stream_handle, chunk_bytes_i64 as usize)
-                }
-                "read_line" => {
-                    if !args.is_empty() {
-                        return Err(RuntimeError::ArityMismatch {
-                            message: "stream::read_line() takes no arguments".to_string(),
-                        });
-                    }
-
-                    // Check if stream is readable
-                    if !stream_handle.is_readable() {
-                        return Err(RuntimeError::StreamError {
-                            message: format!(
-                                "Cannot read from write-only stream: {}",
-                                stream_handle.name
-                            ),
-                        });
-                    }
-
-                    stream_read_line(stream_handle)
-                }
-                "write" => {
-                    if args.len() != 1 {
-                        return Err(RuntimeError::ArityMismatch {
-                            message: "stream::write(text) expects exactly one argument".to_string(),
-                        });
-                    }
-
-                    // Check if stream is writable
-                    if !stream_handle.is_writable() {
-                        return Err(RuntimeError::StreamError {
-                            message: format!(
-                                "Cannot write to read-only stream: {}",
-                                stream_handle.name
-                            ),
-                        });
-                    }
-
-                    let text = args[0].to_string();
-                    stream_write(stream_handle, &text)
-                }
-                "read_all" => {
-                    if !args.is_empty() {
-                        return Err(RuntimeError::ArityMismatch {
-                            message: "stream::read_all() takes no arguments".to_string(),
-                        });
-                    }
-
-                    // Check if stream is readable
-                    if !stream_handle.is_readable() {
-                        return Err(RuntimeError::StreamError {
-                            message: format!(
-                                "Cannot read from write-only stream: {}",
-                                stream_handle.name
-                            ),
-                        });
-                    }
-
-                    stream_read_all(stream_handle)
-                }
-                "read_lines" => {
-                    if !args.is_empty() {
-                        return Err(RuntimeError::ArityMismatch {
-                            message: "stream::read_lines() takes no arguments".to_string(),
-                        });
-                    }
-
-                    // Check if stream is readable
-                    if !stream_handle.is_readable() {
-                        return Err(RuntimeError::StreamError {
-                            message: format!(
-                                "Cannot read from write-only stream: {}",
-                                stream_handle.name
-                            ),
-                        });
-                    }
-
-                    stream_read_lines(stream_handle)
-                }
-                "is_terminal" => {
-                    if !args.is_empty() {
-                        return Err(RuntimeError::ArityMismatch {
-                            message: "stream::is_terminal() takes no arguments".to_string(),
-                        });
-                    }
-
-                    let is_tty = match &stream_handle.backend {
-                        StreamBackend::Stdin(reader_ref) => {
-                            let reader = reader_ref.borrow();
-                            reader.get_ref().is_terminal()
-                        }
-                        StreamBackend::Stdout(stdout_ref) => {
-                            let stdout = stdout_ref.borrow();
-                            stdout.is_terminal()
-                        }
-                        StreamBackend::Stderr(stderr_ref) => {
-                            let stderr = stderr_ref.borrow();
-                            stderr.is_terminal()
-                        }
-                        _ => false,
-                    };
-
-                    Ok(Value::Boolean(is_tty))
-                }
-                "close" => {
-                    if !args.is_empty() {
-                        return Err(RuntimeError::ArityMismatch {
-                            message: "stream::close() takes no arguments".to_string(),
-                        });
-                    }
-                    stream_handle.is_closed.set(true);
-                    Ok(Value::Nil)
-                }
-                "to_string" => {
-                    if !args.is_empty() {
-                        return Err(RuntimeError::ArityMismatch {
-                            message: "to_string() takes no arguments".to_string(),
-                        });
-                    }
-                    Ok(Value::String(format!("<stream:{}>", stream_handle.name)))
-                }
-                _ => Err(RuntimeError::MethodError {
-                    message: format!("Stream has no method '{}'", method),
-                }),
-            }
+    // Now operate on the resolved stream
+    {
+        // Check if stream is closed first
+        if stream_handle.is_closed.get() {
+            return Err(RuntimeError::StreamError {
+                message: "Operation on closed stream".to_string(),
+            });
         }
-        _ => unreachable!(),
+
+        match method {
+            "read" => {
+                // Optional arg: chunk_kb (default 8)
+                let chunk_kb = match args.as_slice() {
+                    [] => DecimalNumber::from_i64(8),
+                    [Value::Number(n)] => n.clone(),
+                    _ => {
+                        return Err(RuntimeError::ArityMismatch {
+                            message: "stream::read(chunk_kb=8) takes 0 or 1 numeric argument"
+                                .to_string(),
+                        });
+                    }
+                };
+
+                let zero = DecimalNumber::from_i64(0);
+                if chunk_kb <= zero {
+                    return Err(RuntimeError::StreamError {
+                        message: "chunk_kb must be a positive number".to_string(),
+                    });
+                }
+
+                // Check if stream is readable
+                if !stream_handle.is_readable() {
+                    return Err(RuntimeError::StreamError {
+                        message: format!(
+                            "Cannot read from write-only stream: {}",
+                            stream_handle.name
+                        ),
+                    });
+                }
+
+                // Convert chunk_kb to bytes (multiply by 1024)
+                let kb_1024 = DecimalNumber::from_i64(1024);
+                let chunk_bytes = chunk_kb.mul(&kb_1024);
+                let chunk_bytes_i64 =
+                    chunk_bytes
+                        .to_i64_checked()
+                        .ok_or_else(|| RuntimeError::StreamError {
+                            message: "chunk size too large".to_string(),
+                        })?;
+                stream_read_chunk(&stream_handle, chunk_bytes_i64 as usize)
+            }
+            "read_line" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "stream::read_line() takes no arguments".to_string(),
+                    });
+                }
+
+                // Check if stream is readable
+                if !stream_handle.is_readable() {
+                    return Err(RuntimeError::StreamError {
+                        message: format!(
+                            "Cannot read from write-only stream: {}",
+                            stream_handle.name
+                        ),
+                    });
+                }
+
+                stream_read_line(&stream_handle)
+            }
+            "write" => {
+                if args.len() != 1 {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "stream::write(text) expects exactly one argument".to_string(),
+                    });
+                }
+
+                // Check if stream is writable
+                if !stream_handle.is_writable() {
+                    return Err(RuntimeError::StreamError {
+                        message: format!(
+                            "Cannot write to read-only stream: {}",
+                            stream_handle.name
+                        ),
+                    });
+                }
+
+                let text = args[0].to_string();
+                stream_write(&stream_handle, &text)
+            }
+            "read_all" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "stream::read_all() takes no arguments".to_string(),
+                    });
+                }
+
+                // Check if stream is readable
+                if !stream_handle.is_readable() {
+                    return Err(RuntimeError::StreamError {
+                        message: format!(
+                            "Cannot read from write-only stream: {}",
+                            stream_handle.name
+                        ),
+                    });
+                }
+
+                stream_read_all(&stream_handle)
+            }
+            "read_lines" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "stream::read_lines() takes no arguments".to_string(),
+                    });
+                }
+
+                // Check if stream is readable
+                if !stream_handle.is_readable() {
+                    return Err(RuntimeError::StreamError {
+                        message: format!(
+                            "Cannot read from write-only stream: {}",
+                            stream_handle.name
+                        ),
+                    });
+                }
+
+                stream_read_lines(&stream_handle)
+            }
+            "is_terminal" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "stream::is_terminal() takes no arguments".to_string(),
+                    });
+                }
+
+                let is_tty = match &stream_handle.backend {
+                    StreamBackend::Stdin(reader_ref) => {
+                        let reader = reader_ref.borrow();
+                        reader.get_ref().is_terminal()
+                    }
+                    StreamBackend::Stdout(stdout_ref) => {
+                        let stdout = stdout_ref.borrow();
+                        stdout.is_terminal()
+                    }
+                    StreamBackend::Stderr(stderr_ref) => {
+                        let stderr = stderr_ref.borrow();
+                        stderr.is_terminal()
+                    }
+                    _ => false,
+                };
+
+                Ok(Value::Boolean(is_tty))
+            }
+            "close" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "stream::close() takes no arguments".to_string(),
+                    });
+                }
+                stream_handle.is_closed.set(true);
+                Ok(Value::Nil)
+            }
+            "to_string" => {
+                if !args.is_empty() {
+                    return Err(RuntimeError::ArityMismatch {
+                        message: "to_string() takes no arguments".to_string(),
+                    });
+                }
+                Ok(Value::String(format!("<stream:{}>", stream_handle.name)))
+            }
+            _ => Err(RuntimeError::MethodError {
+                message: format!("Stream has no method '{}'", method),
+            }),
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "suji-runtime"
-version = "0.1.15"
+version = "0.1.16"
 edition = "2024"
 
 [lib]
@@ -8,6 +8,7 @@ path = "src/lib.rs"
 
 [dependencies]
 suji-ast = { path = "../suji-ast" }
+suji-parser = { path = "../suji-parser" }
 regex = { workspace = true }
 rand = { workspace = true }
 rust_decimal = { workspace = true }

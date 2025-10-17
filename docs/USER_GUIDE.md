@@ -940,8 +940,7 @@ import std:println
 
 fib = |n| {
     match n {
-        0 => 0,
-        1 => 1,
+        0 | 1 => n,
         _ => fib(n - 1) + fib(n - 2),
     }
 }
@@ -967,7 +966,7 @@ quicksort = |list| {
             left = rest::filter(|x| x < pivot)
             right = rest::filter(|x| x >= pivot)
             return quicksort(left) + [pivot] + quicksort(right)
-        }
+        },
     }
 }
 
@@ -1012,8 +1011,8 @@ match config::contains("database") {
 
 ```bash
 # Clone the repository
-git clone https://github.com/ragnar-johannsson/suji-lang.git
-cd suji-lang
+git clone https://github.com/suji-lang/suji.git
+cd suji
 
 # Build the project
 cargo build --release

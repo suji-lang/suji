@@ -157,8 +157,8 @@ impl Parser {
     }
 
     /// Parse return statement in match arm
-    /// In unbraced match arms, only single-value returns are allowed to avoid ambiguity
-    /// with the match arm separator comma
+    /// In unbraced match arms, only single-value returns are allowed
+    /// to avoid ambiguity with the match arm separator comma
     fn parse_match_arm_return(&mut self) -> ParseResult<Stmt> {
         let return_span = self.advance().span.clone(); // consume Return
 

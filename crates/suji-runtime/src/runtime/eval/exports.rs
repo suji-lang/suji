@@ -3,7 +3,7 @@ use super::super::value::{MapKey, RuntimeError, Value};
 use super::eval_expr;
 use indexmap::IndexMap;
 use std::rc::Rc;
-use suji_ast::ast::ExportSpec;
+use suji_ast::ast::{ExportBody, ExportSpec};
 
 #[cfg(test)]
 use suji_ast::Span;
@@ -30,6 +30,23 @@ pub fn eval_export(spec: &ExportSpec, env: Rc<Env>) -> Result<ExportResult, Runt
 
     let module = Value::Map(module_map);
     Ok(ExportResult { module })
+}
+
+/// Evaluate an export body and return the exported value.
+/// - For Map bodies, returns Value::Map of evaluated items
+/// - For Expr bodies, evaluates and returns the expression value directly
+pub fn eval_export_body(body: &ExportBody, env: Rc<Env>) -> Result<Value, RuntimeError> {
+    match body {
+        ExportBody::Map(spec) => {
+            // Reuse existing map export evaluation
+            let result = eval_export(spec, env)?;
+            Ok(result.module)
+        }
+        ExportBody::Expr(expr) => {
+            let value = eval_expr(expr, env)?;
+            Ok(value)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -173,5 +190,66 @@ mod tests {
                 .to_string()
                 .contains("Undefined variable")
         );
+    }
+
+    #[test]
+    fn test_eval_export_body_expr_literal_number() {
+        let env = create_test_env();
+        let body = ExportBody::Expr(Expr::Literal(Literal::Number(
+            "42".to_string(),
+            Span::default(),
+        )));
+
+        let value = eval_export_body(&body, env).expect("export body evaluation should succeed");
+        assert_eq!(value, Value::Number(DecimalNumber::from_i64(42)));
+    }
+
+    #[test]
+    fn test_eval_export_body_expr_identifier() {
+        let env = create_test_env();
+        env.define_or_set("x", Value::Number(DecimalNumber::from_i64(7)));
+        let body = ExportBody::Expr(Expr::Literal(Literal::Identifier(
+            "x".to_string(),
+            Span::default(),
+        )));
+
+        let value = eval_export_body(&body, env).expect("export body evaluation should succeed");
+        assert_eq!(value, Value::Number(DecimalNumber::from_i64(7)));
+    }
+
+    #[test]
+    fn test_eval_export_body_expr_undefined_identifier_errors() {
+        let env = create_test_env();
+        let body = ExportBody::Expr(Expr::Literal(Literal::Identifier(
+            "missing".to_string(),
+            Span::default(),
+        )));
+
+        let err = eval_export_body(&body, env).unwrap_err();
+        assert!(err.to_string().contains("Undefined variable"));
+    }
+
+    #[test]
+    fn test_eval_export_body_map_returns_map() {
+        let env = create_test_env();
+        let spec = ExportSpec {
+            items: vec![(
+                "a".to_string(),
+                Expr::Literal(Literal::Number("1".to_string(), Span::default())),
+            )],
+            span: Span::default(),
+        };
+        let body = ExportBody::Map(spec);
+
+        let value = eval_export_body(&body, env).expect("map export should succeed");
+        match value {
+            Value::Map(map) => {
+                assert_eq!(
+                    map.get(&MapKey::String("a".to_string())),
+                    Some(&Value::Number(DecimalNumber::from_i64(1)))
+                );
+            }
+            _ => panic!("expected a map value from map export body"),
+        }
     }
 }

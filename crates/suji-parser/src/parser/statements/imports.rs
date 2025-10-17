@@ -1,5 +1,6 @@
 use super::{ParseError, ParseResult, Parser};
 use suji_ast::ast::Stmt;
+use suji_ast::ast::{ExportBody, ExportSpec};
 use suji_lexer::token::Token;
 
 impl Parser {
@@ -63,7 +64,7 @@ impl Parser {
         }
     }
 
-    /// Parse export statement: export { name: expr, ... }
+    /// Parse export statement: export { name: expr, ... } | export <expr>
     pub(super) fn parse_export_statement(&mut self) -> ParseResult<Stmt> {
         let span = self.previous().span.clone();
 
@@ -73,30 +74,45 @@ impl Parser {
         }
         self.export_count += 1;
 
-        self.consume(Token::LeftBrace, "Expected '{' after export")?;
-        let mut exports = Vec::new();
+        // Map form: export { ... }
+        if self.match_token(Token::LeftBrace) {
+            let mut exports = Vec::new();
 
-        while !self.check(Token::RightBrace) && !self.is_at_end() {
-            let (name, _name_span) = self.consume_identifier()?;
-            self.consume(Token::Colon, "Expected ':' after export name")?;
-            let value = self.expression()?;
-            exports.push((name, value));
+            while !self.check(Token::RightBrace) && !self.is_at_end() {
+                let (name, _name_span) = self.consume_identifier()?;
+                self.consume(Token::Colon, "Expected ':' after export name")?;
+                let value = self.expression()?;
+                exports.push((name, value));
 
-            if !self.match_token(Token::Comma) {
-                break;
+                if !self.match_token(Token::Comma) {
+                    break;
+                }
+                if self.check(Token::RightBrace) {
+                    break;
+                }
             }
-            if self.check(Token::RightBrace) {
-                break;
-            }
+
+            self.consume(Token::RightBrace, "Expected '}' after exports")?;
+
+            return Ok(Stmt::Export {
+                body: ExportBody::Map(ExportSpec {
+                    items: exports,
+                    span: span.clone(),
+                }),
+                span,
+            });
         }
 
-        self.consume(Token::RightBrace, "Expected '}' after exports")?;
-
+        // Expression form: export <expr>
+        // If no expression follows, surface a clearer error
+        if self.is_at_end() {
+            return Err(ParseError::Generic {
+                message: "Expected '{' or expression after export".to_string(),
+            });
+        }
+        let expr = self.expression()?;
         Ok(Stmt::Export {
-            spec: suji_ast::ast::ExportSpec {
-                items: exports,
-                span: span.clone(),
-            },
+            body: ExportBody::Expr(expr),
             span,
         })
     }

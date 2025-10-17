@@ -83,8 +83,7 @@ impl ErrorContext {
     }
 }
 
-/// Generate error code from RuntimeError variant discriminant
-/// This ensures consistent, unique error codes for each variant
+/// Generate error code from RuntimeError variant
 pub fn error_code_for_variant(error: &RuntimeError) -> u32 {
     // Base code 300 for runtime errors, add variant-specific offset
     match error {
@@ -129,7 +128,6 @@ pub fn error_code_for_variant(error: &RuntimeError) -> u32 {
 }
 
 /// Extract method information from method error messages
-/// Returns (value_type, method_name) if parseable
 pub fn parse_method_error_info(message: &str) -> Option<(String, String)> {
     use regex::Regex;
 

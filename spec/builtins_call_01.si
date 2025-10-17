@@ -1,0 +1,6 @@
+import std:println
+import __builtins__:json_parse as parse
+
+result = parse("{\"x\": 42}")
+
+println(result:x)  # 42

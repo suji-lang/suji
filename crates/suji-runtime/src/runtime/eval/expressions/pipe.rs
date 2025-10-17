@@ -1,10 +1,11 @@
 use super::{EvalResult, eval_expr};
-use crate::runtime::builtins::{call_builtin, create_std_module};
+use crate::runtime::builtins::call_builtin;
 use crate::runtime::env::Env;
+use crate::runtime::io_context::IoContext;
 use crate::runtime::module::ModuleRegistry;
 use crate::runtime::shell::run_shell_bytes_with_input;
 use crate::runtime::string_template::evaluate_string_template;
-use crate::runtime::value::{FunctionValue, RuntimeError, Value};
+use crate::runtime::value::{FunctionValue, RuntimeError, StreamHandle, Value};
 use std::rc::Rc;
 use suji_ast::ast::{BinaryOp, Expr};
 
@@ -96,17 +97,13 @@ fn collect_pipe_stages(
     }
 }
 
-fn pipe_std_map_from(value: Value) -> indexmap::IndexMap<crate::runtime::value::MapKey, Value> {
-    if let Value::Map(m) = value {
-        m
-    } else if let Value::Map(m) = create_std_module() {
-        m
-    } else {
-        indexmap::IndexMap::new()
-    }
-}
-
-pub fn eval_pipe_expression(left: &Expr, right: &Expr, env: Rc<Env>) -> EvalResult<Value> {
+/// Evaluate a pipe expression with module registry support
+pub fn eval_pipe_expression_with_registry(
+    left: &Expr,
+    right: &Expr,
+    env: Rc<Env>,
+    registry: &ModuleRegistry,
+) -> EvalResult<Value> {
     // Build stages
     let mut stages: Vec<PipeStage> = Vec::new();
     collect_pipe_stages(left, env.clone(), &mut stages)?;
@@ -118,15 +115,6 @@ pub fn eval_pipe_expression(left: &Expr, right: &Expr, env: Rc<Env>) -> EvalResu
         });
     }
 
-    // Base std module snapshot (from first function-like stage, if any)
-    let base_std = match stages.first() {
-        Some(PipeStage::Function(f)) => f.env.get("std").unwrap_or(Value::Nil),
-        Some(PipeStage::Invocation { function, .. }) => {
-            function.env.get("std").unwrap_or(Value::Nil)
-        }
-        _ => Value::Nil,
-    };
-
     let mut current_input: Option<Vec<u8>> = None;
     let last_index = stages.len() - 1;
     let mut last_result: Option<Value> = None;
@@ -134,66 +122,57 @@ pub fn eval_pipe_expression(left: &Expr, right: &Expr, env: Rc<Env>) -> EvalResu
     for (i, stage) in stages.into_iter().enumerate() {
         match stage {
             PipeStage::Function(func) => {
-                // Start from a std map snapshot
-                let mut std_map = pipe_std_map_from(base_std.clone());
+                // Prepare stdin override if there is input
+                let stdin_override = current_input
+                    .take()
+                    .map(|bytes| Rc::new(StreamHandle::new_memory_readable(bytes)));
 
-                // Get io submodule map
-                let io_key = crate::runtime::value::MapKey::String("io".to_string());
-                let mut io_map = match std_map.get(&io_key) {
-                    Some(Value::Map(m)) => m.clone(),
-                    _ => match create_std_module() {
-                        Value::Map(std_m) => match std_m.get(&io_key) {
-                            Some(Value::Map(m)) => m.clone(),
-                            _ => indexmap::IndexMap::new(),
-                        },
-                        _ => indexmap::IndexMap::new(),
-                    },
+                // Prepare stdout capture for non-last stages
+                let stdout_override = if i != last_index {
+                    Some(Rc::new(StreamHandle::new_memory_writable()))
+                } else {
+                    None
                 };
 
-                // Replace stdin if there is input
-                if let Some(bytes) = current_input.take() {
-                    let stdin_key = crate::runtime::value::MapKey::String("stdin".to_string());
-                    let stdin_stream = Rc::new(
-                        crate::runtime::value::StreamHandle::new_memory_readable(bytes),
-                    );
-                    io_map.insert(stdin_key, Value::Stream(stdin_stream));
-                }
+                // Execute function within IO context overrides
+                let result: Result<Value, RuntimeError> = IoContext::with_overrides(
+                    stdin_override.clone(),
+                    stdout_override.clone(),
+                    None, // stderr unchanged
+                    || {
+                        // Call function with no args; allow default params
+                        let result = crate::runtime::eval::call_function_with_modules(
+                            &func,
+                            Vec::new(),
+                            Some(env.clone()),
+                            registry,
+                            None, // no env overrides needed
+                        )?;
 
-                // Replace stdout for non-last stages to capture output
-                let mut capture_stdout = None;
-                if i != last_index {
-                    let stdout_key = crate::runtime::value::MapKey::String("stdout".to_string());
-                    let stdout_handle =
-                        Rc::new(crate::runtime::value::StreamHandle::new_memory_writable());
-                    capture_stdout = Some(stdout_handle.clone());
-                    io_map.insert(stdout_key, Value::Stream(stdout_handle));
-                }
+                        // If the result is a function, call it too (handles nested closures)
+                        // The inner function inherits the same redirected IO context
+                        if let Value::Function(ref inner_fn) = result {
+                            match crate::runtime::eval::call_function_with_modules(
+                                inner_fn,
+                                Vec::new(),
+                                Some(env.clone()),
+                                registry,
+                                None,
+                            ) {
+                                Ok(v) => Ok(v),
+                                Err(_) => Ok(result),
+                            }
+                        } else {
+                            Ok(result)
+                        }
+                    },
+                );
 
-                // Put io back into std (keep a clone for env override)
-                let io_map_clone = io_map.clone();
-                std_map.insert(io_key.clone(), Value::Map(io_map));
-
-                // Build overridden std value and module registry
-                let overridden_std = Value::Map(std_map.clone());
-                let registry = ModuleRegistry::new().with_custom_std(overridden_std);
-
-                // Also inject overridden std and io directly into the call environment
-                let env_overrides = Some(vec![
-                    ("std".to_string(), Value::Map(std_map)),
-                    ("io".to_string(), Value::Map(io_map_clone)),
-                ]);
-
-                // Call function with no args; allow default params
-                match crate::runtime::eval::call_function_with_modules(
-                    &func,
-                    Vec::new(),
-                    Some(env.clone()),
-                    &registry,
-                    env_overrides,
-                ) {
+                match result {
                     Ok(val) => {
                         last_result = Some(val);
-                        if let Some(stdout_handle) = capture_stdout {
+                        // Capture stdout AFTER calling any inner functions
+                        if let Some(stdout_handle) = stdout_override {
                             current_input = stdout_handle.take_memory_output();
                         }
                     }
@@ -205,124 +184,79 @@ pub fn eval_pipe_expression(left: &Expr, right: &Expr, env: Rc<Env>) -> EvalResu
                     }
                 }
             }
-            PipeStage::Invocation {
-                function: func,
-                args,
-            } => {
-                // Start from a std map snapshot
-                let mut std_map = pipe_std_map_from(base_std.clone());
+            PipeStage::Invocation { function, args } => {
+                // Prepare stdin override if there is input
+                let stdin_override = current_input
+                    .take()
+                    .map(|bytes| Rc::new(StreamHandle::new_memory_readable(bytes)));
 
-                // Get io submodule map
-                let io_key = crate::runtime::value::MapKey::String("io".to_string());
-                let mut io_map = match std_map.get(&io_key) {
-                    Some(Value::Map(m)) => m.clone(),
-                    _ => match create_std_module() {
-                        Value::Map(std_m) => match std_m.get(&io_key) {
-                            Some(Value::Map(m)) => m.clone(),
-                            _ => indexmap::IndexMap::new(),
-                        },
-                        _ => indexmap::IndexMap::new(),
-                    },
+                // Prepare stdout capture for non-last stages
+                let stdout_override = if i != last_index {
+                    Some(Rc::new(StreamHandle::new_memory_writable()))
+                } else {
+                    None
                 };
 
-                // Replace stdin if there is input
-                if let Some(bytes) = current_input.take() {
-                    let stdin_key = crate::runtime::value::MapKey::String("stdin".to_string());
-                    let stdin_stream = Rc::new(
-                        crate::runtime::value::StreamHandle::new_memory_readable(bytes),
-                    );
-                    io_map.insert(stdin_key, Value::Stream(stdin_stream));
-                }
+                // Execute function within IO context overrides
+                let result: Result<Value, RuntimeError> = IoContext::with_overrides(
+                    stdin_override.clone(),
+                    stdout_override.clone(),
+                    None, // stderr unchanged
+                    || {
+                        // Call function with args
+                        let result = crate::runtime::eval::call_function_with_modules(
+                            &function,
+                            args,
+                            Some(env.clone()),
+                            registry,
+                            None, // no env overrides needed
+                        )?;
 
-                // Replace stdout for non-last stages to capture output
-                let mut capture_stdout = None;
-                if i != last_index {
-                    let stdout_key = crate::runtime::value::MapKey::String("stdout".to_string());
-                    let stdout_handle =
-                        Rc::new(crate::runtime::value::StreamHandle::new_memory_writable());
-                    capture_stdout = Some(stdout_handle.clone());
-                    io_map.insert(stdout_key, Value::Stream(stdout_handle));
-                }
-
-                // Put io back into std (keep a clone for env override)
-                let io_map_clone = io_map.clone();
-                std_map.insert(io_key.clone(), Value::Map(io_map));
-
-                // Build overridden std value and module registry
-                let overridden_std = Value::Map(std_map.clone());
-                let registry = ModuleRegistry::new().with_custom_std(overridden_std);
-
-                // Also inject overridden std and io directly into the call environment
-                let env_overrides_vec = vec![
-                    ("std".to_string(), Value::Map(std_map)),
-                    ("io".to_string(), Value::Map(io_map_clone)),
-                ];
-                let env_overrides = Some(env_overrides_vec.clone());
-
-                // Call function with captured args
-                match crate::runtime::eval::call_function_with_modules(
-                    &func,
-                    args.clone(),
-                    Some(env.clone()),
-                    &registry,
-                    env_overrides.clone(),
-                ) {
-                    Ok(mut val) => {
-                        // If builder pattern: returned a function, immediately invoke with zero args
-                        if let Value::Function(f2) = val {
+                        // If the result is a function, call it too (handles nested closures)
+                        // The inner function inherits the same redirected IO context
+                        if let Value::Function(ref inner_fn) = result {
                             match crate::runtime::eval::call_function_with_modules(
-                                &f2,
+                                inner_fn,
                                 Vec::new(),
                                 Some(env.clone()),
-                                &registry,
-                                env_overrides,
+                                registry,
+                                None,
                             ) {
-                                Ok(v2) => {
-                                    val = v2;
-                                }
-                                Err(e) => {
-                                    return Err(RuntimeError::PipeExecutionError {
-                                        stage: "closure".to_string(),
-                                        message: e.to_string(),
-                                    });
-                                }
+                                Ok(v) => Ok(v),
+                                Err(_) => Ok(result),
                             }
+                        } else {
+                            Ok(result)
                         }
+                    },
+                );
 
+                match result {
+                    Ok(val) => {
                         last_result = Some(val);
-                        if let Some(stdout_handle) = capture_stdout {
+                        // Capture stdout AFTER calling any inner functions
+                        if let Some(stdout_handle) = stdout_override {
                             current_input = stdout_handle.take_memory_output();
                         }
                     }
                     Err(e) => {
                         return Err(RuntimeError::PipeExecutionError {
-                            stage: "closure".to_string(),
+                            stage: "call".to_string(),
                             message: e.to_string(),
                         });
                     }
                 }
             }
             PipeStage::ShellTemplate(parts) => {
-                // Build command string by evaluating the template parts
-                let command =
+                let command_string =
                     evaluate_string_template(&parts, |expr| eval_expr(expr, env.clone()))?;
-                // Run command, providing current_input as stdin if present
-                let out_bytes = run_shell_bytes_with_input(&command, current_input.take())
-                    .map_err(|e| RuntimeError::PipeExecutionError {
-                        stage: "command".to_string(),
-                        message: e.to_string(),
-                    })?;
+                let output = run_shell_bytes_with_input(&command_string, current_input.clone())?;
 
-                if i != last_index {
-                    current_input = Some(out_bytes);
-                } else {
-                    // Last stage -> convert to UTF-8 string and return
-                    let s =
-                        String::from_utf8(out_bytes).map_err(|err| RuntimeError::ShellError {
-                            message: format!("Shell command output is not valid UTF-8: {}", err),
-                        })?;
-                    last_result = Some(Value::String(s));
+                if i < last_index {
+                    current_input = Some(output.clone());
                 }
+
+                last_result = Some(Value::String(String::from_utf8_lossy(&output).to_string()));
             }
         }
     }
@@ -330,7 +264,14 @@ pub fn eval_pipe_expression(left: &Expr, right: &Expr, env: Rc<Env>) -> EvalResu
     Ok(last_result.unwrap_or(Value::Nil))
 }
 
-/// Evaluate pipe-apply expressions (|> and <|). Shared implementation for both directions.
+/// Legacy eval_pipe_expression for backwards compatibility (no registry)
+pub fn eval_pipe_expression(left: &Expr, right: &Expr, env: Rc<Env>) -> EvalResult<Value> {
+    // Use a default registry for backwards compat
+    let registry = ModuleRegistry::new();
+    eval_pipe_expression_with_registry(left, right, env, &registry)
+}
+
+/// Evaluate pipe apply expressions (|> and <|)
 pub fn eval_pipe_apply_expression(
     left: &Expr,
     op: &BinaryOp,

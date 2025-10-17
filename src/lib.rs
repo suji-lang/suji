@@ -26,9 +26,13 @@ pub mod runtime {
 
         impl ModuleRegistry {
             pub fn new() -> Self {
-                let base = RawModuleRegistry::new();
-                let std_value = suji_stdlib::runtime::builtins::create_std_module();
-                Self(base.with_custom_std(std_value))
+                // Register all builtins first (before ModuleRegistry::new creates __builtins__)
+                suji_stdlib::runtime::builtins::register_all_builtins();
+
+                let mut base = RawModuleRegistry::new();
+                // Set up virtual std resolver from stdlib
+                suji_stdlib::setup_module_registry(&mut base);
+                Self(base)
             }
 
             pub fn with_custom_std(&self, std_value: Value) -> Self {

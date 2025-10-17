@@ -1,0 +1,9 @@
+import std:println
+import __builtins__
+
+# Verify __builtins__ is accessible and contains callable functions
+# We can't easily test the map structure directly in spec tests,
+# so we just verify import works and call something from it
+result = __builtins__:println("test")
+
+println("ok")  # ok

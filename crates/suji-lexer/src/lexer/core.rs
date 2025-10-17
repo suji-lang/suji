@@ -1,3 +1,4 @@
+use crate::lexer::LexError;
 use crate::lexer::states::interpolation::InterpolationScanner;
 use crate::lexer::states::normal::NormalScanner;
 use crate::lexer::states::regex::RegexScanner;
@@ -5,9 +6,6 @@ use crate::lexer::states::shell::ShellScanner;
 use crate::lexer::states::string::StringScanner;
 use crate::lexer::states::{LexState, QuoteType, ScannerContext};
 use crate::lexer::token::{Span, Token, TokenWithSpan};
-
-// Re-export commonly used types
-pub use crate::lexer::states::LexError;
 
 pub struct Lexer<'a> {
     context: ScannerContext<'a>,

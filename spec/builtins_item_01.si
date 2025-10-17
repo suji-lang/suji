@@ -1,0 +1,3 @@
+import __builtins__:println
+
+println(123)  # 123

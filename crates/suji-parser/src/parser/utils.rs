@@ -160,7 +160,6 @@ impl Parser {
     }
 
     /// Handle statement separators (semicolons and newlines)
-    /// This method handles the common logic for parsing statements with optional semicolon separators
     pub(super) fn handle_statement_separator(&mut self, is_block_context: bool) -> ParseResult<()> {
         // Check for semicolon separator
         if self.match_token(Token::Semicolon) {

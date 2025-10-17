@@ -1,0 +1,6 @@
+import std:println
+
+add_one = |x| x + 1
+result = 5 |> add_one |> add_one
+
+println(result)  # 7

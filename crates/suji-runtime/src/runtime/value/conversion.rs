@@ -15,6 +15,7 @@ impl Value {
             Value::Regex(_) => "regex",
             Value::Function(_) => "function",
             Value::Stream(_) => "stream",
+            Value::StreamProxy(_) => "stream",
             Value::EnvMap(_) => "env",
             Value::Nil => "nil",
         }

@@ -56,16 +56,13 @@ fn test_io_multiple_resolutions_share_streams() {
         .resolve_nested_module_item("std:io", "stdout")
         .unwrap();
 
-    // Both should be stream values
-    assert!(matches!(stdout1, Value::Stream(_)));
-    assert!(matches!(stdout2, Value::Stream(_)));
+    // Both should be stream proxy values (dynamic resolution)
+    assert!(matches!(stdout1, Value::StreamProxy(_)));
+    assert!(matches!(stdout2, Value::StreamProxy(_)));
 
-    // They should have the same properties (shared backend)
-    if let (Value::Stream(handle1), Value::Stream(handle2)) = (&stdout1, &stdout2) {
-        assert_eq!(handle1.name, handle2.name);
-        assert_eq!(handle1.is_readable(), handle2.is_readable());
-        assert_eq!(handle1.is_writable(), handle2.is_writable());
-        assert_eq!(handle1.is_closed.get(), handle2.is_closed.get());
+    // They should be the same proxy kind
+    if let (Value::StreamProxy(kind1), Value::StreamProxy(kind2)) = (&stdout1, &stdout2) {
+        assert_eq!(kind1, kind2);
     }
 }
 
@@ -77,21 +74,21 @@ fn test_io_module_registry_resolution() {
     let io_module = registry.resolve_module_item("std", "io").unwrap();
     assert!(matches!(io_module, Value::Map(_)));
 
-    // Test resolving specific io items
+    // Test resolving specific io items (now StreamProxy for dynamic resolution)
     let stdout = registry
         .resolve_nested_module_item("std:io", "stdout")
         .unwrap();
-    assert!(matches!(stdout, Value::Stream(_)));
+    assert!(matches!(stdout, Value::StreamProxy(_)));
 
     let stderr = registry
         .resolve_nested_module_item("std:io", "stderr")
         .unwrap();
-    assert!(matches!(stderr, Value::Stream(_)));
+    assert!(matches!(stderr, Value::StreamProxy(_)));
 
     let stdin = registry
         .resolve_nested_module_item("std:io", "stdin")
         .unwrap();
-    assert!(matches!(stdin, Value::Stream(_)));
+    assert!(matches!(stdin, Value::StreamProxy(_)));
 
     let open_fn = registry
         .resolve_nested_module_item("std:io", "open")

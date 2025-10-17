@@ -1,6 +1,6 @@
 # SUJI
 
-This is **suji**, a small, expressive language with dynamic but strong typing, higher‑order functions, pattern matching, built‑in string interpolation and regex, and seamless shell integration. It has a strong focus on pipes and pipelines with support for both shell-like `|` pipes as well as F#-like pipe-apply pipes, `|>` and `<|`.
+This is **suji**, a small, expressive language with dynamic but strong typing, higher‑order functions, pattern matching, built‑in string interpolation and regex, and seamless shell integration. It has a strong focus on pipes and pipelines with support for both shell-like `|` pipes as well as F#-like pipes, `|>` and `<|`.
 
 ```suji
 import std:io

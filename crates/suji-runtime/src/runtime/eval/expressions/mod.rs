@@ -28,6 +28,26 @@ use super::postfix::{eval_postfix_decrement, eval_postfix_increment};
 /// Result type for evaluation that can return control flow signals
 pub type EvalResult<T> = Result<T, RuntimeError>;
 
+/// Evaluate an expression with a module registry (for pipe operator)
+pub fn eval_expr_with_registry(
+    expr: &Expr,
+    env: Rc<Env>,
+    registry: &super::super::module::ModuleRegistry,
+) -> EvalResult<Value> {
+    let result = match expr {
+        Expr::Binary {
+            left,
+            op: suji_ast::ast::BinaryOp::Pipe,
+            right,
+            ..
+        } => pipe::eval_pipe_expression_with_registry(left, right, env.clone(), registry),
+
+        _ => eval_expr(expr, env),
+    };
+
+    result.map_err(|e| e.with_span(expr.covering_span()))
+}
+
 /// Evaluate an expression in the given environment
 pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
     let result = match expr {

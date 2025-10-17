@@ -4,12 +4,12 @@ import std:random
 
 category =
     `curl -sL https://api.chucknorris.io/jokes/categories`
-    |> json:parse
-    |> random:pick
+        |> json:parse
+        |> random:pick
 
 joke =
     `curl -sL 'https://api.chucknorris.io/jokes/random?category=${category}'`
-    |> json:parse
+        |> json:parse
 
 println <| """
     Joke about ${category}:

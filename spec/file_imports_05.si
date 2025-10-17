@@ -1,0 +1,6 @@
+import std:println
+import modules:math as math
+
+result = math:add(5, 3)
+
+println(result)  # 8

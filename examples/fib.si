@@ -9,8 +9,8 @@ fib = |n| {
 
 first_n_fibs = |n| {
     numbers = (0..n)
-                ::map(|f| fib <| f)
-                ::join(", ")
+        ::map(|f| fib <| f)
+        ::join(", ")
 
     "The first ${n} Fibonacci numbers are: ${numbers}" |> println
 }

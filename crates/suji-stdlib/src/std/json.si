@@ -1,0 +1,9 @@
+# std:json module - JSON parsing and generation
+import __builtins__:json_parse
+import __builtins__:json_generate
+
+export {
+    parse: json_parse,
+    generate: json_generate,
+}
+

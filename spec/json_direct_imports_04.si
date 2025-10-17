@@ -1,0 +1,6 @@
+import std:println
+import std:json
+
+result = json:parse("{\"x\": 5}")
+
+println(result:x)  # 5

@@ -1,0 +1,12 @@
+# std:print function - writes text to a stream and returns bytes written
+import __builtins__:io_stdout
+
+export |text, out = nil| {
+    stream = match out {
+        nil => io_stdout,
+        _ => out,
+    }
+    text_str = text::to_string()
+    stream::write(text_str)
+}
+

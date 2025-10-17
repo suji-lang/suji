@@ -1,0 +1,8 @@
+import std:println
+import std:env
+
+# Test that env module is accessible
+# We can't rely on specific env vars being set, so just verify the module loads
+result = "env_module_loaded"
+
+println(result)  # env_module_loaded

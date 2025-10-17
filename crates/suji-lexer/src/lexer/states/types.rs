@@ -1,4 +1,4 @@
-use crate::lexer::token::TokenWithSpan;
+use crate::lexer::token::{Span, TokenWithSpan};
 use thiserror::Error;
 
 pub type ScannerResult = Result<TokenWithSpan, LexError>;
@@ -11,30 +11,18 @@ pub enum QuoteType {
 
 #[derive(Error, Debug, Clone)]
 pub enum LexError {
-    #[error("Unterminated string literal at line {line}, column {column}")]
-    UnterminatedString { line: usize, column: usize },
-    #[error("Unterminated shell command at line {line}, column {column}")]
-    UnterminatedShellCommand { line: usize, column: usize },
-    #[error("Unterminated regex literal at line {line}, column {column}")]
-    UnterminatedRegex { line: usize, column: usize },
-    #[error("Invalid escape sequence '\\{escape}' at line {line}, column {column}")]
-    InvalidEscape {
-        escape: char,
-        line: usize,
-        column: usize,
-    },
-    #[error("Invalid number literal '{literal}' at line {line}, column {column}")]
-    InvalidNumber {
-        literal: String,
-        line: usize,
-        column: usize,
-    },
-    #[error("Unexpected character '{ch}' at line {line}, column {column}")]
-    UnexpectedCharacter {
-        ch: char,
-        line: usize,
-        column: usize,
-    },
+    #[error("Unterminated string literal")]
+    UnterminatedString { span: Span },
+    #[error("Unterminated shell command")]
+    UnterminatedShellCommand { span: Span },
+    #[error("Unterminated regex literal")]
+    UnterminatedRegex { span: Span },
+    #[error("Invalid escape sequence '\\{escape}'")]
+    InvalidEscape { escape: char, span: Span },
+    #[error("Invalid number literal '{literal}'")]
+    InvalidNumber { literal: String, span: Span },
+    #[error("Unexpected character '{ch}'")]
+    UnexpectedCharacter { ch: char, span: Span },
 }
 
 #[derive(Debug, Clone, Copy)]

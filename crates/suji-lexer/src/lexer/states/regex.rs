@@ -6,7 +6,6 @@ use crate::token::{Span, Token, TokenWithSpan};
 pub struct RegexScanner;
 
 impl RegexScanner {
-    /// Scan regex content
     pub fn scan_content(
         context: &mut ScannerContext,
         state: &mut LexState,
@@ -47,8 +46,7 @@ impl RegexScanner {
         }
 
         Err(LexError::UnterminatedRegex {
-            line: context.line,
-            column: context.column,
+            span: Span::new(start_pos, context.position, start_line, start_column),
         })
     }
 }

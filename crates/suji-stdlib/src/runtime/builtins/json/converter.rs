@@ -120,7 +120,7 @@ pub fn suji_to_json_value(suji_value: &Value) -> Result<JsonValue, RuntimeError>
             value_type: "function".to_string(),
         }
         .into()),
-        Value::Stream(_) => Err(JsonError::GenerateError {
+        Value::Stream(_) | Value::StreamProxy(_) => Err(JsonError::GenerateError {
             message: "Stream values cannot be converted to JSON".to_string(),
             value_type: "stream".to_string(),
         }

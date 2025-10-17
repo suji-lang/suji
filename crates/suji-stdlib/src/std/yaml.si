@@ -1,0 +1,9 @@
+# std:yaml module - YAML parsing and generation
+import __builtins__:yaml_parse
+import __builtins__:yaml_generate
+
+export {
+    parse: yaml_parse,
+    generate: yaml_generate,
+}
+

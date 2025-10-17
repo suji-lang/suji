@@ -6,7 +6,6 @@ use crate::token::{Span, Token, TokenWithSpan};
 pub struct NormalScanner;
 
 impl NormalScanner {
-    /// Scan a token in normal state
     pub fn scan_token(context: &mut ScannerContext, state: &mut LexState) -> ScannerResult {
         LexerUtils::skip_whitespace(context);
 
@@ -168,8 +167,7 @@ impl NormalScanner {
                 } else {
                     return Err(LexError::UnexpectedCharacter {
                         ch,
-                        line: start_line,
-                        column: start_column,
+                        span: Span::new(start_pos, context.position, start_line, start_column),
                     });
                 }
             }
@@ -195,8 +193,7 @@ impl NormalScanner {
                 } else {
                     return Err(LexError::UnexpectedCharacter {
                         ch,
-                        line: start_line,
-                        column: start_column,
+                        span: Span::new(start_pos, context.position, start_line, start_column),
                     });
                 }
             }
@@ -208,15 +205,16 @@ impl NormalScanner {
                 context.column = 1;
                 Token::Newline
             }
-            _ if ch.is_ascii_digit() => LexerUtils::scan_number(context, start_pos)?,
+            _ if ch.is_ascii_digit() => {
+                LexerUtils::scan_number(context, start_pos, start_line, start_column)?
+            }
             _ if ch.is_ascii_alphabetic() || ch == '_' => {
                 LexerUtils::scan_identifier_or_keyword(context, start_pos)
             }
             _ => {
                 return Err(LexError::UnexpectedCharacter {
                     ch,
-                    line: start_line,
-                    column: start_column,
+                    span: Span::new(start_pos, context.position, start_line, start_column),
                 });
             }
         };

@@ -104,8 +104,6 @@ pub enum Expr {
     Destructure { elements: Vec<Expr>, span: Span },
 }
 
-// Literal moved to `crate::ast::literal` and re-exported via `mod.rs`
-
 impl Expr {
     /// Get the span of this expression
     pub fn span(&self) -> &Span {

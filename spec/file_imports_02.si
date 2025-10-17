@@ -1,0 +1,4 @@
+import std:println
+import modules:simple_map as mod
+
+println(mod:value)  # 100

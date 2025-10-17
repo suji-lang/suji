@@ -35,10 +35,23 @@ pub enum Value {
     Function(FunctionValue),
     /// Stream for I/O operations
     Stream(Rc<StreamHandle>),
+    /// Dynamic IO stream proxy (resolved at access time via IO context)
+    StreamProxy(StreamProxyKind),
     /// Environment variables map
     EnvMap(Rc<EnvProxy>),
     /// Nil value (absence of value)
     Nil,
+}
+
+/// Kind of IO stream proxy
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StreamProxyKind {
+    /// Proxy for stdin (resolves dynamically)
+    Stdin,
+    /// Proxy for stdout (resolves dynamically)
+    Stdout,
+    /// Proxy for stderr (resolves dynamically)
+    Stderr,
 }
 
 /// Decimal number wrapper for precise base-10 arithmetic

@@ -1,0 +1,12 @@
+# std:println function - writes text followed by newline
+import __builtins__:io_stdout
+
+export |text = "", out = nil| {
+    stream = match out {
+        nil => io_stdout,
+        _ => out,
+    }
+    text_str = text::to_string() + "\n"
+    stream::write(text_str)
+}
+

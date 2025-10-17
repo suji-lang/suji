@@ -24,3 +24,12 @@ pub struct ExportSpec {
     pub items: Vec<(String, Expr)>, // name: expression pairs
     pub span: Span,
 }
+
+/// Export body allows either a map spec or an arbitrary expression
+#[derive(Debug, Clone, PartialEq)]
+pub enum ExportBody {
+    /// Map-style export: export { name: expr, ... }
+    Map(ExportSpec),
+    /// Expression export: export <expr>
+    Expr(Expr),
+}

@@ -1,5 +1,5 @@
 use super::states::{LexError, ScannerContext};
-use crate::token::Token;
+use crate::token::{Span, Token};
 
 /// Common scanning utilities for the lexer
 pub struct LexerUtils;
@@ -44,7 +44,12 @@ impl LexerUtils {
     }
 
     /// Scan a number literal
-    pub fn scan_number(context: &mut ScannerContext, start_pos: usize) -> Result<Token, LexError> {
+    pub fn scan_number(
+        context: &mut ScannerContext,
+        start_pos: usize,
+        start_line: usize,
+        start_column: usize,
+    ) -> Result<Token, LexError> {
         while !context.is_at_end() && context.peek().is_ascii_digit() {
             context.advance();
         }
@@ -66,8 +71,7 @@ impl LexerUtils {
             Ok(_) => Ok(Token::Number(literal.to_string())),
             Err(_) => Err(LexError::InvalidNumber {
                 literal: literal.to_string(),
-                line: context.line,
-                column: context.column,
+                span: Span::new(start_pos, context.position, start_line, start_column),
             }),
         }
     }
@@ -113,12 +117,14 @@ impl LexerUtils {
     pub fn handle_escape_sequence(
         context: &mut ScannerContext,
         allowed_escapes: &[char],
+        start_pos: usize,
+        start_line: usize,
+        start_column: usize,
     ) -> Result<char, LexError> {
         context.advance(); // consume backslash
         if context.is_at_end() {
             return Err(LexError::UnterminatedString {
-                line: context.line,
-                column: context.column,
+                span: Span::new(start_pos, context.position, start_line, start_column),
             });
         }
         let escaped = context.advance();
@@ -135,10 +141,10 @@ impl LexerUtils {
                 if allowed_escapes.contains(&escaped) {
                     escaped
                 } else {
+                    let span_start = context.position - escaped.len_utf8() - 1; // backslash + escaped
                     return Err(LexError::InvalidEscape {
                         escape: escaped,
-                        line: context.line,
-                        column: context.column - 1,
+                        span: Span::new(span_start, context.position, start_line, start_column),
                     });
                 }
             }

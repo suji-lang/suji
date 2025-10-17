@@ -1,0 +1,7 @@
+import std:println
+import std:json
+
+obj = { name: "Alice", age: 30 }
+result = json:generate(obj)
+
+println(result)  # {"age":30,"name":"Alice"}

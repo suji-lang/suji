@@ -19,22 +19,25 @@ FAILED=0
 echo "Running spec tests..."
 echo "===================="
 
-# Find all .si files in spec/ directory
-for spec_file in spec/*.si; do
+# Change to spec/ directory so relative imports work
+cd spec
+
+# Find all .si files in current directory (spec/), excluding subdirectories
+for spec_file in *.si; do
     if [ ! -f "$spec_file" ]; then
         echo "No spec files found in spec/ directory"
         exit 1
     fi
 
     TOTAL=$((TOTAL + 1))
-    filename=$(basename "$spec_file")
+    filename="$spec_file"
 
     # Extract expected output from the last line using perl with non-greedy pattern
     # Look for comment starting with "# " at the end of the last line
     expected_output=$(tail -n 1 "$spec_file" | perl -pe 's/.*?# (.*)/$1/')
 
-    # Run the spec file and capture output, stripping ANSI color codes
-    actual_output=$(./target/release/suji "$spec_file" 2>/dev/null | tail -n 1 | sed 's/\x1b\[[0-9;]*m//g')
+    # Run the spec file from spec/ directory and capture output, stripping ANSI color codes
+    actual_output=$(../target/release/suji "$spec_file" 2>/dev/null | tail -n 1 | sed 's/\x1b\[[0-9;]*m//g')
 
     # Compare actual vs expected
     if [ "$actual_output" = "$expected_output" ]; then

@@ -12,6 +12,7 @@ impl PartialEq for Value {
             (Value::Regex(a), Value::Regex(b)) => a.as_str() == b.as_str(),
             (Value::Function(a), Value::Function(b)) => a == b,
             (Value::Stream(_), Value::Stream(_)) => false, // Streams are never equal
+            (Value::StreamProxy(a), Value::StreamProxy(b)) => a == b, // Proxies are equal if same kind
             (Value::Nil, Value::Nil) => true,
             _ => false,
         }

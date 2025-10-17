@@ -2,9 +2,10 @@
 
 pub mod functions;
 pub mod json;
-pub mod modules;
-pub mod suji_loader;
+mod std_sources_map;
 pub mod toml;
+pub mod virtual_std;
+pub mod virtual_std_adapter;
 pub mod yaml;
 
 // Re-export the main public API to maintain backward compatibility
@@ -14,23 +15,31 @@ pub use functions::{
     builtin_toml_generate, builtin_toml_parse, builtin_yaml_generate, builtin_yaml_parse,
     call_builtin,
 };
-pub use modules::{create_json_module, create_std_module, create_toml_module, create_yaml_module};
+// Modules are now loaded via virtual_std, no longer exported from here
 
 use suji_runtime::env::Env;
 
-/// Setup the global environment with built-in functions and std module
-pub fn setup_global_env(env: &Env) {
+/// Setup the global environment with built-in functions
+/// Note: std module is now loaded via virtual_std, not added here
+pub fn setup_global_env(_env: &Env) {
     // Register all builtin functions with the runtime registry
     register_all_builtins();
 
-    // Add std module to global environment
-    env.define_or_set("std", create_std_module());
+    // std module will be loaded via ModuleRegistry's virtual_std resolver
+}
 
-    // Optionally add other global builtins here
+/// Setup the module registry with virtual std resolver
+/// Should be called before any module loading that depends on std
+pub fn setup_module_registry(registry: &mut suji_runtime::module::ModuleRegistry) {
+    // Register all builtin functions
+    register_all_builtins();
+
+    // Set up virtual std resolver
+    registry.set_virtual_std_resolver(virtual_std_adapter::virtual_std_resolver);
 }
 
 /// Register all builtin function implementations with the runtime
-fn register_all_builtins() {
+pub fn register_all_builtins() {
     use suji_runtime::builtins::register_builtin;
 
     // Register core functions

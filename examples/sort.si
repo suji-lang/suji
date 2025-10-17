@@ -1,32 +1,23 @@
 import std:println
+import std:random
 
-sort = |list| {
+quicksort = |list| {
     match list::length() {
         0 => [],
         1 => list,
         _ => {
             pivot = list[0]
+            rest = list[1:]
+            left = rest::filter(|x| x < pivot)
+            right = rest::filter(|x| x >= pivot)
 
-            less = []
-            equal = []
-            greater = []
-
-            loop through list with element {
-                match {
-                    element < pivot => less::push(element),
-                    element > pivot => greater::push(element),
-                    _ => equal::push(element),
-                }
-            }
-
-            sort(less) + equal + sort(greater)
+            quicksort(left) + [pivot] + quicksort(right)
         },
     }
 }
 
+list = (0..100)::map(|n| random:integer(0, 100))
+sorted_list = quicksort(list)
 
-list = [85, 12, 59, 45, 72, 51, 80, 75, 89, 9, 71, 81, 33, 1, 84, 28, 97, 94, 57, 8]
-sorted_list = sort(list)
-
-println("Original: " + list::join(", "))
-println("Sorted:   " + sorted_list::join(", "))
+println <| "Original: ${list::join(', ')}"
+println <| "Sorted: ${sorted_list::join(', ')}"

@@ -1,9 +1,0 @@
-# std:println function - writes text followed by newline
-export {
-    println: |text = "", out = nil| {
-        import std:print
-        return print(text::to_string() + "\n", out)
-    }
-}
-
-

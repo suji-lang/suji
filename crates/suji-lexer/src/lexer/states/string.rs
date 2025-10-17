@@ -1,5 +1,4 @@
 use super::super::utils::LexerUtils;
-// use super::context::ParentInterpolation; // no longer needed after helper consolidation
 use super::{LexError, LexState, QuoteType, ScannerContext, ScannerResult};
 use crate::token::{Span, Token, TokenWithSpan};
 
@@ -7,7 +6,6 @@ use crate::token::{Span, Token, TokenWithSpan};
 pub struct StringScanner;
 
 impl StringScanner {
-    /// Scan string content with a specific quote character and multiline flag
     pub fn scan_content(
         context: &mut ScannerContext,
         state: &mut LexState,
@@ -104,6 +102,9 @@ impl StringScanner {
                 let escaped_char = LexerUtils::handle_escape_sequence(
                     context,
                     &[quote_char, '\\', '$', 'n', 't', 'r'],
+                    start_pos,
+                    start_line,
+                    start_column,
                 )?;
                 content.push(escaped_char);
             } else {
@@ -112,8 +113,7 @@ impl StringScanner {
         }
 
         Err(LexError::UnterminatedString {
-            line: context.line,
-            column: context.column,
+            span: Span::new(start_pos, context.position, start_line, start_column),
         })
     }
 }

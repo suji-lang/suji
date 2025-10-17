@@ -95,7 +95,7 @@ pub fn suji_to_yaml_value(suji_value: &Value) -> Result<Yaml, RuntimeError> {
             value_type: "function".to_string(),
         }
         .into()),
-        Value::Stream(_) => Err(YamlError::GenerateError {
+        Value::Stream(_) | Value::StreamProxy(_) => Err(YamlError::GenerateError {
             message: "Stream values cannot be converted to YAML".to_string(),
             value_type: "stream".to_string(),
         }

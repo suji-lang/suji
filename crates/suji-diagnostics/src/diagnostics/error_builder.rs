@@ -77,30 +77,3 @@ impl ErrorBuilder {
         self.build_and_print(Some(range), false)
     }
 }
-
-/// Helper function to convert line/column to ariadne's range format (for errors without spans)
-pub fn line_column_to_range(source: &str, line: usize, column: usize) -> std::ops::Range<usize> {
-    // Handle the case where the source ends with a newline (common case)
-    let lines: Vec<&str> = source.lines().collect();
-    let actual_line_count = if source.ends_with('\n') {
-        lines.len() + 1
-    } else {
-        lines.len()
-    };
-
-    if line > 0 && line <= actual_line_count {
-        // Calculate the byte position of the start of the line
-        let mut pos = 0;
-        for (i, line_content) in source.lines().enumerate() {
-            if i == line - 1 {
-                break;
-            }
-            pos += line_content.len() + 1; // +1 for the newline character
-        }
-        // Add the column offset (column is 1-based, so subtract 1)
-        let final_pos = pos + column.saturating_sub(1);
-        final_pos..final_pos
-    } else {
-        0..0
-    }
-}

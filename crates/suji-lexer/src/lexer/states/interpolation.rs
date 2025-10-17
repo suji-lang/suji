@@ -1,6 +1,6 @@
 use super::context::ParentInterpolation;
 use super::normal::NormalScanner;
-use super::{LexState, ScannerContext, ScannerResult};
+use super::{LexError, LexState, ScannerContext, ScannerResult};
 use crate::token::{Span, Token, TokenWithSpan};
 
 /// Scanner for interpolation states (both string and shell)
@@ -22,10 +22,9 @@ impl InterpolationScanner {
                 ..
             } => (*quote_type, *multiline),
             _ => {
-                return Err(super::LexError::UnexpectedCharacter {
+                return Err(LexError::UnexpectedCharacter {
                     ch: ' ',
-                    line: context.line,
-                    column: context.column,
+                    span: Span::new(start_pos, context.position, context.line, context.column),
                 });
             }
         };

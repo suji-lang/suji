@@ -122,7 +122,7 @@ pub fn suji_to_toml_value(suji_value: &Value) -> Result<TomlValue, RuntimeError>
             message: "Function values cannot be converted to TOML".to_string(),
         }
         .into()),
-        Value::Stream(_) => Err(TomlError::ConversionError {
+        Value::Stream(_) | Value::StreamProxy(_) => Err(TomlError::ConversionError {
             message: "Stream values cannot be converted to TOML".to_string(),
         }
         .into()),

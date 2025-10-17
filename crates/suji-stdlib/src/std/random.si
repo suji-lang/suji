@@ -1,0 +1,88 @@
+# std:random module - random number generation and list utilities
+import __builtins__:random_random
+import __builtins__:random_seed
+
+export {
+    random: random_random,
+    seed: random_seed,
+    
+    integer: |a, b| {
+        lo = a::ceil()
+        hi = b::floor()
+
+        match lo >= hi {
+            true => ([]) [0],  # trigger runtime error
+        }
+
+        n = hi - lo
+        idx = (random_random() * n)::floor()
+        lo + idx
+    },
+
+    pick: |xs| {
+        len = xs::length()
+        match len == 0 {
+            true => xs[0],  # trigger runtime error
+        }
+        idx = (random_random() * len)::floor()
+        xs[idx]
+    },
+
+    shuffle: |xs| {
+        ys = xs + []
+        i = ys::length() - 1
+        loop {
+            match i < 1 {
+                true => break,
+            }
+            span = i + 1
+            j = (random_random() * span)::floor()
+            tmp = ys[j]
+            ys[j] = ys[i]
+            ys[i] = tmp
+            i -= 1
+        }
+        ys
+    },
+
+    sample: |xs, k| {
+        len = xs::length()
+        match k <= 0 {
+            true => [],
+        }
+        match k >= len {
+            true => {
+                # Inline shuffle since we can't call it recursively
+                ys = xs + []
+                i = ys::length() - 1
+                loop {
+                    match i < 1 {
+                        true => break,
+                    }
+                    span = i + 1
+                    j = (random_random() * span)::floor()
+                    tmp = ys[j]
+                    ys[j] = ys[i]
+                    ys[i] = tmp
+                    i -= 1
+                }
+                ys
+            },
+        }
+        ys = xs + []
+        i = ys::length() - 1
+        loop {
+            match i < 1 {
+                true => break,
+            }
+            span = i + 1
+            j = (random_random() * span)::floor()
+            tmp = ys[j]
+            ys[j] = ys[i]
+            ys[i] = tmp
+            i -= 1
+        }
+        ys[0:k]
+    }
+}
+

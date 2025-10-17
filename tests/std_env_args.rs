@@ -1,18 +1,22 @@
-use suji_lang::runtime::builtins;
 use suji_lang::runtime::env::Env;
+use suji_lang::runtime::module::ModuleRegistry;
 use suji_lang::runtime::value::{MapKey, Value};
 
 #[test]
 fn std_env_args_and_argv_present_and_shaped() {
     let env = std::rc::Rc::new(Env::new());
-    builtins::setup_global_env(&env);
+    let registry = ModuleRegistry::new();
 
-    let std_val = env.get("std").expect("std in global env");
+    // Load std module via registry
+    let std_val = registry
+        .resolve_module_path(&env, "std", false)
+        .expect("std module should load");
     let std_map = match std_val {
         Value::Map(m) => m,
         _ => panic!("std should be a map"),
     };
 
+    // Load std:env submodule
     let env_val = std_map
         .get(&MapKey::String("env".to_string()))
         .expect("std:env");

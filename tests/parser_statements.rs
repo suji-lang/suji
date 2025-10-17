@@ -1,3 +1,4 @@
+use suji_lang::ast::ExportBody;
 use suji_lang::ast::{Expr, Literal, Stmt};
 use suji_lang::parser::parse_program;
 
@@ -18,6 +19,40 @@ fn test_parse_return_statement() {
         }
     } else {
         panic!("Expected return statement");
+    }
+}
+
+#[test]
+fn test_parse_export_expression() {
+    let result = parse_statement("export 42");
+    assert!(result.is_ok());
+
+    if let Ok(Stmt::Export { body, .. }) = result {
+        match body {
+            ExportBody::Expr(Expr::Literal(Literal::Number(n, _))) => {
+                assert_eq!(n, "42");
+            }
+            _ => panic!("Expected export expression body with number"),
+        }
+    } else {
+        panic!("Expected export statement");
+    }
+}
+
+#[test]
+fn test_parse_export_map() {
+    let result = parse_statement("export { x: 1, y: 2 }");
+    assert!(result.is_ok());
+
+    if let Ok(Stmt::Export { body, .. }) = result {
+        match body {
+            ExportBody::Map(spec) => {
+                assert_eq!(spec.items.len(), 2);
+            }
+            _ => panic!("Expected map export body"),
+        }
+    } else {
+        panic!("Expected export statement");
     }
 }
 
@@ -74,4 +109,22 @@ fn test_parse_program() {
     } else {
         panic!("Expected program to parse successfully");
     }
+}
+
+#[test]
+fn test_parse_multiple_exports_error() {
+    let src = "export { x: 1 }\nexport 2";
+    common::assert_parse_fails(
+        src,
+        "Multiple export statements||Only one export statement is allowed",
+    );
+}
+
+#[test]
+fn test_parse_export_error_no_form() {
+    // "export" followed by EOF should fail
+    common::assert_parse_fails(
+        "export",
+        "Expected '{' or expression after export||Expected '{' after export",
+    );
 }

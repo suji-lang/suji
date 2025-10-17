@@ -1,0 +1,13 @@
+# std:io module - provides stdin, stdout, stderr streams and file open function
+import __builtins__:io_stdin
+import __builtins__:io_stdout
+import __builtins__:io_stderr
+import __builtins__:io_open
+
+export {
+    stdin: io_stdin,
+    stdout: io_stdout,
+    stderr: io_stderr,
+    open: io_open,
+}
+

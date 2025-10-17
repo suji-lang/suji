@@ -1,7 +1,8 @@
 [package]
 name = "suji-stdlib"
-version = "0.1.15"
+version = "0.1.16"
 edition = "2024"
+build = "build.rs"
 
 [lib]
 path = "src/lib.rs"

@@ -1,4 +1,4 @@
-use super::{ExportSpec, Expr, ImportSpec, LoopBindings, Pattern};
+use super::{ExportBody, Expr, ImportSpec, LoopBindings, Pattern};
 use crate::span::Span;
 
 /// Statement nodes representing all SUJI language statements
@@ -39,8 +39,8 @@ pub enum Stmt {
     /// Import statement: import spec
     Import { spec: ImportSpec, span: Span },
 
-    /// Export statement: export { name: expr, ... }
-    Export { spec: ExportSpec, span: Span },
+    /// Export statement: supports map form or expression form
+    Export { body: ExportBody, span: Span },
 }
 
 /// A single match arm: pattern: statement

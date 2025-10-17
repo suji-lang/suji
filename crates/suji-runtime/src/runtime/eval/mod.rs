@@ -59,7 +59,7 @@ pub fn eval_stmt_with_modules(
 ) -> EvalResult<Option<Value>> {
     let result = match stmt {
         Stmt::Expr(expr) => {
-            let value = eval_expr(expr, env)?;
+            let value = expressions::eval_expr_with_registry(expr, env, module_registry)?;
             Ok(Some(value))
         }
 
@@ -125,10 +125,14 @@ pub fn eval_stmt_with_modules(
             Err(e) => Err(e),
         },
 
-        Stmt::Export { spec, .. } => match eval_export(spec, env) {
-            Ok(export_result) => Ok(Some(export_result.module)),
-            Err(e) => Err(e),
-        },
+        Stmt::Export { body, .. } => {
+            // Evaluate both map and expression export bodies.
+            // Map export returns a Value::Map; expression export returns its evaluated value.
+            match exports::eval_export_body(body, env) {
+                Ok(value) => Ok(Some(value)),
+                Err(e) => Err(e),
+            }
+        }
     };
 
     // Attach the statement's span to errors that lack one

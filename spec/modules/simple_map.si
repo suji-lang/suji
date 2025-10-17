@@ -1,0 +1,2 @@
+export { value: 100, double: |x| x * 2 }
+

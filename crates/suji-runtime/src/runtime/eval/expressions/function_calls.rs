@@ -27,9 +27,6 @@ pub fn eval_function_literal(
 
 /// Evaluate a function call
 pub fn eval_function_call(callee: &Expr, args: &[Expr], env: Rc<Env>) -> EvalResult<Value> {
-    // Note: Direct builtin checking removed to enforce module system
-    // All builtins should now be accessed through imports (e.g., import std:println)
-
     let function_value = eval_expr(callee, env.clone())?;
 
     match function_value {

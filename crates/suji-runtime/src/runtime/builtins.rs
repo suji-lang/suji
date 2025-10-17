@@ -52,3 +52,13 @@ pub fn create_std_module() -> Value {
     // Provide an empty std map as a placeholder
     Value::Map(IndexMap::new())
 }
+
+/// List the names of all registered builtin functions
+pub fn list_builtins() -> Vec<String> {
+    let registry = BUILTIN_REGISTRY
+        .read()
+        .expect("Failed to acquire read lock on builtin registry");
+    let mut names: Vec<String> = registry.keys().cloned().collect();
+    names.sort();
+    names
+}

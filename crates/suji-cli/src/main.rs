@@ -8,7 +8,7 @@ use suji_repl::Repl;
 use suji_runtime::env::Env;
 use suji_runtime::eval::eval_program_with_modules;
 use suji_runtime::module::ModuleRegistry;
-use suji_stdlib::setup_global_env;
+use suji_stdlib::{setup_global_env, setup_module_registry};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -56,8 +56,12 @@ fn run_file(filename: &str) -> Result<(), Box<dyn std::error::Error>> {
     let env = Rc::new(Env::new());
     setup_global_env(&env);
 
-    // Create module registry
-    let module_registry = ModuleRegistry::new();
+    // Create module registry and seed base directory for filesystem imports
+    let mut module_registry = ModuleRegistry::new();
+    setup_module_registry(&mut module_registry);
+    if let Some(parent) = std::path::Path::new(filename).parent() {
+        module_registry.set_base_dir(parent);
+    }
 
     // Evaluate the program
     match eval_program_with_modules(&statements, env, &module_registry) {

@@ -1,0 +1,4 @@
+import std:println
+import modules:simple_leaf as value
+
+println(value)  # 42
