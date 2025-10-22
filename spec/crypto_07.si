@@ -1,0 +1,8 @@
+import std:println
+import std:crypto
+
+hmac1 = crypto:hmac_sha256("key1", "message")
+hmac2 = crypto:hmac_sha256("key2", "message")
+result = hmac1 != hmac2
+
+println(result)  # true

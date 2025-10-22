@@ -5,9 +5,6 @@ use crate::runtime::value::Value;
 use std::rc::Rc;
 use suji_ast::ast::{Expr, Literal};
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Evaluate method call
 pub fn eval_method_call(
     target: &Expr,
@@ -44,6 +41,7 @@ pub fn eval_method_call(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use crate::runtime::value::DecimalNumber;
     use suji_ast::Span;

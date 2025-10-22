@@ -41,6 +41,11 @@ This guide covers the SUJI language: core concepts, syntax, standard library, an
   - [YAML Module](#yaml-module)
   - [TOML Module](#toml-module)
   - [Random Module](#random-module)
+  - [Time Module](#time-module)
+  - [UUID Module](#uuid-module)
+  - [Encoding Module](#encoding-module)
+  - [Math Module](#math-module)
+  - [Crypto Module](#crypto-module)
   - [env](#env)
   - [io (Process Streams)](#io-process-streams)
   - [print and println](#print-and-println)
@@ -836,6 +841,140 @@ sampled = random:sample(items, 2)
 println(i)
 ```
 
+### Time Module
+
+Work with time, dates, and sleep:
+
+```suji
+import std:time
+import std:println
+
+# Get current time
+current = time:now()
+println("Current time: ${current:iso}")
+println("Epoch ms: ${current:epoch_ms}")
+println("Timezone: ${current:tz}")
+
+# Sleep for 1 second
+println("Sleeping...")
+time:sleep(1000)
+println("Done!")
+
+# Parse ISO-8601 string
+iso_string = "2024-03-15T14:30:00Z"
+parsed = time:parse_iso(iso_string)
+println("Parsed: ${parsed:epoch_ms}")
+
+# Format epoch to ISO-8601
+epoch = 1710512400000
+formatted = time:format_iso(epoch, "Z")
+println("Formatted: ${formatted}")
+```
+
+### UUID Module
+
+Generate and validate UUIDs:
+
+```suji
+import std:uuid
+import std:println
+
+# Generate random UUID (v4)
+id = uuid:v4()
+println("Random UUID: ${id}")
+
+# Generate namespaced UUID (v5)
+dns_namespace = "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+domain_uuid = uuid:v5(dns_namespace, "example.com")
+println("Domain UUID: ${domain_uuid}")
+
+# Validate UUID strings
+println(uuid:is_valid(id))                    # true
+println(uuid:is_valid("not-a-uuid"))          # false
+```
+
+### Encoding Module
+
+Encode and decode text in various formats:
+
+```suji
+import std:encoding
+import std:println
+
+# Base64 encoding
+original = "Hello, World!"
+encoded = encoding:base64_encode(original)
+decoded = encoding:base64_decode(encoded)
+println("Base64: ${encoded}")
+
+# Hexadecimal encoding
+hex = encoding:hex_encode("Hello")
+println("Hex: ${hex}")  # "48656c6c6f"
+
+# Percent encoding (URL encoding)
+query = "hello world & stuff"
+encoded_url = encoding:percent_encode(query)
+println("URL: ${encoded_url}")  # "hello%20world%20%26%20stuff"
+```
+
+### Math Module
+
+Mathematical constants and functions:
+
+```suji
+import std:math
+import std:println
+
+# Constants
+println(math:PI)  # 3.14159265358979323846...
+println(math:E)   # 2.71828182845904523536...
+
+# Trigonometric functions (input in radians)
+println(math:sin(0))           # 0
+println(math:cos(0))           # 1
+println(math:sin(math:PI / 2)) # 1
+
+# Logarithmic and exponential
+println(math:log(math:E))      # 1
+println(math:log10(100))       # 2
+println(math:exp(1))           # 2.718...
+
+# Convert degrees to radians
+degrees = 45
+radians = degrees * math:PI / 180
+println(math:sin(radians))     # 0.7071... (sin of 45 degrees)
+```
+
+### Crypto Module
+
+Cryptographic hashing and HMAC:
+
+```suji
+import std:crypto
+import std:println
+
+# Hash functions
+text = "Hello, World!"
+println("MD5: ${crypto:md5(text)}")
+println("SHA-1: ${crypto:sha1(text)}")
+println("SHA-256: ${crypto:sha256(text)}")
+println("SHA-512: ${crypto:sha512(text)}")
+
+# HMAC for message authentication
+secret_key = "my-secret-key"
+message = "authenticated message"
+signature = crypto:hmac_sha256(secret_key, message)
+println("HMAC: ${signature}")
+
+# Verify message integrity
+received_msg = "authenticated message"
+computed_sig = crypto:hmac_sha256(secret_key, received_msg)
+match computed_sig == signature {
+    true => println("Message is authentic"),
+    false => println("Message has been tampered with"),
+}
+```
+
 ### env
 
 #### Environment variables
@@ -1074,3 +1213,5 @@ cargo test
 - **v0.1.13**: Official name: suji. Logical split into crates.
 - **v0.1.14**: Stream pipe fixes and precedence. `|` pipelines require invoked closures and bind tighter than `|>`/`<|`.
 - **v0.1.15**: Error codes for all error types and better error handling. Various bugfixes.
+- **v0.1.16**: Export expressions (maps and leaf values), import path resolution (files and directories), special `__builtins__` import object, standard library directory (`std/`) with delegation to builtins.
+- **v0.1.17**: Match syntax changes (optional trailing commas for braced arms), new standard library modules: `std:time`, `std:uuid`, `std:encoding`, `std:math`, `std:crypto`.

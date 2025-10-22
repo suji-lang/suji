@@ -6,9 +6,6 @@ use regex::Regex;
 use std::rc::Rc;
 use suji_ast::ast::Literal;
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Evaluate a literal expression
 pub fn eval_literal(literal: &Literal, env: Rc<Env>) -> EvalResult<Value> {
     match literal {
@@ -62,6 +59,7 @@ pub fn eval_literal(literal: &Literal, env: Rc<Env>) -> EvalResult<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use suji_ast::Span;
     use suji_ast::ast::Literal;

@@ -1,0 +1,7 @@
+import std:println
+import std:encoding
+
+text = "email+test@example.com"
+encoded = encoding:percent_encode(text)
+
+println(encoded)  # email%2Btest%40example%2Ecom

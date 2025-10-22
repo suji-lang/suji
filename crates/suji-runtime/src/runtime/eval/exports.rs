@@ -5,11 +5,6 @@ use indexmap::IndexMap;
 use std::rc::Rc;
 use suji_ast::ast::{ExportBody, ExportSpec};
 
-#[cfg(test)]
-use suji_ast::Span;
-#[cfg(test)]
-use suji_ast::ast::{Expr, Literal};
-
 /// Result of evaluating an export statement
 #[derive(Debug, Clone)]
 pub struct ExportResult {
@@ -53,6 +48,8 @@ pub fn eval_export_body(body: &ExportBody, env: Rc<Env>) -> Result<Value, Runtim
 mod tests {
     use super::*;
     use crate::runtime::value::DecimalNumber;
+    use suji_ast::Span;
+    use suji_ast::ast::{Expr, Literal};
 
     fn create_test_env() -> Rc<Env> {
         Rc::new(Env::new())

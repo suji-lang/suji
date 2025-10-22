@@ -5,84 +5,57 @@ import __builtins__:random_seed
 export {
     random: random_random,
     seed: random_seed,
-    
+
     integer: |a, b| {
         lo = a::ceil()
         hi = b::floor()
 
-        match lo >= hi {
-            true => ([]) [0],  # trigger runtime error
-        }
-
         n = hi - lo
-        idx = (random_random() * n)::floor()
-        lo + idx
+        i = (random_random() * n)::floor()
+
+        lo + i
     },
 
     pick: |xs| {
-        len = xs::length()
-        match len == 0 {
-            true => xs[0],  # trigger runtime error
-        }
-        idx = (random_random() * len)::floor()
+        idx = (random_random() * xs::length())::floor()
+
         xs[idx]
     },
 
     shuffle: |xs| {
-        ys = xs + []
-        i = ys::length() - 1
-        loop {
-            match i < 1 {
-                true => break,
-            }
-            span = i + 1
-            j = (random_random() * span)::floor()
-            tmp = ys[j]
-            ys[j] = ys[i]
-            ys[i] = tmp
-            i -= 1
+        length = xs::length()
+        swap = |a, b| {
+            tmp = xs[a]
+            xs[a] = xs[b]
+            xs[b] = tmp
         }
-        ys
+
+        loop through 0..length with i {
+            j = (random_random() * length)::floor()
+            swap(i, j)
+        }
+
+        xs
     },
 
     sample: |xs, k| {
-        len = xs::length()
-        match k <= 0 {
-            true => [],
+        length = xs::length()
+        match {
+            length <= k => return xs,
         }
-        match k >= len {
-            true => {
-                # Inline shuffle since we can't call it recursively
-                ys = xs + []
-                i = ys::length() - 1
-                loop {
-                    match i < 1 {
-                        true => break,
-                    }
-                    span = i + 1
-                    j = (random_random() * span)::floor()
-                    tmp = ys[j]
-                    ys[j] = ys[i]
-                    ys[i] = tmp
-                    i -= 1
-                }
-                ys
-            },
-        }
-        ys = xs + []
-        i = ys::length() - 1
+
+        indexes = []
         loop {
-            match i < 1 {
-                true => break,
+            i = (random_random() * length)::floor()
+
+            match {
+                indexes::length() == k => break,
+                indexes::contains(i) => continue,
+                _ => indexes::push(i),
             }
-            span = i + 1
-            j = (random_random() * span)::floor()
-            tmp = ys[j]
-            ys[j] = ys[i]
-            ys[i] = tmp
-            i -= 1
         }
-        ys[0:k]
+
+        indexes
+            ::map(|i| xs[i])
     }
 }
-

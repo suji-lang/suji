@@ -6,4 +6,3 @@ export {
     parse: yaml_parse,
     generate: yaml_generate,
 }
-

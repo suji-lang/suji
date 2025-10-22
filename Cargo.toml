@@ -10,7 +10,7 @@ default-members = [
 
 [package]
 name = "suji_lang"
-version = "0.1.16"
+version = "0.1.17"
 edition = "2024"
 default-run = "suji_root"
 
@@ -33,7 +33,7 @@ path = "crates/suji-cli/src/main.rs"
 
 [workspace.package]
 edition = "2024"
-version = "0.1.16"
+version = "0.1.17"
 authors = ["suji contributors"]
 
 [workspace.dependencies]
@@ -49,5 +49,15 @@ thiserror = "2.0.16"
 toml = "0.8"
 yaml-rust2 = "0.10.3"
 rand = "0.8"
-rust_decimal = "1.36"
+rust_decimal = "1.39"
 tempfile = "3"
+chrono = "0.4"
+uuid = { version = "1", features = ["v5"] }
+base64 = "0.21"
+hex = "0.4"
+percent-encoding = "2.3"
+md-5 = "0.10"
+sha1 = "0.10"
+sha2 = "0.10"
+hmac = "0.12"
+digest = "0.10"

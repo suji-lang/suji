@@ -7,9 +7,6 @@ use crate::runtime::value::{ControlFlow, FunctionValue, ParamSpec, RuntimeError,
 use std::rc::Rc;
 use suji_ast::ast::{Expr, Stmt, StringPart};
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Evaluate a function literal
 pub fn eval_function_literal(
     params: &[suji_ast::ast::Param],
@@ -160,6 +157,7 @@ pub fn eval_shell_command_template(parts: &[StringPart], env: Rc<Env>) -> EvalRe
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use crate::runtime::value::DecimalNumber;
     use suji_ast::Span;

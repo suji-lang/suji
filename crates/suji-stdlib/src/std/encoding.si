@@ -1,0 +1,16 @@
+# std:encoding module - base64, hex, and percent encoding
+import __builtins__:encoding_base64_encode
+import __builtins__:encoding_base64_decode
+import __builtins__:encoding_hex_encode
+import __builtins__:encoding_hex_decode
+import __builtins__:encoding_percent_encode
+import __builtins__:encoding_percent_decode
+
+export {
+    base64_encode: encoding_base64_encode,
+    base64_decode: encoding_base64_decode,
+    hex_encode: encoding_hex_encode,
+    hex_decode: encoding_hex_decode,
+    percent_encode: encoding_percent_encode,
+    percent_decode: encoding_percent_decode,
+}

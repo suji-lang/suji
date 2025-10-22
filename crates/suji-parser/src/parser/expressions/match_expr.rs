@@ -104,9 +104,23 @@ impl Parser {
                 }
             }
 
-            // Required comma
-            self.consume(Token::Comma, "Expected ',' after match arm")?;
-            self.skip_newlines();
+            // Comma is optional for braced block arm bodies. Required otherwise.
+            let allow_optional_comma =
+                matches!(arms.last().map(|a| &a.body), Some(Stmt::Block { .. }));
+
+            if allow_optional_comma {
+                if self.check(Token::Comma) {
+                    // Optional comma present; consume and proceed
+                    self.advance();
+                }
+                // Whether or not a comma was present, allow the next token to be
+                // either another arm or the closing '}'. Just normalize newlines.
+                self.skip_newlines();
+            } else {
+                // Require comma for non-braced bodies
+                self.consume(Token::Comma, "Expected ',' after match arm")?;
+                self.skip_newlines();
+            }
         }
 
         self.consume(Token::RightBrace, "Expected '}' after match arms")?;

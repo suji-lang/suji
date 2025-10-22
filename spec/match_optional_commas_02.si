@@ -1,0 +1,10 @@
+import std:println
+
+x = 5
+result = match {
+    x > 10 => { "large" }
+    x > 0 => { "positive" }
+    _ => { "zero or negative" }
+}
+
+println(result)  # positive

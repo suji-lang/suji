@@ -1,0 +1,7 @@
+import std:println
+import std:uuid
+
+valid_no_hyphens = "550e8400e29b41d4a716446655440000"
+result = uuid:is_valid(valid_no_hyphens)
+
+println(result)  # true

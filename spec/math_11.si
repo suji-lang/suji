@@ -1,0 +1,7 @@
+import std:println
+import std:math
+
+result = math:atan2(1, 1)
+is_positive = result > 0
+
+println(is_positive)  # true

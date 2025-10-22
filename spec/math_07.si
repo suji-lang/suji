@@ -1,0 +1,6 @@
+import std:println
+import std:math
+
+result = math:tan(0)
+
+println(result)  # 0

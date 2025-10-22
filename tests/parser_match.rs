@@ -137,7 +137,7 @@ fn test_parse_match_single_expression() {
 
 #[test]
 fn test_parse_match_block() {
-    let result = parse_statement("match x { 1 => { return \"one\" }, 2 => { return \"two\" }, }");
+    let result = parse_statement("match x { 1 => { return \"one\" } 2 => { return \"two\" } }");
     assert!(result.is_ok());
 
     if let Ok(Stmt::Expr(Expr::Match {
@@ -306,16 +306,41 @@ fn test_parse_map_literals_in_match_arms() {
 
 #[test]
 fn test_parse_match_error_missing_comma() {
-    // Missing comma after first arm
+    // Missing comma after first arm (single-expression arm still requires comma)
     let result = parse_statement("match x { 1 => \"one\" 2 => \"two\" }");
     assert!(result.is_err());
 }
 
 #[test]
 fn test_parse_match_error_missing_comma_last_arm() {
-    // Missing comma after last arm
+    // Missing comma after last arm (single-expression)
     let result = parse_statement("match x { 1 => \"one\", 2 => \"two\" }");
     assert!(result.is_err());
+}
+
+#[test]
+fn test_parse_match_conditional_braced_no_commas() {
+    let result = parse_statement(
+        "match { x > 10 => { return \"big\" } x > 0 => { return \"pos\" } _ => { return \"other\" } }",
+    );
+    assert!(result.is_ok());
+
+    if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
+        assert_eq!(arms.len(), 3);
+        assert!(matches!(arms[0].body, Stmt::Block { .. }));
+        assert!(matches!(arms[1].body, Stmt::Block { .. }));
+        assert!(matches!(arms[2].body, Stmt::Block { .. }));
+    } else {
+        panic!("Expected match statement");
+    }
+}
+
+#[test]
+fn test_parse_match_mixed_braced_optional_and_expr_requires_comma() {
+    let result = parse_statement(
+        "match x { 1 => { return \"one\" } , 2 => \"two\", _ => { return \"other\" } }",
+    );
+    assert!(result.is_ok());
 }
 
 #[test]

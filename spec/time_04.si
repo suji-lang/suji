@@ -1,0 +1,6 @@
+import std:println
+import std:time
+
+result = time:sleep(1)
+
+println(result)  # nil

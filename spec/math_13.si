@@ -1,0 +1,7 @@
+import std:println
+import std:math
+
+result = math:log(math:E)
+close_to_one = result > 0.99 && result < 1.01
+
+println(close_to_one)  # true

@@ -1,18 +1,17 @@
 //! Diagnostics: rich error reporting utilities.
-
 use suji_lexer::LexError;
 use suji_parser::ParseError;
 use suji_runtime::value::RuntimeError;
-pub mod error_builder;
-pub mod error_codes;
-pub mod error_template;
-pub mod lexer_errors;
-pub mod parser_errors;
-pub mod runtime_errors;
 
 mod context;
-pub(crate) mod emitters;
-mod suggestions; // internal helpers used by runtime emitter
+mod emitters;
+mod error_builder;
+mod error_codes;
+mod error_template;
+mod lexer_errors;
+mod parser_errors;
+mod runtime_errors;
+mod suggestions;
 
 pub use context::DiagnosticContext;
 

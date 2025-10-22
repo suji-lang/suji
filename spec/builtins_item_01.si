@@ -1,3 +1,5 @@
-import __builtins__:println
+import std:println
+import __builtins__:json_parse
 
-println(123)  # 123
+result = json_parse('{"value": 123}')
+println(result:value)  # 123

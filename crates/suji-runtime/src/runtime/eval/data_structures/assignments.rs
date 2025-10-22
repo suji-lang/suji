@@ -4,9 +4,6 @@ use crate::runtime::value::{MapKey, RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::{Expr, Literal};
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Evaluate assignment expression
 pub fn eval_assignment(target: &Expr, value: &Expr, env: Rc<Env>) -> EvalResult<Value> {
     let rhs_value = eval_expr(value, env.clone())?;
@@ -468,6 +465,7 @@ fn update_map_access_value(target: &Value, key: &str, value: &Value) -> EvalResu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use crate::runtime::value::DecimalNumber;
     use suji_ast::Span;

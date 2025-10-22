@@ -1,0 +1,7 @@
+import std:println
+import std:encoding
+
+encoded = "hello%20world"
+decoded = encoding:percent_decode(encoded)
+
+println(decoded)  # hello world

@@ -1,0 +1,7 @@
+import std:println
+import std:time
+
+parsed = time:parse_iso("2024-01-01T00:00:00Z")
+result = parsed::contains("epoch_ms")
+
+println(result)  # true

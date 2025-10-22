@@ -1,0 +1,8 @@
+import std:println
+import std:encoding
+
+text = "Hello"
+encoded = encoding:hex_encode(text)
+decoded = encoding:hex_decode(encoded)
+
+println(decoded)  # Hello

@@ -1,4 +1,4 @@
-use crate::runtime::builtins::functions::random_core::rng_f64;
+use crate::runtime::builtins::random::rng_f64;
 use suji_runtime::value::{DecimalNumber, RuntimeError, Value};
 
 pub fn builtin_random_random(args: &[Value]) -> Result<Value, RuntimeError> {

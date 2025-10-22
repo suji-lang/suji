@@ -32,8 +32,6 @@ pub enum ErrorCategory {
 /// Structured error context extracted from RuntimeError variants
 #[derive(Debug, Clone)]
 pub struct ErrorContext {
-    /// The error category for grouping similar errors
-    pub category: ErrorCategory,
     /// Primary error message
     pub primary_message: String,
     /// Contextual suggestions based on error content
@@ -46,14 +44,8 @@ pub struct ErrorContext {
 
 impl ErrorContext {
     /// Create a new error context
-    pub fn new(
-        category: ErrorCategory,
-        error_code: u32,
-        title: &'static str,
-        primary_message: String,
-    ) -> Self {
+    pub fn new(error_code: u32, title: &'static str, primary_message: String) -> Self {
         Self {
-            category,
             primary_message,
             suggestions: Vec::new(),
             error_code,
@@ -74,10 +66,10 @@ impl ErrorContext {
     }
 
     /// Convert to ErrorTemplate
-    pub fn to_template(self) -> ErrorTemplate {
+    pub fn to_template(&self) -> ErrorTemplate {
         let mut template = ErrorTemplate::new(self.error_code, self.title, &self.primary_message);
-        for suggestion in self.suggestions {
-            template = template.with_suggestion(&suggestion);
+        for suggestion in &self.suggestions {
+            template = template.with_suggestion(suggestion);
         }
         template
     }
@@ -214,7 +206,6 @@ impl RuntimeErrorExt for RuntimeError {
             // Type-related errors
             RuntimeError::TypeError { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Type,
                     error_code,
                     "Type error",
                     message.clone(),
@@ -222,7 +213,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::InvalidOperation { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Type,
                     error_code,
                     "Invalid operation",
                     message.clone(),
@@ -231,7 +221,6 @@ impl RuntimeErrorExt for RuntimeError {
             // Pipe-related structured errors
             RuntimeError::PipeStageTypeError { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Execution,
                     error_code,
                     "Pipe stage type error",
                     message.clone(),
@@ -239,7 +228,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::EmptyPipeExpression { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Execution,
                     error_code,
                     "Empty pipe expression",
                     message.clone(),
@@ -247,7 +235,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::PipeExecutionError { stage, message } => {
                 ErrorContext::new(
-                    ErrorCategory::Execution,
                     error_code,
                     "Pipe execution error",
                     format!("{}: {}", stage, message),
@@ -255,7 +242,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::PipeApplyRightTypeError => {
                 ErrorContext::new(
-                    ErrorCategory::Type,
                     error_code,
                     "Pipe apply type error",
                     "Pipe apply (|>) requires a function on the right-hand side".to_string(),
@@ -263,7 +249,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::PipeApplyLeftTypeError => {
                 ErrorContext::new(
-                    ErrorCategory::Type,
                     error_code,
                     "Pipe apply type error",
                     "Pipe apply (<|) requires a function on the left-hand side".to_string(),
@@ -271,7 +256,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::DestructureTypeError => {
                 ErrorContext::new(
-                    ErrorCategory::Type,
                     error_code,
                     "Destructuring type error",
                     "Destructuring assignment requires a tuple value".to_string(),
@@ -279,7 +263,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::DestructureArityMismatch { expected, actual } => {
                 ErrorContext::new(
-                    ErrorCategory::Execution,
                     error_code,
                     "Destructuring arity mismatch",
                     format!("Expected {} values but got {}", expected, actual),
@@ -287,7 +270,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::DestructureInvalidTarget { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Type,
                     error_code,
                     "Invalid destructuring target",
                     message.clone(),
@@ -295,7 +277,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::InvalidNumberConversion { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Type,
                     error_code,
                     "Invalid number conversion",
                     message.clone(),
@@ -305,7 +286,6 @@ impl RuntimeErrorExt for RuntimeError {
             // Scope-related errors
             RuntimeError::UndefinedVariable { name } => {
                 ErrorContext::new(
-                    ErrorCategory::Scope,
                     error_code,
                     "Undefined variable",
                     format!("Variable '{}' is not defined", name),
@@ -314,7 +294,6 @@ impl RuntimeErrorExt for RuntimeError {
             // Access-related errors
             RuntimeError::IndexOutOfBounds { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Access,
                     error_code,
                     "Index out of bounds",
                     message.clone(),
@@ -323,7 +302,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::KeyNotFound { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Access,
                     error_code,
                     "Key not found",
                     message.clone(),
@@ -331,7 +309,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::InvalidKeyType { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Access,
                     error_code,
                     "Invalid key type",
                     message.clone(),
@@ -340,7 +317,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::MapContainsError { message, key_type } => {
                 ErrorContext::new(
-                    ErrorCategory::Access,
                     error_code,
                     "Map contains error",
                     message.clone(),
@@ -351,7 +327,6 @@ impl RuntimeErrorExt for RuntimeError {
             // Method-related errors
             RuntimeError::MethodError { message } => {
                 let mut context = ErrorContext::new(
-                    ErrorCategory::Method,
                     error_code,
                     "Method error",
                     message.clone(),
@@ -379,7 +354,6 @@ impl RuntimeErrorExt for RuntimeError {
                 };
 
                 ErrorContext::new(
-                    ErrorCategory::Method,
                     error_code,
                     "Map method error",
                     message.clone(),
@@ -389,7 +363,6 @@ impl RuntimeErrorExt for RuntimeError {
             // Serialization errors (JSON/YAML/TOML)
             RuntimeError::JsonParseError { message, .. } => {
                 ErrorContext::new(
-                    ErrorCategory::Serialization,
                     error_code,
                     "JSON parse error",
                     message.clone(),
@@ -400,7 +373,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::JsonGenerateError { message, value_type } => {
                 ErrorContext::new(
-                    ErrorCategory::Serialization,
                     error_code,
                     "JSON generation error",
                     message.clone(),
@@ -411,7 +383,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::YamlParseError { message, .. } => {
                 ErrorContext::new(
-                    ErrorCategory::Serialization,
                     error_code,
                     "YAML parse error",
                     message.clone(),
@@ -422,7 +393,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::YamlGenerateError { message, value_type } => {
                 ErrorContext::new(
-                    ErrorCategory::Serialization,
                     error_code,
                     "YAML generation error",
                     message.clone(),
@@ -433,7 +403,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::TomlParseError { message, .. } => {
                 ErrorContext::new(
-                    ErrorCategory::Serialization,
                     error_code,
                     "TOML parse error",
                     message.clone(),
@@ -444,7 +413,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::TomlGenerateError { message, .. } => {
                 ErrorContext::new(
-                    ErrorCategory::Serialization,
                     error_code,
                     "TOML generation error",
                     message.clone(),
@@ -455,7 +423,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::TomlConversionError { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Serialization,
                     error_code,
                     "TOML conversion error",
                     message.clone(),
@@ -466,7 +433,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::SerializationError { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Serialization,
                     error_code,
                     "Serialization error",
                     message.clone(),
@@ -476,7 +442,6 @@ impl RuntimeErrorExt for RuntimeError {
             // System errors
             RuntimeError::ShellError { message } => {
                 ErrorContext::new(
-                    ErrorCategory::System,
                     error_code,
                     "Shell command failed",
                     message.clone(),
@@ -485,7 +450,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::StreamError { message } => {
                 ErrorContext::new(
-                    ErrorCategory::System,
                     error_code,
                     "Stream error",
                     message.clone(),
@@ -494,7 +458,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::RegexError { message } => {
                 ErrorContext::new(
-                    ErrorCategory::System,
                     error_code,
                     "Regex error",
                     message.clone(),
@@ -504,7 +467,6 @@ impl RuntimeErrorExt for RuntimeError {
             // Execution errors
             RuntimeError::ArityMismatch { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Execution,
                     error_code,
                     "Arity mismatch",
                     message.clone(),
@@ -512,7 +474,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::ControlFlow { flow } => {
                 ErrorContext::new(
-                    ErrorCategory::Execution,
                     error_code,
                     "Internal control flow error",
                     format!("Unexpected control flow: {:?}", flow),
@@ -520,7 +481,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::ConditionalMatchError { message } => {
                 ErrorContext::new(
-                    ErrorCategory::Execution,
                     error_code,
                     "Conditional match error",
                     message.clone(),
@@ -531,7 +491,6 @@ impl RuntimeErrorExt for RuntimeError {
             // Range errors
             RuntimeError::StringIndexError { message, index, length } => {
                 ErrorContext::new(
-                    ErrorCategory::Range,
                     error_code,
                     "String index error",
                     message.clone(),
@@ -543,7 +502,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::RangeError { message, start, end } => {
                 let mut context = ErrorContext::new(
-                    ErrorCategory::Range,
                     error_code,
                     "Range error",
                     message.clone(),
@@ -562,7 +520,6 @@ impl RuntimeErrorExt for RuntimeError {
             }
             RuntimeError::ListConcatenationError { message, left_type, right_type } => {
                 ErrorContext::new(
-                    ErrorCategory::Range,
                     error_code,
                     "List concatenation error",
                     message.clone(),

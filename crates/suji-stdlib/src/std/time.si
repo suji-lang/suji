@@ -1,0 +1,12 @@
+# std:time module - time and date operations
+import __builtins__:time_now
+import __builtins__:time_sleep
+import __builtins__:time_parse_iso
+import __builtins__:time_format_iso
+
+export {
+    now: time_now,
+    sleep: time_sleep,
+    parse_iso: time_parse_iso,
+    format_iso: time_format_iso,
+}

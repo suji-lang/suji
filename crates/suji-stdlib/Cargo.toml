@@ -1,6 +1,6 @@
 [package]
 name = "suji-stdlib"
-version = "0.1.16"
+version = "0.1.17"
 edition = "2024"
 build = "build.rs"
 
@@ -26,6 +26,16 @@ rand = { workspace = true, optional = false }
 indexmap = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }
-rust_decimal = { workspace = true }
+rust_decimal = { workspace = true, features = ["maths"] }
 thiserror = { workspace = true }
 yaml-rust2 = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true, features = ["v5"] }
+base64 = { workspace = true }
+hex = { workspace = true }
+percent-encoding = { workspace = true }
+md-5 = { workspace = true }
+sha1 = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+digest = { workspace = true }

@@ -1,0 +1,8 @@
+import std:println
+import std:crypto
+
+text = "test"
+hash = crypto:sha512(text)
+result = hash::length()
+
+println(result)  # 128

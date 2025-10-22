@@ -4,7 +4,6 @@ use super::value::{ControlFlow, RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::Stmt;
 
-// Module declarations
 mod assignments;
 mod exports;
 mod function_call;
@@ -12,7 +11,6 @@ mod functions;
 mod helpers;
 mod imports;
 mod literals;
-mod operators;
 mod patterns;
 mod postfix;
 
@@ -20,14 +18,12 @@ mod control_flow;
 mod data_structures;
 mod expressions;
 
-// Re-export the main evaluation functions
 pub use exports::eval_export;
 pub use function_call::{call_function, call_function_with_modules};
 pub use functions::*;
 pub use helpers::*;
 pub use imports::*;
 pub use literals::*;
-pub use operators::*;
 pub use patterns::*;
 pub use postfix::*;
 

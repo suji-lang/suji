@@ -4,9 +4,6 @@ use crate::runtime::value::{MapKey, RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::Expr;
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Evaluate array/map indexing
 pub fn eval_index(target: &Expr, index: &Expr, env: Rc<Env>) -> EvalResult<Value> {
     let target_value = eval_expr(target, env.clone())?;
@@ -313,6 +310,7 @@ pub fn eval_map_access_by_name(target: &Expr, key: &str, env: Rc<Env>) -> EvalRe
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use crate::runtime::value::DecimalNumber;
     use suji_ast::Span;

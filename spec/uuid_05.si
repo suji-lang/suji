@@ -1,0 +1,9 @@
+import std:println
+import std:uuid
+
+dns_namespace = "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+uuid1 = uuid:v5(dns_namespace, "example.com")
+uuid2 = uuid:v5(dns_namespace, "other.com")
+result = uuid1 != uuid2
+
+println(result)  # true

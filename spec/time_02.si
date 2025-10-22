@@ -1,0 +1,7 @@
+import std:println
+import std:time
+
+now = time:now()
+has_all = now::contains("epoch_ms") && now::contains("iso") && now::contains("tz")
+
+println(has_all)  # true

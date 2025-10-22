@@ -1,0 +1,8 @@
+import std:println
+import std:encoding
+
+text = "Hello, World!"
+encoded = encoding:base64_encode(text)
+decoded = encoding:base64_decode(encoded)
+
+println(decoded)  # Hello, World!

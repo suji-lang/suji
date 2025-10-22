@@ -1,0 +1,8 @@
+import std:println
+import std:uuid
+
+id = uuid:v4()
+version_char = id[14:15]
+result = version_char == "4"
+
+println(result)  # true

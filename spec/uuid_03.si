@@ -1,0 +1,7 @@
+import std:println
+import std:uuid
+
+invalid = "not-a-uuid"
+result = uuid:is_valid(invalid)
+
+println(result)  # false

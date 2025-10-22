@@ -1,0 +1,7 @@
+import std:println
+import std:uuid
+
+uppercase = "550E8400-E29B-41D4-A716-446655440000"
+result = uuid:is_valid(uppercase)
+
+println(result)  # true

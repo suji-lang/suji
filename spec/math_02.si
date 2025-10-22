@@ -1,0 +1,6 @@
+import std:println
+import std:math
+
+result = math:cos(0)
+
+println(result)  # 1

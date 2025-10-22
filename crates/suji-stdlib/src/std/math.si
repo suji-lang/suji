@@ -1,0 +1,28 @@
+# std:math module - mathematical constants and functions
+import __builtins__:math_sin
+import __builtins__:math_cos
+import __builtins__:math_tan
+import __builtins__:math_asin
+import __builtins__:math_acos
+import __builtins__:math_atan
+import __builtins__:math_atan2
+import __builtins__:math_log
+import __builtins__:math_log10
+import __builtins__:math_exp
+
+export {
+    PI: 3.14159265358979323846,
+    E: 2.71828182845904523536,
+
+    sin: math_sin,
+    cos: math_cos,
+    tan: math_tan,
+    asin: math_asin,
+    acos: math_acos,
+    atan: math_atan,
+    atan2: math_atan2,
+
+    log: math_log,
+    log10: math_log10,
+    exp: math_exp,
+}

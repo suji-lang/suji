@@ -4,9 +4,6 @@ use crate::runtime::value::{DecimalNumber, RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::{Expr, Literal};
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Evaluate postfix increment (x++)
 pub fn eval_postfix_increment(target: &Expr, env: Rc<Env>) -> EvalResult<Value> {
     match target {
@@ -56,6 +53,7 @@ pub fn eval_postfix_decrement(target: &Expr, env: Rc<Env>) -> EvalResult<Value> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use suji_ast::Span;
     use suji_ast::ast::{Expr, Literal};

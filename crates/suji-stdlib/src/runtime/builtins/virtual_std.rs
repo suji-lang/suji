@@ -2,7 +2,7 @@
 
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use super::std_sources_map;
 
@@ -19,15 +19,7 @@ pub enum StdResolution {
 static STD_SOURCES: Lazy<HashMap<PathBuf, &'static str>> =
     Lazy::new(std_sources_map::get_std_sources);
 
-/// Load a std source file by path
-pub fn load_std_source(path: &Path) -> Option<&'static str> {
-    STD_SOURCES.get(path).copied()
-}
-
-/// List all std source file paths
-pub fn list_std_sources() -> Vec<PathBuf> {
-    STD_SOURCES.keys().cloned().collect()
-}
+// Internal helpers for adapter/tests can iterate keys directly if needed
 
 /// Resolve a std module path (e.g., ["io"] or ["subdir", "module"])
 pub fn resolve_std_path(segments: &[&str]) -> Option<StdResolution> {
@@ -91,26 +83,6 @@ pub fn resolve_std_path(segments: &[&str]) -> Option<StdResolution> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_load_std_source() {
-        // Test loading a known file
-        let io_source = load_std_source(Path::new("io.si"));
-        assert!(io_source.is_some());
-        assert!(io_source.unwrap().contains("io_stdin"));
-    }
-
-    #[test]
-    fn test_list_std_sources() {
-        let sources = list_std_sources();
-        assert!(!sources.is_empty());
-
-        // Check that expected files are present
-        let has_io = sources.iter().any(|p| p.file_name().unwrap() == "io.si");
-        let has_json = sources.iter().any(|p| p.file_name().unwrap() == "json.si");
-        assert!(has_io);
-        assert!(has_json);
-    }
 
     #[test]
     fn test_resolve_std_path_file() {

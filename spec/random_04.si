@@ -3,4 +3,4 @@ import std:random
 
 random:seed(42)
 
-println(random:shuffle([1, 2, 3, 4, 5]))  # [4, 1, 2, 5, 3]
+println(random:shuffle([1, 2, 3, 4, 5]))  # [5, 1, 2, 4, 3]

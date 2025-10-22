@@ -1,0 +1,6 @@
+import std:println
+import std:math
+
+result = math:sin(0)
+
+println(result)  # 0

@@ -1,0 +1,7 @@
+import std:println
+import std:crypto
+
+text = "Hello, World!"
+hash = crypto:sha1(text)
+
+println(hash)  # 0a0a9f2a6772942557ab5355d76af442f8f65e01

@@ -1,0 +1,9 @@
+import std:println
+import std:encoding
+
+text = "test"
+base64 = encoding:base64_encode(text)
+hex = encoding:hex_encode(text)
+result = base64::length() > hex::length()
+
+println(result)  # false

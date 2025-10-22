@@ -1,48 +1,73 @@
 //! Built-in function implementations.
 
+pub mod crypto_hmac_sha256;
+pub mod crypto_md5;
+pub mod crypto_sha1;
+pub mod crypto_sha256;
+pub mod crypto_sha512;
+pub mod encoding_base64_decode;
+pub mod encoding_base64_encode;
+pub mod encoding_hex_decode;
+pub mod encoding_hex_encode;
+pub mod encoding_percent_decode;
+pub mod encoding_percent_encode;
 pub mod io_open;
 pub mod json_generate;
 pub mod json_parse;
-pub mod print;
-pub mod println;
-pub mod random_core;
+pub mod math_acos;
+pub mod math_asin;
+pub mod math_atan;
+pub mod math_atan2;
+pub mod math_cos;
+pub mod math_exp;
+pub mod math_log;
+pub mod math_log10;
+pub mod math_sin;
+pub mod math_tan;
 pub mod random_random;
 pub mod random_seed;
+pub mod time_format_iso;
+pub mod time_now;
+pub mod time_parse_iso;
+pub mod time_sleep;
 pub mod toml_generate;
 pub mod toml_parse;
+pub mod uuid_v5;
 pub mod yaml_generate;
 pub mod yaml_parse;
 
-// Re-export all function implementations
+pub use crypto_hmac_sha256::builtin_crypto_hmac_sha256;
+pub use crypto_md5::builtin_crypto_md5;
+pub use crypto_sha1::builtin_crypto_sha1;
+pub use crypto_sha256::builtin_crypto_sha256;
+pub use crypto_sha512::builtin_crypto_sha512;
+pub use encoding_base64_decode::builtin_encoding_base64_decode;
+pub use encoding_base64_encode::builtin_encoding_base64_encode;
+pub use encoding_hex_decode::builtin_encoding_hex_decode;
+pub use encoding_hex_encode::builtin_encoding_hex_encode;
+pub use encoding_percent_decode::builtin_encoding_percent_decode;
+pub use encoding_percent_encode::builtin_encoding_percent_encode;
 pub use io_open::builtin_io_open;
 pub use json_generate::builtin_json_generate;
 pub use json_parse::builtin_json_parse;
-pub use print::builtin_print;
-pub use println::builtin_println;
+pub use math_acos::builtin_math_acos;
+pub use math_asin::builtin_math_asin;
+pub use math_atan::builtin_math_atan;
+pub use math_atan2::builtin_math_atan2;
+pub use math_cos::builtin_math_cos;
+pub use math_exp::builtin_math_exp;
+pub use math_log::builtin_math_log;
+pub use math_log10::builtin_math_log10;
+pub use math_sin::builtin_math_sin;
+pub use math_tan::builtin_math_tan;
 pub use random_random::builtin_random_random;
 pub use random_seed::builtin_random_seed;
+pub use time_format_iso::builtin_time_format_iso;
+pub use time_now::builtin_time_now;
+pub use time_parse_iso::builtin_time_parse_iso;
+pub use time_sleep::builtin_time_sleep;
 pub use toml_generate::builtin_toml_generate;
 pub use toml_parse::builtin_toml_parse;
+pub use uuid_v5::builtin_uuid_v5;
 pub use yaml_generate::builtin_yaml_generate;
 pub use yaml_parse::builtin_yaml_parse;
-
-use suji_runtime::value::{RuntimeError, Value};
-
-/// Built-in function type
-pub type BuiltinFunction = fn(&[Value]) -> Result<Value, RuntimeError>;
-
-/// Built-in function wrapper for the runtime
-#[derive(Debug, Clone)]
-pub struct Builtin {
-    pub name: &'static str,
-    pub func: BuiltinFunction,
-    pub min_args: usize,
-    pub max_args: Option<usize>, // None for variadic
-}
-
-/// Call a built-in function by name
-///
-/// This function delegates to the runtime's builtin registry.
-pub fn call_builtin(name: &str, args: &[Value]) -> Result<Value, RuntimeError> {
-    suji_runtime::builtins::call_builtin(name, args)
-}

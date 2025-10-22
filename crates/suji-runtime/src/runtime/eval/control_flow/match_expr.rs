@@ -4,9 +4,6 @@ use crate::runtime::value::Value;
 use std::rc::Rc;
 use suji_ast::ast::{Expr, MatchArm, Stmt};
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Evaluate a match statement
 pub fn eval_match(
     scrutinee: Option<&Expr>,
@@ -119,6 +116,7 @@ pub fn eval_match_expression(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use crate::runtime::value::DecimalNumber;
     use suji_ast::Span;

@@ -1,0 +1,8 @@
+import std:println
+import std:crypto
+
+key = "secret"
+message = "test message"
+hmac = crypto:hmac_sha256(key, message)
+
+println(hmac)  # 3bcebf43c85d20bba6e3b6ba278af1d2ba3ab0d57de271b0ad30b833e851c5a6

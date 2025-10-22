@@ -1,0 +1,7 @@
+import std:println
+import std:math
+
+result = math:acos(0)
+close_to_pi_over_2 = result > 1.57 && result < 1.58
+
+println(close_to_pi_over_2)  # true

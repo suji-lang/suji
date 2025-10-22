@@ -1,31 +1,24 @@
 //! Builtins: functions and modules used by the runtime.
 
-pub mod functions;
-pub mod json;
+mod common;
+mod functions;
+mod json;
+mod math;
+mod random;
 mod std_sources_map;
-pub mod toml;
-pub mod virtual_std;
-pub mod virtual_std_adapter;
-pub mod yaml;
+mod time;
+mod toml;
+mod virtual_std;
+mod virtual_std_adapter;
+mod yaml;
 
-// Re-export the main public API to maintain backward compatibility
-pub use functions::{
-    Builtin, BuiltinFunction, builtin_io_open, builtin_json_generate, builtin_json_parse,
-    builtin_print, builtin_println, builtin_random_random, builtin_random_seed,
-    builtin_toml_generate, builtin_toml_parse, builtin_yaml_generate, builtin_yaml_parse,
-    call_builtin,
-};
-// Modules are now loaded via virtual_std, no longer exported from here
-
+use functions::*;
 use suji_runtime::env::Env;
 
 /// Setup the global environment with built-in functions
-/// Note: std module is now loaded via virtual_std, not added here
 pub fn setup_global_env(_env: &Env) {
     // Register all builtin functions with the runtime registry
     register_all_builtins();
-
-    // std module will be loaded via ModuleRegistry's virtual_std resolver
 }
 
 /// Setup the module registry with virtual std resolver
@@ -41,13 +34,6 @@ pub fn setup_module_registry(registry: &mut suji_runtime::module::ModuleRegistry
 /// Register all builtin function implementations with the runtime
 pub fn register_all_builtins() {
     use suji_runtime::builtins::register_builtin;
-
-    // Register core functions
-    register_builtin("print", builtin_print as suji_runtime::builtins::BuiltinFn);
-    register_builtin(
-        "println",
-        builtin_println as suji_runtime::builtins::BuiltinFn,
-    );
 
     // Register JSON functions
     register_builtin(
@@ -94,62 +80,118 @@ pub fn register_all_builtins() {
         "random_seed",
         builtin_random_seed as suji_runtime::builtins::BuiltinFn,
     );
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use suji_runtime::value::DecimalNumber;
+    // Register time functions
+    register_builtin(
+        "time_now",
+        builtin_time_now as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "time_sleep",
+        builtin_time_sleep as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "time_parse_iso",
+        builtin_time_parse_iso as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "time_format_iso",
+        builtin_time_format_iso as suji_runtime::builtins::BuiltinFn,
+    );
 
-    #[test]
-    fn test_call_builtin() {
-        // Initialize the builtin registry
-        register_all_builtins();
+    // Register uuid functions (v5 only; v4 is SUJI)
+    register_builtin(
+        "uuid_v5",
+        builtin_uuid_v5 as suji_runtime::builtins::BuiltinFn,
+    );
 
-        let args = vec![suji_runtime::value::Value::String("test".to_string())];
-        // print returns number of bytes written
-        assert_eq!(
-            call_builtin("print", &args).unwrap(),
-            suji_runtime::value::Value::Number(DecimalNumber::from_i64(4))
-        );
-        // println returns number of bytes including newline
-        assert_eq!(
-            call_builtin("println", &args).unwrap(),
-            suji_runtime::value::Value::Number(DecimalNumber::from_i64(5))
-        );
+    // Register encoding functions
+    register_builtin(
+        "encoding_base64_encode",
+        builtin_encoding_base64_encode as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "encoding_base64_decode",
+        builtin_encoding_base64_decode as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "encoding_hex_encode",
+        builtin_encoding_hex_encode as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "encoding_hex_decode",
+        builtin_encoding_hex_decode as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "encoding_percent_encode",
+        builtin_encoding_percent_encode as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "encoding_percent_decode",
+        builtin_encoding_percent_decode as suji_runtime::builtins::BuiltinFn,
+    );
 
-        // Test println with no arguments (should print just newline)
-        assert_eq!(
-            call_builtin("println", &[]).unwrap(),
-            suji_runtime::value::Value::Number(DecimalNumber::from_i64(1))
-        );
+    // Register math functions
+    register_builtin(
+        "math_sin",
+        builtin_math_sin as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_cos",
+        builtin_math_cos as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_tan",
+        builtin_math_tan as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_asin",
+        builtin_math_asin as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_acos",
+        builtin_math_acos as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_atan",
+        builtin_math_atan as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_atan2",
+        builtin_math_atan2 as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_log",
+        builtin_math_log as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_log10",
+        builtin_math_log10 as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "math_exp",
+        builtin_math_exp as suji_runtime::builtins::BuiltinFn,
+    );
 
-        assert!(call_builtin("invalid", &args).is_err());
-    }
-
-    #[test]
-    fn test_json_call_builtin() {
-        // Initialize the builtin registry
-        register_all_builtins();
-
-        let args = vec![suji_runtime::value::Value::String(
-            "{\"test\": true}".to_string(),
-        )];
-        let result = call_builtin("json_parse", &args).unwrap();
-        if let suji_runtime::value::Value::Map(map) = result {
-            assert_eq!(
-                map.get(&suji_runtime::value::MapKey::String("test".to_string())),
-                Some(&suji_runtime::value::Value::Boolean(true))
-            );
-        } else {
-            panic!("Expected map");
-        }
-
-        let args = vec![suji_runtime::value::Value::Boolean(true)];
-        let result = call_builtin("json_generate", &args).unwrap();
-        assert_eq!(
-            result,
-            suji_runtime::value::Value::String("true".to_string())
-        );
-    }
+    // Register crypto functions
+    register_builtin(
+        "crypto_md5",
+        builtin_crypto_md5 as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "crypto_sha1",
+        builtin_crypto_sha1 as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "crypto_sha256",
+        builtin_crypto_sha256 as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "crypto_sha512",
+        builtin_crypto_sha512 as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "crypto_hmac_sha256",
+        builtin_crypto_hmac_sha256 as suji_runtime::builtins::BuiltinFn,
+    );
 }

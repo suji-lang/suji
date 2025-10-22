@@ -5,9 +5,6 @@ use crate::runtime::value::{ControlFlow, FunctionValue, RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::Stmt;
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Context for function call execution
 pub struct CallContext {
     /// The function being called
@@ -207,6 +204,7 @@ fn handle_implicit_return(body: &Stmt, call_env: Rc<Env>) -> Result<Value, Runti
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use crate::runtime::value::DecimalNumber;
     use crate::runtime::value::ParamSpec;

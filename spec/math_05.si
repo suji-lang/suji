@@ -1,0 +1,9 @@
+import std:println
+import std:math
+
+x = 5
+result = math:log(math:exp(x))
+diff = result - x
+tolerance_check = diff::abs() < 0.0001
+
+println(tolerance_check)  # true

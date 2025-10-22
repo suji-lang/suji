@@ -1,0 +1,40 @@
+# std:uuid module - UUID generation and validation
+import __builtins__:uuid_v5
+import __builtins__:random_random
+
+export {
+    v4: || {
+        # Generate 32 random hex characters using random_random builtin directly
+        hex_chars = "0123456789abcdef"
+        result = ""
+        loop through 0..32 {
+            idx = (random_random() * 16)::floor()
+            result = result + hex_chars[idx]
+        }
+
+        # Format as UUID: 8-4-4-4-12
+        # Extract parts
+        p1 = result[0:8]
+        p2 = result[8:12]
+        p3_raw = result[12:16]
+        p4_raw = result[16:20]
+        p5 = result[20:32]
+
+        # Set version 4 (position 12: should be '4')
+        p3 = "4" + p3_raw[1:4]
+
+        # Set variant bits (position 16: should be 8, 9, a, or b)
+        variant_chars = "89ab"
+        variant_idx = (random_random() * 4)::floor()
+        p4 = variant_chars[variant_idx] + p4_raw[1:4]
+
+        p1 + "-" + p2 + "-" + p3 + "-" + p4 + "-" + p5
+    },
+
+    v5: uuid_v5,
+
+    is_valid: |text| {
+        # UUID format: 8-4-4-4-12 hex digits (hyphens optional)
+        text ~ /^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$/
+    },
+}

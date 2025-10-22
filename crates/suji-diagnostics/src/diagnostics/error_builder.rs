@@ -50,11 +50,6 @@ impl ErrorBuilder {
         Ok(())
     }
 
-    /// Build and print a diagnostic report
-    pub fn print(self) -> Result<(), Box<dyn std::error::Error>> {
-        self.build_and_print(None, false)
-    }
-
     /// Build and print a diagnostic report with a specific span
     pub fn print_with_span(self, span: Span) -> Result<(), Box<dyn std::error::Error>> {
         let range = span.start..span.end;

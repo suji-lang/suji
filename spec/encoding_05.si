@@ -1,0 +1,6 @@
+import std:println
+import std:encoding
+
+decoded = encoding:base64_decode("SGVsbG8=")
+
+println(decoded)  # Hello

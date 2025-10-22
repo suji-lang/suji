@@ -1,0 +1,7 @@
+import std:println
+import std:uuid
+
+id = uuid:v4()
+result = id::length()
+
+println(result)  # 36

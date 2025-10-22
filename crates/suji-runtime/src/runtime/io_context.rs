@@ -1,22 +1,4 @@
-//! IO Context for dynamic stream resolution in pipe expressions
-//!
-//! This module provides a thread-local IO context that allows streams (stdin, stdout, stderr)
-//! to be dynamically resolved at access time rather than import time. This enables proper
-//! IO redirection in pipe expressions where nested function calls need to see the redirected
-//! streams.
-//!
-//! ## Usage
-//!
-//! ```rust,ignore
-//! use suji_runtime::runtime::io_context::IoContext;
-//!
-//! // Redirect stdout for a block of code
-//! let captured = Rc::new(StreamHandle::new_memory_writable());
-//! IoContext::with_overrides(None, Some(captured.clone()), None, || {
-//!     // Any code here that accesses stdout will use the captured stream
-//!     println!("This goes to captured stream");
-//! });
-//! ```
+//! Thread-local IO context for dynamic stream redirection in pipe expressions
 
 use super::value::StreamHandle;
 use std::cell::RefCell;

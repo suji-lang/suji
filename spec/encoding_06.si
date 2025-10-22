@@ -1,0 +1,6 @@
+import std:println
+import std:encoding
+
+decoded = encoding:hex_decode("48656C6C6F")
+
+println(decoded)  # Hello

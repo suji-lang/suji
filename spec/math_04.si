@@ -1,0 +1,6 @@
+import std:println
+import std:math
+
+result = math:E > 2.71 && math:E < 2.72
+
+println(result)  # true

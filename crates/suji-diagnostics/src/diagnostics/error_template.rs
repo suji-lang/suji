@@ -27,11 +27,4 @@ impl ErrorTemplate {
         self.suggestions.push(suggestion.to_string());
         self
     }
-
-    /// Add multiple suggestions to the template
-    pub fn with_suggestions(mut self, suggestions: Vec<&str>) -> Self {
-        self.suggestions
-            .extend(suggestions.iter().map(|s| s.to_string()));
-        self
-    }
 }

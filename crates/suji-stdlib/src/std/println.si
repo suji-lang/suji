@@ -9,4 +9,3 @@ export |text = "", out = nil| {
     text_str = text::to_string() + "\n"
     stream::write(text_str)
 }
-

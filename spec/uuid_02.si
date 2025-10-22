@@ -1,0 +1,7 @@
+import std:println
+import std:uuid
+
+valid = "550e8400-e29b-41d4-a716-446655440000"
+result = uuid:is_valid(valid)
+
+println(result)  # true

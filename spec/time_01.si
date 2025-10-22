@@ -1,0 +1,8 @@
+import std:println
+import std:time
+
+iso_string = "2024-03-15T14:30:00Z"
+parsed = time:parse_iso(iso_string)
+formatted = time:format_iso(parsed:epoch_ms, "Z")
+
+println(formatted)  # 2024-03-15T14:30:00.000Z

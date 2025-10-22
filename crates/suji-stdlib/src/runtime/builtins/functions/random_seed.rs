@@ -1,4 +1,4 @@
-use crate::runtime::builtins::functions::random_core::rng_seed_with;
+use crate::runtime::builtins::random::rng_seed_with;
 use suji_runtime::value::{RuntimeError, Value};
 
 pub fn builtin_random_seed(args: &[Value]) -> Result<Value, RuntimeError> {

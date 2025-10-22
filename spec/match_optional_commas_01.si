@@ -1,0 +1,10 @@
+import std:println
+
+x = 2
+result = match x {
+    1 => { println("one"); "one" }
+    2 => { println("two"); "two" }
+    _ => { println("other"); "other" }
+}
+
+println(result)  # two

@@ -1,0 +1,6 @@
+import std:println
+import std:math
+
+result = math:log10(100)
+
+println(result)  # 2

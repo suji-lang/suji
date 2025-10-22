@@ -1,0 +1,7 @@
+import std:println
+import std:math
+
+result = math:atan(1)
+close_to_pi_over_4 = result > 0.78 && result < 0.79
+
+println(close_to_pi_over_4)  # true

@@ -1,17 +1,17 @@
-pub mod binary;
-pub mod expressions;
-pub mod patterns;
-pub mod postfix;
-pub mod statements;
-pub mod utils;
+mod binary;
+mod expressions;
+mod patterns;
+mod postfix;
+mod statements;
+mod utils;
 
 use suji_ast::ast::Stmt;
 use suji_lexer::token::{Span, Token, TokenWithSpan};
 use suji_lexer::{LexError, Lexer};
 use thiserror::Error;
 
-/// Controls whether postfix operators (calls, indexing, field access, ++/--) are allowed
-/// in the current expression parsing context.
+/// Controls whether postfix operators (calls, indexing, field access, ++/--)
+/// are allowed in the current expression parsing context.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum ExpressionContext {
     Default,

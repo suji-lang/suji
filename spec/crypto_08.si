@@ -1,0 +1,9 @@
+import std:println
+import std:crypto
+
+text = "data"
+hash1 = crypto:sha256(text)
+hash2 = crypto:sha256(text)
+result = hash1 == hash2
+
+println(result)  # true

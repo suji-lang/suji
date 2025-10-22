@@ -15,7 +15,7 @@ pub enum TomlError {
     GenerateError { message: String, value_type: String },
 
     #[error("TOML conversion error: {message}")]
-    ConversionError { message: String },
+    Conversion { message: String },
 }
 
 impl From<TomlError> for RuntimeError {
@@ -35,7 +35,7 @@ impl From<TomlError> for RuntimeError {
                 message,
                 value_type,
             },
-            TomlError::ConversionError { message } => RuntimeError::TomlConversionError { message },
+            TomlError::Conversion { message } => RuntimeError::TomlConversionError { message },
         }
     }
 }

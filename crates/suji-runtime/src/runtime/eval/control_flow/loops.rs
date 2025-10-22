@@ -7,9 +7,6 @@ use crate::runtime::value::{ControlFlow, RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::{Expr, LoopBindings, Stmt};
 
-#[cfg(test)]
-use crate::runtime::builtins::setup_global_env;
-
 /// Evaluate an infinite loop
 pub fn eval_infinite_loop(
     label: Option<&str>,
@@ -598,6 +595,7 @@ pub fn eval_loop_through_with_modules(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::builtins::setup_global_env;
     use crate::runtime::env::Env;
     use crate::runtime::value::DecimalNumber;
     use suji_ast::Span;

@@ -49,7 +49,7 @@ pub fn toml_to_suji_value(toml_value: TomlValue) -> Result<Value, RuntimeError> 
 /// Convert SUJI value to TOML value
 pub fn suji_to_toml_value(suji_value: &Value) -> Result<TomlValue, RuntimeError> {
     match suji_value {
-        Value::Nil => Err(TomlError::ConversionError {
+        Value::Nil => Err(TomlError::Conversion {
             message: "TOML does not support nil values".to_string(),
         }
         .into()),
@@ -63,7 +63,7 @@ pub fn suji_to_toml_value(suji_value: &Value) -> Result<TomlValue, RuntimeError>
                     let float_str = n.to_string();
                     match float_str.parse::<f64>() {
                         Ok(f) => Ok(TomlValue::Float(f)),
-                        Err(_) => Err(TomlError::ConversionError {
+                        Err(_) => Err(TomlError::Conversion {
                             message: format!("Number '{}' cannot be converted to TOML", float_str),
                         }
                         .into()),
@@ -74,7 +74,7 @@ pub fn suji_to_toml_value(suji_value: &Value) -> Result<TomlValue, RuntimeError>
                 let float_str = n.to_string();
                 match float_str.parse::<f64>() {
                     Ok(f) => Ok(TomlValue::Float(f)),
-                    Err(_) => Err(TomlError::ConversionError {
+                    Err(_) => Err(TomlError::Conversion {
                         message: format!("Number '{}' cannot be converted to TOML", float_str),
                     }
                     .into()),
@@ -95,7 +95,7 @@ pub fn suji_to_toml_value(suji_value: &Value) -> Result<TomlValue, RuntimeError>
                 let key_str = match key {
                     MapKey::String(s) => s.clone(),
                     _ => {
-                        return Err(TomlError::ConversionError {
+                        return Err(TomlError::Conversion {
                             message: "TOML keys must be strings".to_string(),
                         }
                         .into());
@@ -114,19 +114,19 @@ pub fn suji_to_toml_value(suji_value: &Value) -> Result<TomlValue, RuntimeError>
             }
             Ok(TomlValue::Array(toml_array))
         }
-        Value::Regex(_) => Err(TomlError::ConversionError {
+        Value::Regex(_) => Err(TomlError::Conversion {
             message: "Regex values cannot be converted to TOML".to_string(),
         }
         .into()),
-        Value::Function(_) => Err(TomlError::ConversionError {
+        Value::Function(_) => Err(TomlError::Conversion {
             message: "Function values cannot be converted to TOML".to_string(),
         }
         .into()),
-        Value::Stream(_) | Value::StreamProxy(_) => Err(TomlError::ConversionError {
+        Value::Stream(_) | Value::StreamProxy(_) => Err(TomlError::Conversion {
             message: "Stream values cannot be converted to TOML".to_string(),
         }
         .into()),
-        Value::EnvMap(_) => Err(TomlError::ConversionError {
+        Value::EnvMap(_) => Err(TomlError::Conversion {
             message: "Environment map values cannot be converted to TOML".to_string(),
         }
         .into()),
