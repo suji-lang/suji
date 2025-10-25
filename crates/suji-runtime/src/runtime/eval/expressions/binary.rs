@@ -2,7 +2,7 @@ use super::{
     EvalResult, eval_assignment, eval_expr, eval_pipe_apply_expression, eval_pipe_expression,
 };
 use crate::runtime::env::Env;
-use crate::runtime::range::expand_range_values;
+use crate::runtime::range::{expand_range_inclusive_values, expand_range_values};
 use crate::runtime::value::{FunctionValue, ParamSpec, RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::Span;
@@ -63,6 +63,12 @@ pub fn eval_binary_expr(
 
 /// Evaluate a binary operation on two values
 pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Value> {
+    if matches!(left, Value::Module(_)) || matches!(right, Value::Module(_)) {
+        return Err(RuntimeError::InvalidOperation {
+            message: "Cannot use module in binary operation.".to_string(),
+        });
+    }
+
     match op {
         // Pipe handled at higher level in eval_binary_expr
         BinaryOp::Pipe => unreachable!("Pipe op is evaluated in eval_binary_expr"),
@@ -202,6 +208,7 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
 
         // Range operation
         BinaryOp::Range => expand_range_values(&left, &right),
+        BinaryOp::RangeInclusive => expand_range_inclusive_values(&left, &right),
 
         // Regex matching
         BinaryOp::RegexMatch => match (&left, &right) {

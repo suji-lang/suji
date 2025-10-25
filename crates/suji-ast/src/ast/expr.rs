@@ -102,6 +102,16 @@ pub enum Expr {
 
     /// Destructuring assignment target: (a, _, b)
     Destructure { elements: Vec<Expr>, span: Span },
+
+    /// Return expression: return expr_list?
+    /// Empty list represents `return` with no value
+    Return { values: Vec<Expr>, span: Span },
+
+    /// Break expression: break label?
+    Break { label: Option<String>, span: Span },
+
+    /// Continue expression: continue label?
+    Continue { label: Option<String>, span: Span },
 }
 
 impl Expr {
@@ -125,6 +135,9 @@ impl Expr {
             Expr::MethodCall { span, .. } => span,
             Expr::Match { span, .. } => span,
             Expr::Destructure { span, .. } => span,
+            Expr::Return { span, .. } => span,
+            Expr::Break { span, .. } => span,
+            Expr::Continue { span, .. } => span,
         }
     }
 
@@ -137,6 +150,52 @@ impl Expr {
                 | Expr::MapAccessByName { .. }
                 | Expr::Destructure { .. }
         )
+    }
+
+    /// Check if this expression contains control flow (return, break, continue)
+    pub fn has_control_flow(&self) -> bool {
+        match self {
+            Expr::Return { .. } | Expr::Break { .. } | Expr::Continue { .. } => true,
+            Expr::Unary { expr, .. } => expr.has_control_flow(),
+            Expr::Binary { left, right, .. } => left.has_control_flow() || right.has_control_flow(),
+            Expr::PostfixIncrement { target, .. } | Expr::PostfixDecrement { target, .. } => {
+                target.has_control_flow()
+            }
+            Expr::Call { callee, args, .. } => {
+                callee.has_control_flow() || args.iter().any(|arg| arg.has_control_flow())
+            }
+            Expr::Grouping { expr, .. } => expr.has_control_flow(),
+            // FunctionLiteral: return false - control flow inside functions doesn't escape
+            Expr::FunctionLiteral { .. } => false,
+            Expr::Index { target, index, .. } => {
+                target.has_control_flow() || index.has_control_flow()
+            }
+            Expr::Slice {
+                target, start, end, ..
+            } => {
+                target.has_control_flow()
+                    || start.as_deref().is_some_and(|e| e.has_control_flow())
+                    || end.as_deref().is_some_and(|e| e.has_control_flow())
+            }
+            Expr::MapAccessByName { target, .. } => target.has_control_flow(),
+            Expr::Assign { target, value, .. } => {
+                target.has_control_flow() || value.has_control_flow()
+            }
+            Expr::CompoundAssign { target, value, .. } => {
+                target.has_control_flow() || value.has_control_flow()
+            }
+            Expr::MethodCall { target, args, .. } => {
+                target.has_control_flow() || args.iter().any(|arg| arg.has_control_flow())
+            }
+            Expr::Match { arms, .. } => arms.iter().any(|arm| arm.body.has_control_flow()),
+            Expr::Destructure { elements, .. } => {
+                elements.iter().any(|elem| elem.has_control_flow())
+            }
+            Expr::ShellCommandTemplate { parts, .. } => parts
+                .iter()
+                .any(|part| matches!(part, StringPart::Expr(e) if e.has_control_flow())),
+            Expr::Literal(lit) => lit.has_control_flow(),
+        }
     }
 
     /// Compute a covering span that encompasses this entire expression.
@@ -261,6 +320,36 @@ impl Expr {
                     let first_span = first.covering_span();
                     let last_span = last.covering_span();
                     combine_three_spans(&first_span, span, &last_span)
+                } else {
+                    span.clone()
+                }
+            }
+
+            // Return: from values
+            Expr::Return { values, span, .. } => {
+                if let Some(last_value) = values.last() {
+                    let last_span = last_value.covering_span();
+                    combine_spans(span, &last_span)
+                } else {
+                    span.clone()
+                }
+            }
+
+            // Break: from label
+            Expr::Break { label, span, .. } => {
+                if label.is_some() {
+                    // Label text is typically part of the source span already
+                    span.clone()
+                } else {
+                    span.clone()
+                }
+            }
+
+            // Continue: from label
+            Expr::Continue { label, span, .. } => {
+                if label.is_some() {
+                    // Label text is typically part of the source span already
+                    span.clone()
                 } else {
                     span.clone()
                 }
@@ -485,5 +574,72 @@ mod tests {
         assert_eq!(cov.start, 5);
         assert_eq!(cov.end, 26);
         assert_eq!((cov.line, cov.column), (1, 1));
+
+        // Return empty
+        let span = mk_span(10, 11, 2, 3);
+        let expr = Expr::Return {
+            values: vec![],
+            span: span.clone(),
+        };
+        let cov = expr.covering_span();
+        assert_eq!(cov.start, 10);
+        assert_eq!(cov.end, 11);
+        assert_eq!((cov.line, cov.column), (2, 3));
+
+        // Return non-empty
+        let value = num("1", mk_span(20, 21, 3, 4));
+        let span = mk_span(15, 16, 1, 6);
+        let expr = Expr::Return {
+            values: vec![value],
+            span: span.clone(),
+        };
+        let cov = expr.covering_span();
+        assert_eq!(cov.start, 15);
+        assert_eq!(cov.end, 21);
+        assert_eq!((cov.line, cov.column), (1, 6));
+
+        // Break
+        let span = mk_span(10, 11, 2, 3);
+        let expr = Expr::Break {
+            label: None,
+            span: span.clone(),
+        };
+        let cov = expr.covering_span();
+        assert_eq!(cov.start, 10);
+        assert_eq!(cov.end, 11);
+        assert_eq!((cov.line, cov.column), (2, 3));
+
+        // Break with label - span already encompasses the label
+        let label = "loop".to_string();
+        let expr = Expr::Break {
+            label: Some(label),
+            span: mk_span(10, 15, 2, 3),
+        };
+        let cov = expr.covering_span();
+        assert_eq!(cov.start, 10);
+        assert_eq!(cov.end, 15);
+        assert_eq!((cov.line, cov.column), (2, 3));
+
+        // Continue
+        let span = mk_span(10, 11, 2, 3);
+        let expr = Expr::Continue {
+            label: None,
+            span: span.clone(),
+        };
+        let cov = expr.covering_span();
+        assert_eq!(cov.start, 10);
+        assert_eq!(cov.end, 11);
+        assert_eq!((cov.line, cov.column), (2, 3));
+
+        // Continue with label - span already encompasses the label
+        let label = "loop".to_string();
+        let expr = Expr::Continue {
+            label: Some(label),
+            span: mk_span(10, 15, 2, 3),
+        };
+        let cov = expr.covering_span();
+        assert_eq!(cov.start, 10);
+        assert_eq!(cov.end, 15);
+        assert_eq!((cov.line, cov.column), (2, 3));
     }
 }

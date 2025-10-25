@@ -36,7 +36,8 @@ pub enum BinaryOp {
     ComposeLeft,  // <<
 
     // Range
-    Range, // ..
+    Range,          // ..
+    RangeInclusive, // ..=
 
     // Regex matching
     RegexMatch,    // ~

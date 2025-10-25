@@ -1,10 +1,10 @@
 use super::value::{DecimalNumber, RuntimeError, Value};
 
-/// Expand a range (start..end) into a list with half-open semantics
-/// - Includes start, excludes end
-/// - If start >= end, returns empty list
-/// - Supports negative numbers
-pub fn expand_range(start: &DecimalNumber, end: &DecimalNumber) -> Result<Value, RuntimeError> {
+/// Helper function to validate and convert range bounds to i64
+fn validate_range_bounds(
+    start: &DecimalNumber,
+    end: &DecimalNumber,
+) -> Result<(i64, i64), RuntimeError> {
     // Check if start and end are integer values
     if !start.is_integer() || !end.is_integer() {
         return Err(RuntimeError::TypeError {
@@ -23,44 +23,88 @@ pub fn expand_range(start: &DecimalNumber, end: &DecimalNumber) -> Result<Value,
             message: "Range end out of integer range".to_string(),
         })?;
 
-    // Handle empty range: start == end
+    Ok((start_int, end_int))
+}
+
+/// Helper function to build range with specified inclusivity
+fn build_range(start_int: i64, end_int: i64, inclusive: bool) -> Result<Value, RuntimeError> {
+    // Handle equal start and end
     if start_int == end_int {
-        return Ok(Value::List(vec![]));
+        return Ok(if inclusive {
+            Value::List(vec![Value::Number(DecimalNumber::from_i64(start_int))])
+        } else {
+            Value::List(vec![])
+        });
     }
 
     // Handle descending ranges: start > end
     if start_int > end_int {
-        let range_size = (start_int - end_int) as u64;
+        let range_size = if inclusive {
+            (start_int - end_int + 1) as u64
+        } else {
+            (start_int - end_int) as u64
+        };
+
         if range_size > 1_000_000 {
             return Err(RuntimeError::InvalidOperation {
                 message: format!("Range too large: {} elements", range_size),
             });
         }
 
-        let values: Vec<Value> = (end_int + 1..start_int + 1)
-            .rev()
-            .map(|i| Value::Number(DecimalNumber::from_i64(i)))
-            .collect();
+        let values: Vec<Value> = if inclusive {
+            (end_int..=start_int)
+                .rev()
+                .map(|i| Value::Number(DecimalNumber::from_i64(i)))
+                .collect()
+        } else {
+            (end_int + 1..start_int + 1)
+                .rev()
+                .map(|i| Value::Number(DecimalNumber::from_i64(i)))
+                .collect()
+        };
         return Ok(Value::List(values));
     }
 
-    // Check for reasonable range size to prevent memory issues
-    let range_size = (end_int - start_int) as u64;
+    // Handle ascending ranges: start < end
+    let range_size = if inclusive {
+        (end_int - start_int + 1) as u64
+    } else {
+        (end_int - start_int) as u64
+    };
+
     if range_size > 1_000_000 {
         return Err(RuntimeError::InvalidOperation {
             message: format!("Range too large: {} elements", range_size),
         });
     }
 
-    let values: Vec<Value> = (start_int..end_int)
-        .map(|i| Value::Number(DecimalNumber::from_i64(i)))
-        .collect();
+    let values: Vec<Value> = if inclusive {
+        (start_int..=end_int)
+            .map(|i| Value::Number(DecimalNumber::from_i64(i)))
+            .collect()
+    } else {
+        (start_int..end_int)
+            .map(|i| Value::Number(DecimalNumber::from_i64(i)))
+            .collect()
+    };
 
     Ok(Value::List(values))
 }
 
-/// Convenience function to expand range from two Values
-pub fn expand_range_values(start_val: &Value, end_val: &Value) -> Result<Value, RuntimeError> {
+/// Expand a range (start..end) into a list with half-open semantics
+/// - Includes start, excludes end
+/// - If start >= end, returns empty list
+/// - Supports negative numbers
+pub fn expand_range(start: &DecimalNumber, end: &DecimalNumber) -> Result<Value, RuntimeError> {
+    let (start_int, end_int) = validate_range_bounds(start, end)?;
+    build_range(start_int, end_int, false)
+}
+
+/// Helper function to extract DecimalNumbers from Value references
+fn extract_decimal_bounds<'a>(
+    start_val: &'a Value,
+    end_val: &'a Value,
+) -> Result<(&'a DecimalNumber, &'a DecimalNumber), RuntimeError> {
     let start = match start_val {
         Value::Number(n) => n,
         _ => {
@@ -82,7 +126,34 @@ pub fn expand_range_values(start_val: &Value, end_val: &Value) -> Result<Value, 
         }
     };
 
+    Ok((start, end))
+}
+
+/// Convenience function to expand range from two Values
+pub fn expand_range_values(start_val: &Value, end_val: &Value) -> Result<Value, RuntimeError> {
+    let (start, end) = extract_decimal_bounds(start_val, end_val)?;
     expand_range(start, end)
+}
+
+/// Expand an inclusive range (start..=end) with closed semantics
+/// - Includes both start and end
+/// - If start == end, returns single-element list [start]
+/// - Supports negative numbers and descending ranges
+pub fn expand_range_inclusive(
+    start: &DecimalNumber,
+    end: &DecimalNumber,
+) -> Result<Value, RuntimeError> {
+    let (start_int, end_int) = validate_range_bounds(start, end)?;
+    build_range(start_int, end_int, true)
+}
+
+/// Convenience function to expand inclusive range from two Values
+pub fn expand_range_inclusive_values(
+    start_val: &Value,
+    end_val: &Value,
+) -> Result<Value, RuntimeError> {
+    let (start, end) = extract_decimal_bounds(start_val, end_val)?;
+    expand_range_inclusive(start, end)
 }
 
 #[cfg(test)]
@@ -222,6 +293,142 @@ mod tests {
             &DecimalNumber::from_i64(2_000_000),
         );
         assert!(matches!(result, Err(RuntimeError::InvalidOperation { .. })));
+    }
+
+    // Tests for inclusive ranges (0.1.18 feature)
+    #[test]
+    fn test_inclusive_range_basic() {
+        let result =
+            expand_range_inclusive(&DecimalNumber::from_i64(0), &DecimalNumber::from_i64(5))
+                .unwrap();
+        if let Value::List(items) = result {
+            assert_eq!(items.len(), 6);
+            assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(0)));
+            assert_eq!(items[5], Value::Number(DecimalNumber::from_i64(5)));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_inclusive_range_single_element() {
+        let result =
+            expand_range_inclusive(&DecimalNumber::from_i64(5), &DecimalNumber::from_i64(5))
+                .unwrap();
+        if let Value::List(items) = result {
+            assert_eq!(items.len(), 1);
+            assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(5)));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_inclusive_range_descending() {
+        let result =
+            expand_range_inclusive(&DecimalNumber::from_i64(10), &DecimalNumber::from_i64(5))
+                .unwrap();
+        if let Value::List(items) = result {
+            assert_eq!(items.len(), 6);
+            assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(10)));
+            assert_eq!(items[5], Value::Number(DecimalNumber::from_i64(5)));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_inclusive_range_negative() {
+        let result =
+            expand_range_inclusive(&DecimalNumber::from_i64(-2), &DecimalNumber::from_i64(2))
+                .unwrap();
+        if let Value::List(items) = result {
+            assert_eq!(items.len(), 5);
+            assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(-2)));
+            assert_eq!(items[4], Value::Number(DecimalNumber::from_i64(2)));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_inclusive_range_size_limit() {
+        let result = expand_range_inclusive(
+            &DecimalNumber::from_i64(0),
+            &DecimalNumber::from_i64(2_000_000),
+        );
+        assert!(matches!(result, Err(RuntimeError::InvalidOperation { .. })));
+    }
+
+    #[test]
+    fn test_inclusive_range_non_integer_error() {
+        let result = expand_range_inclusive(
+            &DecimalNumber::parse("1.5").unwrap(),
+            &DecimalNumber::from_i64(3),
+        );
+        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+    }
+
+    #[test]
+    fn test_inclusive_range_negative_descending() {
+        let result =
+            expand_range_inclusive(&DecimalNumber::from_i64(-2), &DecimalNumber::from_i64(-5))
+                .unwrap();
+        if let Value::List(items) = result {
+            assert_eq!(items.len(), 4);
+            assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(-2)));
+            assert_eq!(items[3], Value::Number(DecimalNumber::from_i64(-5)));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_inclusive_vs_exclusive_range() {
+        // 0..5 should give [0,1,2,3,4] (5 elements)
+        let exclusive =
+            expand_range(&DecimalNumber::from_i64(0), &DecimalNumber::from_i64(5)).unwrap();
+        // 0..=5 should give [0,1,2,3,4,5] (6 elements)
+        let inclusive =
+            expand_range_inclusive(&DecimalNumber::from_i64(0), &DecimalNumber::from_i64(5))
+                .unwrap();
+
+        if let (Value::List(ex), Value::List(inc)) = (exclusive, inclusive) {
+            assert_eq!(ex.len(), 5);
+            assert_eq!(inc.len(), 6);
+        } else {
+            panic!("Expected lists");
+        }
+    }
+
+    #[test]
+    fn test_expand_range_inclusive_values() {
+        let start = Value::Number(DecimalNumber::from_i64(0));
+        let end = Value::Number(DecimalNumber::from_i64(3));
+
+        let result = expand_range_inclusive_values(&start, &end).unwrap();
+        if let Value::List(items) = result {
+            assert_eq!(items.len(), 4);
+            assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(0)));
+            assert_eq!(items[3], Value::Number(DecimalNumber::from_i64(3)));
+        } else {
+            panic!("Expected list");
+        }
+    }
+
+    #[test]
+    fn test_expand_range_inclusive_values_type_error() {
+        let start = Value::String("not a number".to_string());
+        let end = Value::Number(DecimalNumber::from_i64(3));
+
+        let result = expand_range_inclusive_values(&start, &end);
+        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
+
+        let start = Value::Number(DecimalNumber::from_i64(0));
+        let end = Value::Boolean(true);
+
+        let result = expand_range_inclusive_values(&start, &end);
+        assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
     }
 
     #[test]

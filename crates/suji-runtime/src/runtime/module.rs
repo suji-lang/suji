@@ -202,7 +202,13 @@ impl ModuleRegistry {
             Value::Map(map) => {
                 let key = super::value::MapKey::String(item_name.to_string());
                 match map.get(&key) {
-                    Some(value) => Ok(value.clone()),
+                    Some(value) => {
+                        // Force-load if it's a module
+                        match value {
+                            Value::Module(handle) => self.force_load_module(handle),
+                            _ => Ok(value.clone()),
+                        }
+                    }
                     None => Err(RuntimeError::InvalidOperation {
                         message: format!(
                             "Item '{}' not found in module '{}'",
@@ -241,6 +247,10 @@ impl ModuleRegistry {
                     match map.get(&key) {
                         Some(Value::Map(nested_map)) => {
                             current_module = Value::Map(nested_map.clone());
+                        }
+                        Some(Value::Module(handle)) => {
+                            // Force-load lazy module
+                            current_module = self.force_load_module(handle)?;
                         }
                         Some(_) => {
                             return Err(RuntimeError::InvalidOperation {
@@ -293,6 +303,117 @@ impl ModuleRegistry {
     /// Check if a builtin module exists
     pub fn has_module(&self, name: &str) -> bool {
         self.builtins.contains_key(name)
+    }
+
+    /// Creates a lazy module handle for the given path.
+    /// Does not load the module immediately.
+    pub fn create_lazy_module(
+        &self,
+        module_path: String,
+        segments: Vec<String>,
+        source: Option<&'static str>,
+    ) -> super::value::ModuleHandle {
+        super::value::ModuleHandle::new(
+            module_path,
+            segments,
+            source,
+            self as *const ModuleRegistry as *const (),
+        )
+    }
+
+    /// Forces a lazy module to load if not already loaded.
+    /// Returns the loaded module value.
+    pub fn force_load_module(
+        &self,
+        handle: &super::value::ModuleHandle,
+    ) -> Result<Value, RuntimeError> {
+        // Check if already loaded
+        if let Some(loaded) = handle.loaded.borrow().as_ref() {
+            return Ok((**loaded).clone());
+        }
+
+        // Load the module based on type
+        let value = if let Some(source) = handle.source {
+            // Virtual module (e.g., std lib)
+            let cache_key = PathBuf::from(format!("<virtual>/{}.si", handle.segments.join("/")));
+            self.load_virtual_module_internal(source, &cache_key)?
+        } else {
+            // Filesystem module
+            let file_path = PathBuf::from(handle.segments.join("/") + ".si");
+            self.load_file_value(&file_path)?
+        };
+
+        // Cache the loaded value
+        *handle.loaded.borrow_mut() = Some(Box::new(value.clone()));
+
+        Ok(value)
+    }
+
+    /// Internal helper for loading virtual modules with cycle detection
+    fn load_virtual_module_internal(
+        &self,
+        source: &str,
+        cache_key: &Path,
+    ) -> Result<Value, RuntimeError> {
+        // Check cache first (for cycle detection and performance)
+        if let Some(cached) = self.file_cache.borrow().get(cache_key) {
+            return Ok(cached.clone());
+        }
+
+        // Insert sentinel for cycle detection
+        self.file_cache.borrow_mut().insert(
+            cache_key.to_path_buf(),
+            Value::String("__LOADING__".to_string()),
+        );
+
+        // Parse the source
+        let statements = match suji_parser::parse_program(source) {
+            Ok(stmts) => stmts,
+            Err(e) => {
+                self.file_cache.borrow_mut().remove(cache_key);
+                return Err(RuntimeError::InvalidOperation {
+                    message: format!(
+                        "Parse error in virtual module '{}': {}",
+                        cache_key.display(),
+                        e
+                    ),
+                });
+            }
+        };
+
+        // Evaluate with isolated environment
+        let env = Rc::new(Env::new());
+        let mut loop_stack = Vec::new();
+        let mut export_value: Option<Value> = None;
+
+        for stmt in &statements {
+            let result = eval_stmt_with_modules(stmt, env.clone(), &mut loop_stack, self);
+            match result {
+                Ok(Some(v)) => {
+                    if matches!(stmt, Stmt::Export { .. }) {
+                        export_value = Some(v);
+                    }
+                }
+                Ok(None) => {
+                    // continue
+                }
+                Err(e) => {
+                    self.file_cache.borrow_mut().remove(cache_key);
+                    return Err(e);
+                }
+            }
+        }
+
+        let result = export_value.ok_or_else(|| RuntimeError::InvalidOperation {
+            message: format!("Virtual module '{}' has no export", cache_key.display()),
+        })?;
+
+        // Update cache with real value
+        self.file_cache
+            .borrow_mut()
+            .insert(cache_key.to_path_buf(), result.clone());
+
+        Ok(result)
     }
 
     /// Set the base importer directory (clears and initializes the dir stack)
@@ -478,10 +599,18 @@ impl ModuleRegistry {
 
                     match resolver(&child_segments) {
                         Some(VirtualStdResult::File(source)) => {
-                            let path = format!("std/{}.si", child_segments.join("/"));
-                            if let Some(value) = self.load_virtual_std_file(source, &path)? {
-                                map.insert(super::value::MapKey::String(child.clone()), value);
-                            }
+                            // Create a lazy module instead of loading immediately
+                            let module_path = format!("std:{}", child_segments.join(":"));
+                            let segments_owned: Vec<String> =
+                                child_segments.iter().map(|s| s.to_string()).collect();
+
+                            let handle =
+                                self.create_lazy_module(module_path, segments_owned, Some(source));
+
+                            map.insert(
+                                super::value::MapKey::String(child.clone()),
+                                Value::Module(handle),
+                            );
                         }
                         Some(VirtualStdResult::Directory(_)) => {
                             // Nested directory - recursively build its module map
@@ -505,59 +634,6 @@ impl ModuleRegistry {
             }
             None => Ok(None),
         }
-    }
-
-    /// Load and evaluate a virtual std source file
-    fn load_virtual_std_file(
-        &self,
-        source: &str,
-        path: &str,
-    ) -> Result<Option<Value>, RuntimeError> {
-        // Check cache using virtual path
-        let cache_key = PathBuf::from(format!("<virtual>/{}", path));
-        if let Some(v) = self.file_cache.borrow().get(&cache_key) {
-            return Ok(Some(v.clone()));
-        }
-
-        // Parse the source
-        let statements = match suji_parser::parse_program(source) {
-            Ok(stmts) => stmts,
-            Err(e) => {
-                return Err(RuntimeError::InvalidOperation {
-                    message: format!("Parse error in virtual module '{}': {}", path, e),
-                });
-            }
-        };
-
-        // Evaluate with isolated environment
-        let env = Rc::new(Env::new());
-        let mut loop_stack = Vec::new();
-        let mut export_value: Option<Value> = None;
-
-        for stmt in &statements {
-            let result = eval_stmt_with_modules(stmt, env.clone(), &mut loop_stack, self);
-            match result {
-                Ok(Some(v)) => {
-                    if matches!(stmt, Stmt::Export { .. }) {
-                        export_value = Some(v);
-                    }
-                }
-                Ok(None) => {
-                    // continue
-                }
-                Err(e) => return Err(e),
-            }
-        }
-
-        let value = export_value.ok_or_else(|| RuntimeError::InvalidOperation {
-            message: format!("Virtual module '{}' has no export", path),
-        })?;
-
-        // Cache the result
-        self.file_cache
-            .borrow_mut()
-            .insert(cache_key, value.clone());
-        Ok(Some(value))
     }
 
     /// Resolve a colon-separated path via filesystem rules, relative to current dir.

@@ -10,16 +10,6 @@ pub enum Stmt {
     /// Block statement: { stmt1; stmt2; ... }
     Block { statements: Vec<Stmt>, span: Span },
 
-    /// Return statement: return expr_list?
-    /// Empty list represents `return` with no value
-    Return { values: Vec<Expr>, span: Span },
-
-    /// Break statement: break label?
-    Break { label: Option<String>, span: Span },
-
-    /// Continue statement: continue label?
-    Continue { label: Option<String>, span: Span },
-
     /// Infinite loop: loop (as label)? { ... }
     Loop {
         label: Option<String>,
@@ -57,9 +47,6 @@ impl Stmt {
         match self {
             Stmt::Expr(expr) => expr.span(),
             Stmt::Block { span, .. } => span,
-            Stmt::Return { span, .. } => span,
-            Stmt::Break { span, .. } => span,
-            Stmt::Continue { span, .. } => span,
             Stmt::Loop { span, .. } => span,
             Stmt::LoopThrough { span, .. } => span,
             Stmt::Import { span, .. } => span,
@@ -75,7 +62,7 @@ impl Stmt {
     /// Check if this statement contains control flow (break/continue/return)
     pub fn has_control_flow(&self) -> bool {
         match self {
-            Stmt::Return { .. } | Stmt::Break { .. } | Stmt::Continue { .. } => true,
+            Stmt::Expr(expr) => expr.has_control_flow(),
             Stmt::Block { statements, .. } => statements.iter().any(|stmt| stmt.has_control_flow()),
             Stmt::Loop { body, .. } | Stmt::LoopThrough { body, .. } => body.has_control_flow(),
             _ => false,

@@ -33,16 +33,17 @@ mod tests {
     use crate::runtime::value::DecimalNumber;
     use std::rc::Rc;
     use suji_ast::Span;
+    use suji_ast::ast::Expr;
     use suji_ast::ast::Stmt;
 
     #[test]
     fn test_function_to_string() {
         let func_val = Value::Function(FunctionValue {
             params: vec![],
-            body: Stmt::Return {
+            body: Stmt::Expr(Expr::Return {
                 values: Vec::new(),
                 span: Span::default(),
-            },
+            }),
             env: Rc::new(crate::runtime::env::Env::new()),
         });
         let receiver = ValueRef::Immutable(&func_val);
@@ -54,10 +55,10 @@ mod tests {
     fn test_function_to_string_arity_mismatch() {
         let func_val = Value::Function(FunctionValue {
             params: vec![],
-            body: Stmt::Return {
+            body: Stmt::Expr(Expr::Return {
                 values: Vec::new(),
                 span: Span::default(),
-            },
+            }),
             env: Rc::new(crate::runtime::env::Env::new()),
         });
         let receiver = ValueRef::Immutable(&func_val);
@@ -73,10 +74,10 @@ mod tests {
     fn test_function_invalid_method() {
         let func_val = Value::Function(FunctionValue {
             params: vec![],
-            body: Stmt::Return {
+            body: Stmt::Expr(Expr::Return {
                 values: Vec::new(),
                 span: Span::default(),
-            },
+            }),
             env: Rc::new(crate::runtime::env::Env::new()),
         });
         let receiver = ValueRef::Immutable(&func_val);

@@ -1,6 +1,6 @@
 use super::env::Env;
 use super::module::ModuleRegistry;
-use super::value::{ControlFlow, RuntimeError, Value};
+use super::value::{RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::Stmt;
 
@@ -62,31 +62,6 @@ pub fn eval_stmt_with_modules(
         Stmt::Block { statements, .. } => {
             eval_block_with_modules(statements, env, loop_stack, module_registry)
         }
-
-        Stmt::Return { values, .. } => {
-            let return_value = if values.is_empty() {
-                Value::Nil
-            } else if values.len() == 1 {
-                eval_expr(&values[0], env)?
-            } else {
-                let mut tuple_values = Vec::new();
-                for expr in values {
-                    tuple_values.push(eval_expr(expr, env.clone())?);
-                }
-                Value::Tuple(tuple_values)
-            };
-            Err(RuntimeError::ControlFlow {
-                flow: ControlFlow::Return(Box::new(return_value)),
-            })
-        }
-
-        Stmt::Break { label, .. } => Err(RuntimeError::ControlFlow {
-            flow: ControlFlow::Break(label.clone()),
-        }),
-
-        Stmt::Continue { label, .. } => Err(RuntimeError::ControlFlow {
-            flow: ControlFlow::Continue(label.clone()),
-        }),
 
         Stmt::Loop { label, body, .. } => eval_infinite_loop_with_modules(
             label.as_deref(),

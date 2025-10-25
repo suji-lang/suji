@@ -17,6 +17,7 @@ impl Value {
             Value::Stream(_) => "stream",
             Value::StreamProxy(_) => "stream",
             Value::EnvMap(_) => "env",
+            Value::Module(_) => "module",
             Value::Nil => "nil",
         }
     }

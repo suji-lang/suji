@@ -1,4 +1,3 @@
-// Expression evaluation modules
 mod binary;
 mod function_calls;
 mod literals;
@@ -6,7 +5,6 @@ mod method_calls;
 pub mod pipe;
 mod unary;
 
-// Re-export the main expression evaluation functions
 pub use binary::*;
 pub use function_calls::*;
 pub use literals::*;
@@ -19,16 +17,17 @@ use super::super::value::{RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::Expr;
 
-// Import functions that are used in eval_expr but defined in other modules
 use super::assignments::eval_assignment;
-use super::data_structures::{eval_index, eval_map_access_by_name, eval_slice};
+use super::data_structures::{
+    eval_index, eval_map_access_by_name, eval_map_access_by_name_with_modules, eval_slice,
+};
 use super::eval_match_expression;
 use super::postfix::{eval_postfix_decrement, eval_postfix_increment};
 
 /// Result type for evaluation that can return control flow signals
 pub type EvalResult<T> = Result<T, RuntimeError>;
 
-/// Evaluate an expression with a module registry (for pipe operator)
+/// Evaluate an expression with a module registry (for pipe operator and lazy modules)
 pub fn eval_expr_with_registry(
     expr: &Expr,
     env: Rc<Env>,
@@ -41,6 +40,10 @@ pub fn eval_expr_with_registry(
             right,
             ..
         } => pipe::eval_pipe_expression_with_registry(left, right, env.clone(), registry),
+
+        Expr::MapAccessByName { target, key, .. } => {
+            eval_map_access_by_name_with_modules(target, key, env.clone(), registry)
+        }
 
         _ => eval_expr(expr, env),
     };
@@ -103,6 +106,31 @@ pub fn eval_expr(expr: &Expr, env: Rc<Env>) -> EvalResult<Value> {
 
         Expr::Destructure { .. } => Err(RuntimeError::InvalidOperation {
             message: "Destructuring pattern cannot appear as a standalone expression".to_string(),
+        }),
+
+        Expr::Return { values, .. } => {
+            let return_value = if values.is_empty() {
+                Value::Nil
+            } else if values.len() == 1 {
+                eval_expr(&values[0], env)?
+            } else {
+                let mut tuple_values = Vec::new();
+                for expr in values {
+                    tuple_values.push(eval_expr(expr, env.clone())?);
+                }
+                Value::Tuple(tuple_values)
+            };
+            Err(RuntimeError::ControlFlow {
+                flow: super::super::value::ControlFlow::Return(Box::new(return_value)),
+            })
+        }
+
+        Expr::Break { label, .. } => Err(RuntimeError::ControlFlow {
+            flow: super::super::value::ControlFlow::Break(label.clone()),
+        }),
+
+        Expr::Continue { label, .. } => Err(RuntimeError::ControlFlow {
+            flow: super::super::value::ControlFlow::Continue(label.clone()),
         }),
     };
 

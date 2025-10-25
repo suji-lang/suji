@@ -1,0 +1,6 @@
+import std:println
+
+# Single element inclusive range
+result = 5..=5
+
+println(result)  # [5]

@@ -78,7 +78,7 @@ impl Parser {
     pub(super) fn parse_power(&mut self) -> ParseResult<Expr> {
         // Choose the atomic base depending on whether postfix is allowed
         let next: fn(&mut Parser) -> ParseResult<Expr> = match self.expression_context {
-            ExpressionContext::Default => Parser::postfix,
+            ExpressionContext::Default | ExpressionContext::NoColonAccess => Parser::postfix,
             ExpressionContext::NoPostfix => Parser::primary,
         };
         self.parse_infix_right_layer(next, |t| match t {
@@ -106,10 +106,11 @@ impl Parser {
         })
     }
 
-    /// Parse range expressions (..)
+    /// Parse range expressions (.. and ..=)
     pub(super) fn parse_range(&mut self) -> ParseResult<Expr> {
         self.parse_infix_left_layer(Parser::parse_term, |t| match t {
             Token::Range => Some(suji_ast::ast::BinaryOp::Range),
+            Token::RangeInclusive => Some(suji_ast::ast::BinaryOp::RangeInclusive),
             _ => None,
         })
     }

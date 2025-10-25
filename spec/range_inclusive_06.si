@@ -1,0 +1,9 @@
+import std:println
+
+# Inclusive range in loop
+sum = 0
+loop through 1..=10 with i {
+    sum += i
+}
+
+println(sum)  # 55

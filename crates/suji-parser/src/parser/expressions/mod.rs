@@ -12,6 +12,17 @@ use suji_lexer::token::Token;
 impl Parser {
     /// Parse a primary expression - main dispatcher
     pub(super) fn primary(&mut self) -> ParseResult<Expr> {
+        // Control flow expressions
+        if self.match_token(Token::Return) {
+            return self.parse_return_expr();
+        }
+        if self.match_token(Token::Break) {
+            return self.parse_break_expr();
+        }
+        if self.match_token(Token::Continue) {
+            return self.parse_continue_expr();
+        }
+
         // Try parsing literals first
         if let Ok(expr) = self.parse_literals() {
             return Ok(expr);
@@ -48,5 +59,60 @@ impl Parser {
             token: current.token,
             span: current.span,
         })
+    }
+
+    /// Parse return expression: return expr*
+    pub fn parse_return_expr(&mut self) -> ParseResult<Expr> {
+        let span = self.previous().span.clone();
+
+        // If the next token ends the statement, this is a bare `return`
+        if self.check(Token::Newline) || self.check(Token::Semicolon) || self.is_at_end() {
+            return Ok(Expr::Return {
+                values: Vec::new(),
+                span,
+            });
+        }
+
+        // Parse comma-separated expressions until newline/semicolon/end
+        let mut values = Vec::new();
+        loop {
+            values.push(self.expression()?);
+
+            if !self.match_token(Token::Comma) {
+                break;
+            }
+
+            if self.check(Token::Newline) || self.check(Token::Semicolon) || self.is_at_end() {
+                return Err(ParseError::Generic {
+                    message: "Trailing comma not allowed in return".to_string(),
+                });
+            }
+        }
+
+        Ok(Expr::Return { values, span })
+    }
+
+    /// Parse break expression: break label?
+    pub fn parse_break_expr(&mut self) -> ParseResult<Expr> {
+        let span = self.previous().span.clone();
+        let label = if let Token::Identifier(_) = &self.peek().token {
+            let (name, _span) = self.consume_identifier()?;
+            Some(name)
+        } else {
+            None
+        };
+        Ok(Expr::Break { label, span })
+    }
+
+    /// Parse continue expression: continue label?
+    pub fn parse_continue_expr(&mut self) -> ParseResult<Expr> {
+        let span = self.previous().span.clone();
+        let label = if let Token::Identifier(_) = &self.peek().token {
+            let (name, _span) = self.consume_identifier()?;
+            Some(name)
+        } else {
+            None
+        };
+        Ok(Expr::Continue { label, span })
     }
 }

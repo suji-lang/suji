@@ -154,9 +154,11 @@ impl Parser {
         self.expression_in_context(ExpressionContext::NoPostfix)
     }
 
-    /// Parse expressions used as array indices (without postfix operations to avoid conflicts with ':')
+    /// Parse expressions used as array indices
+    /// Full expressions including postfix operations (calls, methods, indexing, pipelines) are allowed,
+    /// except for colon map access which would conflict with slice syntax (start:end).
     pub(super) fn index_expression(&mut self) -> ParseResult<Expr> {
-        self.expression_in_context(ExpressionContext::NoPostfix)
+        self.expression_in_context(ExpressionContext::NoColonAccess)
     }
 
     /// Handle statement separators (semicolons and newlines)

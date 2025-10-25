@@ -1,5 +1,5 @@
 //! JSON conversion utilities.
- 
+
 mod converter;
 mod types;
 

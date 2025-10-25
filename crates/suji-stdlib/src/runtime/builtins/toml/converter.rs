@@ -130,5 +130,12 @@ pub fn suji_to_toml_value(suji_value: &Value) -> Result<TomlValue, RuntimeError>
             message: "Environment map values cannot be converted to TOML".to_string(),
         }
         .into()),
+        Value::Module(handle) => Err(TomlError::Conversion {
+            message: format!(
+                "Cannot serialize module '{}'. Import and use module members instead.",
+                handle.module_path
+            ),
+        }
+        .into()),
     }
 }

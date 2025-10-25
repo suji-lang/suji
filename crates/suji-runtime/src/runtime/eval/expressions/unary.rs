@@ -4,6 +4,12 @@ use suji_ast::ast::UnaryOp;
 
 /// Evaluate a unary operation
 pub fn eval_unary_op(op: &UnaryOp, value: Value) -> EvalResult<Value> {
+    if matches!(value, Value::Module(_)) {
+        return Err(RuntimeError::InvalidOperation {
+            message: "Cannot use module in unary operation.".to_string(),
+        });
+    }
+
     match op {
         UnaryOp::Negate => match value {
             Value::Number(n) => Ok(Value::Number(-n)),

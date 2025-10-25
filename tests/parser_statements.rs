@@ -10,7 +10,7 @@ fn test_parse_return_statement() {
     let result = parse_statement("return 42");
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Return { values, .. }) = result {
+    if let Ok(Stmt::Expr(Expr::Return { values, .. })) = result {
         assert_eq!(values.len(), 1);
         if let Expr::Literal(Literal::Number(n, _)) = &values[0] {
             assert_eq!(n, "42");
@@ -18,7 +18,7 @@ fn test_parse_return_statement() {
             panic!("Expected number in return");
         }
     } else {
-        panic!("Expected return statement");
+        panic!("Expected return expression statement");
     }
 }
 
@@ -61,11 +61,11 @@ fn test_parse_return_without_value() {
     let result = parse_statement("return");
     assert!(result.is_ok());
 
-    if let Ok(Stmt::Return { values, .. }) = result {
+    if let Ok(Stmt::Expr(Expr::Return { values, .. })) = result {
         assert!(values.is_empty());
         // Expected
     } else {
-        panic!("Expected return statement without value");
+        panic!("Expected return expression statement without value");
     }
 }
 

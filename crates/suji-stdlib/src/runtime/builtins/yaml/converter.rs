@@ -105,5 +105,13 @@ pub fn suji_to_yaml_value(suji_value: &Value) -> Result<Yaml, RuntimeError> {
             value_type: "env".to_string(),
         }
         .into()),
+        Value::Module(handle) => Err(YamlError::GenerateError {
+            message: format!(
+                "Cannot serialize module '{}'. Import and use module members instead.",
+                handle.module_path
+            ),
+            value_type: "module".to_string(),
+        }
+        .into()),
     }
 }

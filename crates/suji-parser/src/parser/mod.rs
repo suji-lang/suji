@@ -10,12 +10,19 @@ use suji_lexer::token::{Span, Token, TokenWithSpan};
 use suji_lexer::{LexError, Lexer};
 use thiserror::Error;
 
-/// Controls whether postfix operators (calls, indexing, field access, ++/--)
-/// are allowed in the current expression parsing context.
+/// Controls which postfix operators are allowed in the current expression parsing context.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum ExpressionContext {
+    /// Default context: all postfix operators allowed (calls, indexing, field access, ++/--, ::, :)
     Default,
+
+    /// No postfix operators allowed at all.
+    /// Used for map keys in `map:key` syntax to prevent ambiguity with nested colons.
     NoPostfix,
+
+    /// All postfix operators allowed except single-colon map access (`:`).
+    /// Used for index expressions inside `[]` to prevent ambiguity with slice syntax.
+    NoColonAccess,
 }
 
 #[derive(Error, Debug, Clone)]

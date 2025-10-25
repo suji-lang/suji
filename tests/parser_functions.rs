@@ -49,7 +49,7 @@ fn test_parse_function_block() {
 
         if let Stmt::Block { statements, .. } = body.as_ref() {
             assert_eq!(statements.len(), 1);
-            if let Stmt::Return { values, .. } = &statements[0] {
+            if let Stmt::Expr(Expr::Return { values, .. }) = &statements[0] {
                 if let Some(Expr::Binary {
                     op, left, right, ..
                 }) = values.first()
@@ -69,7 +69,7 @@ fn test_parse_function_block() {
                     panic!("Expected multiplication expression");
                 }
             } else {
-                panic!("Expected return statement");
+                panic!("Expected return expression statement");
             }
         } else {
             panic!("Expected block statement");
@@ -87,10 +87,10 @@ fn test_parse_function_multi_return_destructure() {
     if let Ok(Expr::FunctionLiteral { body, .. }) = result {
         if let Stmt::Block { statements, .. } = body.as_ref() {
             assert_eq!(statements.len(), 1);
-            if let Stmt::Return { values, .. } = &statements[0] {
+            if let Stmt::Expr(Expr::Return { values, .. }) = &statements[0] {
                 assert_eq!(values.len(), 2);
             } else {
-                panic!("Expected return statement");
+                panic!("Expected return expression statement");
             }
         } else {
             panic!("Expected block statement");

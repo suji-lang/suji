@@ -43,6 +43,13 @@ impl fmt::Display for Value {
             Value::Stream(stream) => write!(f, "<stream:{}>", stream.name),
             Value::StreamProxy(kind) => write!(f, "<stream-proxy:{:?}>", kind),
             Value::EnvMap(_) => write!(f, "<env>"),
+            Value::Module(handle) => {
+                if handle.loaded.borrow().is_some() {
+                    write!(f, "<module '{}' (loaded)>", handle.module_path)
+                } else {
+                    write!(f, "<module '{}' (unloaded)>", handle.module_path)
+                }
+            }
             Value::Nil => write!(f, "nil"),
         }
     }
@@ -134,10 +141,10 @@ mod tests {
                 "{}",
                 Value::Function(FunctionValue {
                     params: vec![],
-                    body: Stmt::Return {
+                    body: Stmt::Expr(Expr::Return {
                         values: Vec::new(),
                         span: Span::default()
-                    },
+                    }),
                     env: Rc::new(crate::runtime::env::Env::new()),
                 })
             ),
@@ -177,13 +184,13 @@ mod tests {
             name: "x".to_string(),
             default: None,
         }];
-        let body = Stmt::Return {
+        let body = Stmt::Expr(Expr::Return {
             values: vec![Expr::Literal(Literal::Number(
                 "42".to_string(),
                 Span::default(),
             ))],
             span: Span::default(),
-        };
+        });
 
         let func = FunctionValue { params, body, env };
 

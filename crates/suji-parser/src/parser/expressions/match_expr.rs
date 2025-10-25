@@ -159,9 +159,34 @@ impl Parser {
     /// Parse unbraced arm body - single expression or statement
     fn parse_unbraced_arm_body(&mut self) -> ParseResult<Stmt> {
         match self.peek().token {
-            Token::Return => self.parse_match_arm_return(),
-            Token::Break => self.parse_match_arm_break(),
-            Token::Continue => self.parse_match_arm_continue(),
+            Token::Return => {
+                let expr = self.parse_match_arm_return_expr()?;
+                Ok(Stmt::Expr(expr))
+            }
+            Token::Break => {
+                self.advance(); // consume Break token
+                let span = self.previous().span.clone();
+                let label = if let Token::Identifier(_) = &self.peek().token {
+                    let (name, _span) = self.consume_identifier()?;
+                    Some(name)
+                } else {
+                    None
+                };
+                let expr = Expr::Break { label, span };
+                Ok(Stmt::Expr(expr))
+            }
+            Token::Continue => {
+                self.advance(); // consume Continue token
+                let span = self.previous().span.clone();
+                let label = if let Token::Identifier(_) = &self.peek().token {
+                    let (name, _span) = self.consume_identifier()?;
+                    Some(name)
+                } else {
+                    None
+                };
+                let expr = Expr::Continue { label, span };
+                Ok(Stmt::Expr(expr))
+            }
             _ => {
                 // Fall back to expression
                 let expr = self.expression()?;
@@ -170,14 +195,14 @@ impl Parser {
         }
     }
 
-    /// Parse return statement in match arm
+    /// Parse return expression in match arm
     /// In unbraced match arms, only single-value returns are allowed
     /// to avoid ambiguity with the match arm separator comma
-    fn parse_match_arm_return(&mut self) -> ParseResult<Stmt> {
+    fn parse_match_arm_return_expr(&mut self) -> ParseResult<Expr> {
         let return_span = self.advance().span.clone(); // consume Return
 
         if !self.has_expression_after() {
-            return Ok(Stmt::Return {
+            return Ok(Expr::Return {
                 values: Vec::new(),
                 span: return_span,
             });
@@ -186,41 +211,9 @@ impl Parser {
         // Parse single return value (no comma-separated multi-value returns in unbraced arms)
         let value = self.expression()?;
 
-        Ok(Stmt::Return {
+        Ok(Expr::Return {
             values: vec![value],
             span: return_span,
-        })
-    }
-
-    /// Parse break statement in match arm
-    fn parse_match_arm_break(&mut self) -> ParseResult<Stmt> {
-        let break_span = self.advance().span.clone(); // consume Break
-
-        let label = if self.has_expression_after() {
-            self.parse_optional_label()
-        } else {
-            None
-        };
-
-        Ok(Stmt::Break {
-            label,
-            span: break_span,
-        })
-    }
-
-    /// Parse continue statement in match arm
-    fn parse_match_arm_continue(&mut self) -> ParseResult<Stmt> {
-        let continue_span = self.advance().span.clone(); // consume Continue
-
-        let label = if self.has_expression_after() {
-            self.parse_optional_label()
-        } else {
-            None
-        };
-
-        Ok(Stmt::Continue {
-            label,
-            span: continue_span,
         })
     }
 
@@ -230,17 +223,6 @@ impl Parser {
             && !self.check(Token::Comma)
             && !self.check(Token::FatArrow)
             && !self.is_at_end()
-    }
-
-    /// Parse optional label for break/continue statements
-    fn parse_optional_label(&mut self) -> Option<String> {
-        if let Token::Identifier(name) = &self.peek().token {
-            let name = name.clone();
-            self.advance();
-            Some(name)
-        } else {
-            None
-        }
     }
 
     /// Detect whether braced content is a map literal or block

@@ -39,8 +39,53 @@ pub enum Value {
     StreamProxy(StreamProxyKind),
     /// Environment variables map
     EnvMap(Rc<EnvProxy>),
+    /// Lazily-loaded module that loads on first access
+    Module(ModuleHandle),
     /// Nil value (absence of value)
     Nil,
+}
+
+/// Handle to a lazily-loaded module.
+#[derive(Debug, Clone)]
+pub struct ModuleHandle {
+    /// Unique identifier for this module (e.g., "std:random", "myproject:utils")
+    pub module_path: String,
+
+    /// Path segments for resolution (e.g., ["std", "random"])
+    pub segments: Vec<String>,
+
+    /// Source code for virtual modules (None for filesystem modules)
+    pub source: Option<&'static str>,
+
+    /// Loaded module value (cached after first load)
+    pub loaded: Rc<RefCell<Option<Box<Value>>>>,
+
+    /// Registry reference for loading (stored as raw pointer to avoid circular dependency)
+    /// We use *const instead of Weak because ModuleRegistry isn't behind Rc yet
+    pub registry_ptr: *const (),
+}
+
+impl ModuleHandle {
+    /// Create a new module handle
+    pub fn new(
+        module_path: String,
+        segments: Vec<String>,
+        source: Option<&'static str>,
+        registry_ptr: *const (),
+    ) -> Self {
+        Self {
+            module_path,
+            segments,
+            source,
+            loaded: Rc::new(RefCell::new(None)),
+            registry_ptr,
+        }
+    }
+
+    /// Check if this module has been loaded
+    pub fn is_loaded(&self) -> bool {
+        self.loaded.borrow().is_some()
+    }
 }
 
 /// Kind of IO stream proxy

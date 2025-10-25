@@ -1,0 +1,6 @@
+import std:println
+
+indices = [0, 2, 4]
+data = [10, 20, 30, 40, 50]
+
+println(data[indices[1]])  # 30

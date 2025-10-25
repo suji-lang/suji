@@ -203,20 +203,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "chumsky"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14377e276b2c8300513dff55ba4cc4142b44e5d6de6d00eb5b2307d650bb4ec1"
-dependencies = [
- "hashbrown 0.15.5",
- "regex-automata 0.3.9",
- "serde",
- "stacker",
- "unicode-ident",
- "unicode-segmentation",
-]
-
-[[package]]
 name = "clipboard-win"
 version = "5.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -391,8 +377,6 @@ version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
 dependencies = [
- "allocator-api2",
- "equivalent",
  "foldhash",
 ]
 
@@ -598,15 +582,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "psm"
-version = "0.1.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e66fcd288453b748497d8fb18bccc83a16b0518e3906d4b8df0a8d42d93dbb1c"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "ptr_meta"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -695,19 +670,8 @@ checksum = "8b5288124840bee7b386bc413c487869b360b2b4ec421ea56425128692f2a82c"
 dependencies = [
  "aho-corasick",
  "memchr",
- "regex-automata 0.4.11",
- "regex-syntax 0.8.6",
-]
-
-[[package]]
-name = "regex-automata"
-version = "0.3.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59b23e92ee4318893fa3fe3e6fb365258efbfe6ac6ab30f090cdcbb7aa37efa9"
-dependencies = [
- "aho-corasick",
- "memchr",
- "regex-syntax 0.7.5",
+ "regex-automata",
+ "regex-syntax",
 ]
 
 [[package]]
@@ -718,14 +682,8 @@ checksum = "833eb9ce86d40ef33cb1306d8accf7bc8ec2bfea4355cbdebb3df68b40925cad"
 dependencies = [
  "aho-corasick",
  "memchr",
- "regex-syntax 0.8.6",
+ "regex-syntax",
 ]
-
-[[package]]
-name = "regex-syntax"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbb5fb1acd8a1a18b3dd5be62d25485eb770e05afb408a9627d14d451bae12da"
 
 [[package]]
 name = "regex-syntax"
@@ -950,19 +908,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 
 [[package]]
-name = "stacker"
-version = "0.1.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1f8b29fb42aafcea4edeeb6b2f2d7ecd0d969c48b4cf0d2e64aafc471dd6e59"
-dependencies = [
- "cc",
- "cfg-if",
- "libc",
- "psm",
- "windows-sys 0.59.0",
-]
-
-[[package]]
 name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -970,11 +915,11 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "suji-ast"
-version = "0.1.17"
+version = "0.1.18"
 
 [[package]]
 name = "suji-cli"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "suji-diagnostics",
  "suji-parser",
@@ -985,7 +930,7 @@ dependencies = [
 
 [[package]]
 name = "suji-diagnostics"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "ariadne",
  "regex",
@@ -998,7 +943,7 @@ dependencies = [
 
 [[package]]
 name = "suji-lexer"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "regex",
  "suji-ast",
@@ -1007,9 +952,8 @@ dependencies = [
 
 [[package]]
 name = "suji-parser"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
- "chumsky",
  "suji-ast",
  "suji-lexer",
  "thiserror 2.0.17",
@@ -1017,7 +961,7 @@ dependencies = [
 
 [[package]]
 name = "suji-repl"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "ariadne",
  "rustyline",
@@ -1029,7 +973,7 @@ dependencies = [
 
 [[package]]
 name = "suji-runtime"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "indexmap",
  "once_cell",
@@ -1044,7 +988,7 @@ dependencies = [
 
 [[package]]
 name = "suji-stdlib"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "base64",
  "chrono",
@@ -1074,7 +1018,7 @@ dependencies = [
 
 [[package]]
 name = "suji_lang"
-version = "0.1.17"
+version = "0.1.18"
 dependencies = [
  "indexmap",
  "suji-ast",

@@ -16,13 +16,19 @@ fn std_env_args_and_argv_present_and_shaped() {
         _ => panic!("std should be a map"),
     };
 
-    // Load std:env submodule
+    // Load std:env submodule (may be a lazy module, so force-load it)
     let env_val = std_map
         .get(&MapKey::String("env".to_string()))
         .expect("std:env");
+    let env_val = match env_val {
+        Value::Module(handle) => registry
+            .force_load_module(handle)
+            .expect("force load std:env"),
+        other => other.clone(),
+    };
     let env_map = match env_val {
         Value::Map(m) => m,
-        _ => panic!("std:env should be a map"),
+        _ => panic!("std:env should be a map after loading"),
     };
 
     // args exists and is a map

@@ -44,25 +44,28 @@ fn test_expr_is_assignable() {
 fn test_stmt_has_control_flow() {
     let span = Span::new(0, 5, 1, 0);
 
-    // Return statement has control flow
-    let return_stmt = Stmt::Return {
+    // Return expression has control flow
+    let return_expr = Expr::Return {
         values: Vec::new(),
         span: span.clone(),
     };
+    let return_stmt = Stmt::Expr(return_expr);
     assert!(return_stmt.has_control_flow());
 
-    // Break statement has control flow
-    let break_stmt = Stmt::Break {
+    // Break expression has control flow
+    let break_expr = Expr::Break {
         label: None,
         span: span.clone(),
     };
+    let break_stmt = Stmt::Expr(break_expr);
     assert!(break_stmt.has_control_flow());
 
-    // Continue statement has control flow
-    let continue_stmt = Stmt::Continue {
+    // Continue expression has control flow
+    let continue_expr = Expr::Continue {
         label: None,
         span: span.clone(),
     };
+    let continue_stmt = Stmt::Expr(continue_expr);
     assert!(continue_stmt.has_control_flow());
 
     // Expression statement without control flow
@@ -73,8 +76,12 @@ fn test_stmt_has_control_flow() {
     assert!(!expr_stmt.has_control_flow());
 
     // Block with control flow inside
+    let return_expr_for_block = Expr::Return {
+        values: Vec::new(),
+        span: span.clone(),
+    };
     let block_with_control = Stmt::Block {
-        statements: vec![return_stmt],
+        statements: vec![Stmt::Expr(return_expr_for_block)],
         span: span.clone(),
     };
     assert!(block_with_control.has_control_flow());

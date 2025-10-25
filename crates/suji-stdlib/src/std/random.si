@@ -1,25 +1,25 @@
 # std:random module - random number generation and list utilities
-import __builtins__:random_random
-import __builtins__:random_seed
+import __builtins__:random_random as random
+import __builtins__:random_seed as seed
 
 export {
-    random: random_random,
-    seed: random_seed,
+    random: random,
+    seed: seed,
 
     integer: |a, b| {
         lo = a::ceil()
         hi = b::floor()
 
         n = hi - lo
-        i = (random_random() * n)::floor()
+        i = (random() * n)::floor()
 
         lo + i
     },
 
     pick: |xs| {
-        idx = (random_random() * xs::length())::floor()
-
-        xs[idx]
+        xs[
+            (random() * xs::length())::floor()
+        ]
     },
 
     shuffle: |xs| {
@@ -31,7 +31,7 @@ export {
         }
 
         loop through 0..length with i {
-            j = (random_random() * length)::floor()
+            j = (random() * length)::floor()
             swap(i, j)
         }
 
@@ -46,7 +46,7 @@ export {
 
         indexes = []
         loop {
-            i = (random_random() * length)::floor()
+            i = (random() * length)::floor()
 
             match {
                 indexes::length() == k => break,

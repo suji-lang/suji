@@ -89,8 +89,9 @@ pub enum Token {
     ComposeRight,
     ComposeLeft,
 
-    // Range operator
-    Range,
+    // Range operators
+    Range,          // ..
+    RangeInclusive, // ..=
 
     // Regex match operators
     RegexMatch,
@@ -190,6 +191,7 @@ impl Token {
                 | Token::And
                 | Token::Or
                 | Token::Range
+                | Token::RangeInclusive
                 | Token::RegexMatch
                 | Token::RegexNotMatch
         )

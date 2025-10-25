@@ -189,7 +189,11 @@ impl NormalScanner {
             }
             '.' => {
                 if context.match_char('.') {
-                    Token::Range
+                    if context.match_char('=') {
+                        Token::RangeInclusive
+                    } else {
+                        Token::Range
+                    }
                 } else {
                     return Err(LexError::UnexpectedCharacter {
                         ch,

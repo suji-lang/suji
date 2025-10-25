@@ -168,7 +168,7 @@ fn test_parse_match_block() {
         {
             assert_eq!(*n, "1".to_string());
             assert_eq!(statements.len(), 1);
-            if let Stmt::Return { values, .. } = &statements[0] {
+            if let Stmt::Expr(Expr::Return { values, .. }) = &statements[0] {
                 if let [Expr::Literal(suji_lang::ast::Literal::StringTemplate(parts, _))] =
                     values.as_slice()
                 {
@@ -271,9 +271,9 @@ fn test_parse_return_statements_in_non_braced_match_arms() {
     if let Ok(Stmt::Expr(Expr::Match { arms, .. })) = result {
         assert_eq!(arms.len(), 3);
         for arm in arms {
-            if let Stmt::Return { .. } = &arm.body {
+            if let Stmt::Expr(Expr::Return { .. }) = &arm.body {
             } else {
-                panic!("Expected return statement in match arm");
+                panic!("Expected return expression in match arm");
             }
         }
     } else {

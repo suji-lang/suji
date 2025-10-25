@@ -46,6 +46,14 @@ impl Parser {
 
             // Handle single-element tuple: (expr,)
             if self.match_token(Token::RightParen) {
+                // Validate no control flow in tuple elements
+                for elem in &elements {
+                    if elem.has_control_flow() {
+                        return Err(ParseError::Generic {
+                            message: "Control flow expressions (return, break, continue) are not allowed in tuple literals".to_string(),
+                        });
+                    }
+                }
                 return Ok(Expr::Literal(Literal::Tuple(elements, start_span)));
             }
 
@@ -54,6 +62,15 @@ impl Parser {
                 elements.push(self.expression()?);
                 if !self.match_token(Token::Comma) {
                     break;
+                }
+            }
+
+            // Validate no control flow in tuple elements
+            for elem in &elements {
+                if elem.has_control_flow() {
+                    return Err(ParseError::Generic {
+                        message: "Control flow expressions (return, break, continue) are not allowed in tuple literals".to_string(),
+                    });
                 }
             }
 
@@ -87,6 +104,15 @@ impl Parser {
             }
         }
 
+        // Validate no control flow in list elements
+        for elem in &elements {
+            if elem.has_control_flow() {
+                return Err(ParseError::Generic {
+                    message: "Control flow expressions (return, break, continue) are not allowed in list literals".to_string(),
+                });
+            }
+        }
+
         self.consume(Token::RightBracket, "Expected ']' after list elements")?;
         Ok(Expr::Literal(Literal::List(elements, start_span)))
     }
@@ -111,6 +137,20 @@ impl Parser {
                 if self.check(Token::RightBrace) {
                     break;
                 }
+            }
+        }
+
+        // Validate no control flow in map keys or values
+        for (key, value) in &pairs {
+            if key.has_control_flow() {
+                return Err(ParseError::Generic {
+                    message: "Control flow expressions (return, break, continue) are not allowed in map keys".to_string(),
+                });
+            }
+            if value.has_control_flow() {
+                return Err(ParseError::Generic {
+                    message: "Control flow expressions (return, break, continue) are not allowed in map values".to_string(),
+                });
             }
         }
 
@@ -158,6 +198,15 @@ impl Parser {
                 return Err(ParseError::UnexpectedToken {
                     token: current.token,
                     span: current.span,
+                });
+            }
+        }
+
+        // Validate no control flow in string template parts
+        for part in &parts {
+            if part.has_control_flow() {
+                return Err(ParseError::Generic {
+                    message: "Control flow expressions (return, break, continue) are not allowed in string templates".to_string(),
                 });
             }
         }

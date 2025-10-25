@@ -34,6 +34,9 @@ pub fn call_method(
         Value::Function(_) => function_methods::call_function_method(receiver, method, args),
         Value::Stream(_) => stream_methods::call_stream_method(receiver, method, args),
         Value::StreamProxy(_) => stream_methods::call_stream_method(receiver, method, args),
+        Value::Module(handle) => Err(RuntimeError::InvalidOperation {
+            message: format!("Cannot call methods on module '{}'.", handle.module_path),
+        }),
         Value::Nil => nil_methods::call_nil_method(receiver, method, args),
     }
 }

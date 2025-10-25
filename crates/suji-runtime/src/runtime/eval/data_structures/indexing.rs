@@ -1,5 +1,6 @@
 use super::super::super::eval::{EvalResult, eval_expr};
 use crate::runtime::env::Env;
+use crate::runtime::module::ModuleRegistry;
 use crate::runtime::value::{MapKey, RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::Expr;
@@ -277,34 +278,91 @@ pub fn eval_slice(
     }
 }
 
-/// Evaluate map access by name (map:key)
+/// Evaluate map access by name (map:key) without module registry
 pub fn eval_map_access_by_name(target: &Expr, key: &str, env: Rc<Env>) -> EvalResult<Value> {
-    let target_value = eval_expr(target, env)?;
+    eval_map_access_by_name_internal(target, key, env, None)
+}
 
-    match target_value {
+/// Evaluate map access by name (map:key) with module registry for lazy loading
+pub fn eval_map_access_by_name_with_modules(
+    target: &Expr,
+    key: &str,
+    env: Rc<Env>,
+    registry: &ModuleRegistry,
+) -> EvalResult<Value> {
+    eval_map_access_by_name_internal(target, key, env, Some(registry))
+}
+
+/// Internal implementation for map access by name
+fn eval_map_access_by_name_internal(
+    target: &Expr,
+    key: &str,
+    env: Rc<Env>,
+    registry: Option<&ModuleRegistry>,
+) -> EvalResult<Value> {
+    let mut target_value = eval_expr(target, env)?;
+
+    // If target is a module, force-load it first
+    if let Value::Module(handle) = target_value {
+        if let Some(reg) = registry {
+            target_value = reg.force_load_module(&handle)?;
+        } else {
+            return Err(RuntimeError::InvalidOperation {
+                message: format!(
+                    "Cannot access member on unloaded module '{}'. Use import to load it first.",
+                    handle.module_path
+                ),
+            });
+        }
+    }
+
+    // Now access the key on the (potentially loaded) target
+    let mut result = match target_value {
         Value::Map(ref map) => {
             let map_key = MapKey::String(key.to_string());
             match map.get(&map_key) {
-                Some(value) => Ok(value.clone()),
-                None => Err(RuntimeError::KeyNotFound {
-                    message: format!("Key '{}' not found in map", key),
-                }),
+                Some(value) => value.clone(),
+                None => {
+                    return Err(RuntimeError::KeyNotFound {
+                        message: format!("Key '{}' not found in map", key),
+                    });
+                }
             }
         }
         Value::EnvMap(ref env_proxy) => match env_proxy.get(key) {
-            Some(value) => Ok(Value::String(value)),
-            None => Err(RuntimeError::KeyNotFound {
-                message: format!("Environment variable not found: {}", key),
-            }),
+            Some(value) => Value::String(value),
+            None => {
+                return Err(RuntimeError::KeyNotFound {
+                    message: format!("Environment variable not found: {}", key),
+                });
+            }
         },
-        _ => Err(RuntimeError::TypeError {
-            message: format!(
-                "Cannot access key '{}' on {}",
-                key,
-                target_value.type_name()
-            ),
-        }),
+        _ => {
+            return Err(RuntimeError::TypeError {
+                message: format!(
+                    "Cannot access key '{}' on {}",
+                    key,
+                    target_value.type_name()
+                ),
+            });
+        }
+    };
+
+    // If the result is also a module, force-load it
+    if let Value::Module(handle) = result {
+        if let Some(reg) = registry {
+            result = reg.force_load_module(&handle)?;
+        } else {
+            return Err(RuntimeError::InvalidOperation {
+                message: format!(
+                    "Cannot use unloaded module '{}'. Use import to load it first.",
+                    handle.module_path
+                ),
+            });
+        }
     }
+
+    Ok(result)
 }
 
 #[cfg(test)]

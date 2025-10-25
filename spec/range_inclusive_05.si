@@ -1,0 +1,7 @@
+import std:println
+
+# Compare exclusive vs inclusive
+exclusive = 0..5
+inclusive = 0..=5
+
+println(exclusive::length())  # 5

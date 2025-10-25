@@ -1,0 +1,7 @@
+import std:println
+
+nums = [10, 20, 30, 40]
+get_two = || 2
+nums[get_two()] = 99
+
+println(nums[2])  # 99

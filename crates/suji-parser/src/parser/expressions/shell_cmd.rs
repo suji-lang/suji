@@ -43,6 +43,15 @@ impl Parser {
             }
         }
 
+        // Validate no control flow in shell command parts
+        for part in &parts {
+            if part.has_control_flow() {
+                return Err(ParseError::Generic {
+                    message: "Control flow expressions (return, break, continue) are not allowed in shell command templates".to_string(),
+                });
+            }
+        }
+
         self.consume(Token::ShellEnd, "Expected end of shell command")?;
         Ok(Expr::ShellCommandTemplate {
             parts,

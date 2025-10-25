@@ -1,0 +1,6 @@
+import std:println
+
+inc = |x| x + 1
+nums = [10, 20, 30, 40, 50]
+
+println(nums[1 |> inc])  # 30

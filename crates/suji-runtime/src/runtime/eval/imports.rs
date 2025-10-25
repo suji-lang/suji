@@ -4,6 +4,15 @@ use super::super::value::{RuntimeError, Value};
 use std::rc::Rc;
 use suji_ast::ast::ImportSpec;
 
+/// Force-loads a value if it's a lazy module.
+/// Returns the value unchanged if it's not a module.
+fn force_load_if_module(value: Value, registry: &ModuleRegistry) -> Result<Value, RuntimeError> {
+    match value {
+        Value::Module(handle) => registry.force_load_module(&handle),
+        other => Ok(other),
+    }
+}
+
 /// Evaluate an import statement
 pub fn eval_import(
     spec: &ImportSpec,
@@ -15,6 +24,7 @@ pub fn eval_import(
             // import module - bind the whole module to the module name
             // Env → FS → builtins
             let module = module_registry.resolve_module_root(&env, name)?;
+            let module = force_load_if_module(module, module_registry)?;
             env.define_or_set(name, module);
             Ok(())
         }
@@ -23,7 +33,8 @@ pub fn eval_import(
             // import module:item - bind the specific item to its name
             // Env → FS → builtins for module path
             let base = module_registry.resolve_module_path(&env, module, true)?;
-            let item = match base {
+            let base = force_load_if_module(base, module_registry)?;
+            let mut item = match base {
                 Value::Map(map) => {
                     let key = super::super::value::MapKey::String(name.to_string());
                     map.get(&key)
@@ -38,6 +49,8 @@ pub fn eval_import(
                     });
                 }
             };
+            // Force-load the item if it's also a module
+            item = force_load_if_module(item, module_registry)?;
             env.define_or_set(name, item);
             Ok(())
         }
@@ -49,7 +62,8 @@ pub fn eval_import(
         } => {
             // import module:item as alias - bind the specific item to the alias
             let base = module_registry.resolve_module_path(&env, module, true)?;
-            let item = match base {
+            let base = force_load_if_module(base, module_registry)?;
+            let mut item = match base {
                 Value::Map(map) => {
                     let key = super::super::value::MapKey::String(name.to_string());
                     map.get(&key)
@@ -64,6 +78,8 @@ pub fn eval_import(
                     });
                 }
             };
+            // Force-load the item if it's also a module
+            item = force_load_if_module(item, module_registry)?;
             env.define_or_set(alias, item);
             Ok(())
         }

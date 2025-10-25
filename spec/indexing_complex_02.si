@@ -1,0 +1,6 @@
+import std:println
+
+get_two = || 2
+nums = [10, 20, 30, 40]
+
+println(nums[get_two()])  # 30

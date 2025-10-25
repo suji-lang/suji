@@ -48,8 +48,11 @@ impl Parser {
             } else if self.match_token(Token::DoubleColon) {
                 // Method call
                 expr = self.finish_method_call(expr)?;
-            } else if self.match_token(Token::Colon) {
-                // Map access by name
+            } else if self.check(Token::Colon)
+                && self.expression_context != ExpressionContext::NoColonAccess
+            {
+                // Map access by name (skip if in NoColonAccess context for slice parsing)
+                self.advance(); // consume the colon
                 expr = self.finish_map_access(expr)?;
             } else if self.match_token(Token::Increment) {
                 // Postfix increment

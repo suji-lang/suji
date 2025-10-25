@@ -1,0 +1,6 @@
+import std:println
+
+# Descending inclusive range
+result = 10..=5
+
+println(result)  # [10, 9, 8, 7, 6, 5]

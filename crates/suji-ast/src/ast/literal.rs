@@ -47,4 +47,19 @@ impl Literal {
             Literal::Nil(span) => span,
         }
     }
+
+    /// Check if this literal contains control flow expressions
+    pub fn has_control_flow(&self) -> bool {
+        match self {
+            Literal::List(exprs, _) => exprs.iter().any(|e| e.has_control_flow()),
+            Literal::Map(pairs, _) => pairs
+                .iter()
+                .any(|(k, v)| k.has_control_flow() || v.has_control_flow()),
+            Literal::Tuple(exprs, _) => exprs.iter().any(|e| e.has_control_flow()),
+            Literal::StringTemplate(parts, _) => parts
+                .iter()
+                .any(|part| matches!(part, StringPart::Expr(e) if e.has_control_flow())),
+            _ => false,
+        }
+    }
 }

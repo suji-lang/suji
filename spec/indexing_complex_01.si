@@ -1,0 +1,5 @@
+import std:println
+
+nums = 0..10
+
+println(nums[nums::length() - 1])  # 9

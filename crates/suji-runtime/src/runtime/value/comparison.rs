@@ -13,6 +13,7 @@ impl PartialEq for Value {
             (Value::Function(a), Value::Function(b)) => a == b,
             (Value::Stream(_), Value::Stream(_)) => false, // Streams are never equal
             (Value::StreamProxy(a), Value::StreamProxy(b)) => a == b, // Proxies are equal if same kind
+            (Value::Module(a), Value::Module(b)) => a.module_path == b.module_path,
             (Value::Nil, Value::Nil) => true,
             _ => false,
         }
@@ -33,7 +34,7 @@ impl PartialOrd for Value {
             (Value::Number(a), Value::Number(b)) => a.partial_cmp(b),
             (Value::String(a), Value::String(b)) => a.partial_cmp(b),
             (Value::Boolean(a), Value::Boolean(b)) => a.partial_cmp(b),
-            // Lists, maps, tuples, functions, regex, streams, and nil are not comparable
+            // Lists, maps, tuples, functions, regex, streams, modules, and nil are not comparable
             _ => None,
         }
     }
@@ -143,13 +144,13 @@ mod tests {
             default: None,
         }];
 
-        let body = Stmt::Return {
+        let body = Stmt::Expr(Expr::Return {
             values: vec![Expr::Literal(Literal::Number(
                 "42".to_string(),
                 Span::default(),
             ))],
             span: Span::default(),
-        };
+        });
 
         let func1 = FunctionValue {
             params: params.clone(),

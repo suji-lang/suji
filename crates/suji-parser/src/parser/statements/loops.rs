@@ -1,63 +1,8 @@
-use super::{ParseError, ParseResult, Parser};
+use super::{ParseResult, Parser};
 use suji_ast::ast::Stmt;
 use suji_lexer::token::{Span, Token};
 
 impl Parser {
-    /// Parse return statement: return expr?
-    pub(super) fn parse_return_statement(&mut self) -> ParseResult<Stmt> {
-        let span = self.previous().span.clone();
-
-        // If the next token ends the statement, this is a bare `return`
-        if self.check(Token::Newline) || self.check(Token::Semicolon) || self.is_at_end() {
-            return Ok(Stmt::Return {
-                values: Vec::new(),
-                span,
-            });
-        }
-
-        // Parse comma-separated expressions until newline/semicolon/end
-        let mut values = Vec::new();
-        loop {
-            values.push(self.expression()?);
-
-            if !self.match_token(Token::Comma) {
-                break;
-            }
-
-            if self.check(Token::Newline) || self.check(Token::Semicolon) || self.is_at_end() {
-                return Err(ParseError::Generic {
-                    message: "Trailing comma not allowed in return".to_string(),
-                });
-            }
-        }
-
-        Ok(Stmt::Return { values, span })
-    }
-
-    /// Parse break statement: break label?
-    pub(super) fn parse_break_statement(&mut self) -> ParseResult<Stmt> {
-        let span = self.previous().span.clone();
-        let label = if let Token::Identifier(_) = &self.peek().token {
-            let (name, _span) = self.consume_identifier()?;
-            Some(name)
-        } else {
-            None
-        };
-        Ok(Stmt::Break { label, span })
-    }
-
-    /// Parse continue statement: continue label?
-    pub(super) fn parse_continue_statement(&mut self) -> ParseResult<Stmt> {
-        let span = self.previous().span.clone();
-        let label = if let Token::Identifier(_) = &self.peek().token {
-            let (name, _span) = self.consume_identifier()?;
-            Some(name)
-        } else {
-            None
-        };
-        Ok(Stmt::Continue { label, span })
-    }
-
     /// Parse loop statement: loop (as label)? { ... } or loop through ...
     pub(super) fn parse_loop_statement(&mut self) -> ParseResult<Stmt> {
         let span = self.previous().span.clone();

@@ -130,5 +130,13 @@ pub fn suji_to_json_value(suji_value: &Value) -> Result<JsonValue, RuntimeError>
             value_type: "env".to_string(),
         }
         .into()),
+        Value::Module(handle) => Err(JsonError::GenerateError {
+            message: format!(
+                "Cannot serialize module '{}'. Import and use module members instead.",
+                handle.module_path
+            ),
+            value_type: "module".to_string(),
+        }
+        .into()),
     }
 }

@@ -1,0 +1,6 @@
+import std:println
+
+# Basic inclusive range
+result = 0..=5
+
+println(result)  # [0, 1, 2, 3, 4, 5]

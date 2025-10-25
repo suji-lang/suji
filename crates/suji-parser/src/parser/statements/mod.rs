@@ -9,17 +9,20 @@ impl Parser {
     pub fn statement(&mut self) -> ParseResult<Stmt> {
         // Return statement
         if self.match_token(Token::Return) {
-            return self.parse_return_statement();
+            let expr = self.parse_return_expr()?;
+            return Ok(Stmt::Expr(expr));
         }
 
         // Break statement
         if self.match_token(Token::Break) {
-            return self.parse_break_statement();
+            let expr = self.parse_break_expr()?;
+            return Ok(Stmt::Expr(expr));
         }
 
         // Continue statement
         if self.match_token(Token::Continue) {
-            return self.parse_continue_statement();
+            let expr = self.parse_continue_expr()?;
+            return Ok(Stmt::Expr(expr));
         }
 
         // Loop statements
@@ -49,6 +52,6 @@ impl Parser {
 
 // Re-export all statement parsing modules
 pub mod blocks;
-pub mod control_flow;
 pub mod expressions;
 pub mod imports;
+pub mod loops;

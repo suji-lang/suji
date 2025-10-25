@@ -196,6 +196,10 @@ mixed = ["hello", 42, true, [1, 2]]
 range = 0..5        # [0, 1, 2, 3, 4]
 descending = 5..0   # [5, 4, 3, 2, 1]
 
+# Inclusive ranges (include the end value)
+inclusive = 0..=5      # [0, 1, 2, 3, 4, 5]
+inclusive_desc = 10..=5  # [10, 9, 8, 7, 6, 5]
+
 # Indexing and slicing
 first = numbers[0]      # 1
 last = numbers[-1]      # 5
@@ -565,6 +569,30 @@ loop as outer {
 }
 ```
 
+### Guard Clauses with Short-Circuit
+
+Use logical operators to short-circuit into control flow for concise early exits:
+
+```suji
+# Early exit in loops
+count = 0
+loop {
+    count++
+    count == 5 && break
+}
+
+# Guard clause in functions
+validate = |x| {
+    x < 0 && return "negative"
+    x > 100 && return "too large"
+    "valid"
+}
+
+# Inverse with ||: execute right side only when left is false
+done = false
+done || return "wasn't done"
+```
+
 ### Match Expressions
 
 ```suji
@@ -694,6 +722,8 @@ import math:multiply as mul
 result = add(5, 3)  # 8
 area = mul(PI, 2)   # 6.28318
 ```
+
+Note: Modules are loaded lazily on first access and cached. This behavior is transparent to users and improves startup performance.
 
 ## Shell Integration
 
@@ -1215,3 +1245,4 @@ cargo test
 - **v0.1.15**: Error codes for all error types and better error handling. Various bugfixes.
 - **v0.1.16**: Export expressions (maps and leaf values), import path resolution (files and directories), special `__builtins__` import object, standard library directory (`std/`) with delegation to builtins.
 - **v0.1.17**: Match syntax changes (optional trailing commas for braced arms), new standard library modules: `std:time`, `std:uuid`, `std:encoding`, `std:math`, `std:crypto`.
+- **v0.1.18**: Lazy module loading; inclusive ranges (`..=`); complex indexing expressions; short-circuit to `break`/`continue`/`return` with `&&`/`||`.

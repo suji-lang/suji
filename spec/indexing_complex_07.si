@@ -1,0 +1,7 @@
+import std:println
+
+get_i = || 1
+get_j = || 0
+matrix = [[1, 2], [3, 4], [5, 6]]
+
+println(matrix[get_i()][get_j()])  # 3
