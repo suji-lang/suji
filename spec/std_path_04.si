@@ -1,0 +1,7 @@
+import std:println
+import std:path
+
+# Test extname
+ext = path:extname("file.txt")
+
+println(ext)  # .txt

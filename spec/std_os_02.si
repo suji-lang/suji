@@ -1,0 +1,10 @@
+import std:println
+import std:os
+
+tmp_dir = os:tmp_dir()
+home_dir = os:home_dir()
+work_dir = os:work_dir()
+pid = os:pid()
+result = (tmp_dir::length() > 0) && (home_dir::length() > 0) && (work_dir::length() > 0) && (pid > 0)
+
+println(result)  # true

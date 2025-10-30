@@ -97,6 +97,15 @@ pub enum RuntimeError {
     #[error("TOML conversion error: {message}")]
     TomlConversionError { message: String },
 
+    #[error("CSV parse error: {message}")]
+    CsvParseError {
+        message: String,
+        csv_input: Option<String>,
+    },
+
+    #[error("CSV generation error: {message}")]
+    CsvGenerateError { message: String, value_type: String },
+
     #[error("Map method error: {message}")]
     MapMethodError { method: String, message: String },
 

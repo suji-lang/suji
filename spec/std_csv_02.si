@@ -1,0 +1,6 @@
+import std:println
+import std:csv
+
+csv = csv:generate([["a", "b"], ["1", "2"]])
+
+println(csv::starts_with("a,b"))  # true

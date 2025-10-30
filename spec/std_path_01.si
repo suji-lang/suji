@@ -1,0 +1,7 @@
+import std:println
+import std:path
+
+# Test join function - verify result contains parts
+joined = path:join(["a", "b", "c"])
+
+println(joined::contains("a") && joined::contains("b") && joined::contains("c"))  # true

@@ -1,0 +1,27 @@
+# std:os module - provides operating system and process information
+import __builtins__:os_name
+import __builtins__:os_hostname
+import __builtins__:os_uptime_ms
+import __builtins__:os_tmp_dir
+import __builtins__:os_home_dir
+import __builtins__:os_work_dir
+import __builtins__:os_exit
+import __builtins__:os_pid
+import __builtins__:os_ppid
+import __builtins__:os_uid
+import __builtins__:os_gid
+
+export {
+    name: os_name,
+    hostname: os_hostname,
+    uptime_ms: os_uptime_ms,
+    tmp_dir: os_tmp_dir,
+    home_dir: os_home_dir,
+    work_dir: os_work_dir,
+    exit: os_exit,
+    pid: os_pid,
+    ppid: os_ppid,
+    uid: os_uid,
+    gid: os_gid,
+}
+

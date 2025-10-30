@@ -1,0 +1,7 @@
+import std:println
+import std:os
+
+name = os:name()
+is_valid = (name == "linux") || (name == "darwin") || (name == "windows")
+
+println(is_valid)  # true

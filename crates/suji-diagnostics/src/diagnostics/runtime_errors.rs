@@ -103,6 +103,8 @@ pub fn error_code_for_variant(error: &RuntimeError) -> u32 {
         RuntimeError::TomlParseError { .. } => RUNTIME_TOML_PARSE_ERROR,
         RuntimeError::TomlGenerateError { .. } => RUNTIME_TOML_GENERATE_ERROR,
         RuntimeError::TomlConversionError { .. } => RUNTIME_TOML_CONVERSION_ERROR,
+        RuntimeError::CsvParseError { .. } => RUNTIME_CSV_PARSE_ERROR,
+        RuntimeError::CsvGenerateError { .. } => RUNTIME_CSV_GENERATE_ERROR,
         RuntimeError::MapMethodError { .. } => RUNTIME_MAP_METHOD_ERROR,
         RuntimeError::StreamError { .. } => RUNTIME_STREAM_ERROR,
         RuntimeError::SerializationError { .. } => RUNTIME_SERIALIZATION_ERROR,
@@ -429,6 +431,26 @@ impl RuntimeErrorExt for RuntimeError {
                 ).with_suggestion("TOML keys must be strings".to_string())
                 .with_suggestion("TOML does not support nil values".to_string())
                 .with_suggestion("Check the data types being converted".to_string())
+                .with_suggestions(generate_category_suggestions(ErrorCategory::Serialization, self))
+            }
+            RuntimeError::CsvParseError { message, .. } => {
+                ErrorContext::new(
+                    error_code,
+                    "CSV parse error",
+                    message.clone(),
+                ).with_suggestion("CSV syntax: comma-separated values, one record per line".to_string())
+                .with_suggestion("Example: csv:parse('a,b,c\\n1,2,3', nil)".to_string())
+                .with_suggestion("Check for unclosed quotes or invalid delimiters".to_string())
+                .with_suggestions(generate_category_suggestions(ErrorCategory::Serialization, self))
+            }
+            RuntimeError::CsvGenerateError { message, .. } => {
+                ErrorContext::new(
+                    error_code,
+                    "CSV generation error",
+                    message.clone(),
+                ).with_suggestion("csv:generate expects a list of lists of strings".to_string())
+                .with_suggestion("Example: csv:generate([['a', 'b'], ['1', '2']], nil)".to_string())
+                .with_suggestion("All cells must be strings; convert numbers to strings first".to_string())
                 .with_suggestions(generate_category_suggestions(ErrorCategory::Serialization, self))
             }
             RuntimeError::SerializationError { message } => {

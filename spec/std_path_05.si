@@ -1,0 +1,7 @@
+import std:println
+import std:path
+
+# Test is_abs
+is_absolute = path:is_abs("/foo")
+
+println(is_absolute)  # true

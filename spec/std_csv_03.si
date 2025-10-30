@@ -1,0 +1,6 @@
+import std:println
+import std:csv
+
+rows = csv:parse("a|b\n1|2", "|")
+
+println(rows[0][1])  # b

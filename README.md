@@ -1,6 +1,6 @@
 # SUJI
 
-This is **suji**, a small, expressive language with dynamic but strong typing, higher‑order functions, pattern matching, built‑in string interpolation and regex, and seamless shell integration. It has a strong focus on pipes and pipelines with support for both shell-like `|` pipes as well as F#-like pipes, `|>` and `<|`.
+This is **suji**: a small, expressive language with dynamic but strong typing, higher‑order functions, pattern matching, built‑in string interpolation, regex, and seamless shell integration. It has a strong focus on pipes and pipelines with support for both shell-like `|` pipes and F#-like pipes, `|>` and `<|`.
 
 ```suji
 import std:io
@@ -46,24 +46,27 @@ For the full language tour see the User Guide: [`docs/USER_GUIDE.md`](docs/USER_
 Entry points:
 - Library: exposed via the crate graph under `crates/`
 - CLI: `crates/suji-cli/src/main.rs`
-- REPL: `crates/suji-repl/src/main.rs`
 
 ## Build
 
 Prerequisite: Rust stable (via `rustup`).
 
 ```bash
-cargo build            # debug
-cargo build --release  # optimized
+make build    # debug
+make release  # optimized
 ```
 
 ## Run
 
-Interpret a program file:
+Run a file:
 
 ```bash
 cargo run -- examples/hello.si
-# or after building in release:
+```
+
+Or, after a `make release`:
+
+```bash
 target/release/suji examples/hello.si
 ```
 
@@ -71,28 +74,20 @@ Start the REPL:
 
 ```bash
 cargo run
-# Exit: Ctrl-D
 ```
 
 ## Test
 
-Rust tests only:
+Tests are split into three categories:
 
 ```bash
-cargo test
+make rust_tests       # Rust unit and integration tests
+make verify_spec      # Language specification tests
+make verify_examples  # Examples verification
 ```
 
-Full suite (Rust + specs + examples):
+Or, for short:
 
 ```bash
 make test
-# or individually
-scripts/verify_spec.sh
-scripts/verify_examples.sh
-```
-
-## Lint
-
-```bash
-make lint
 ```

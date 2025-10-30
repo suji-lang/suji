@@ -194,4 +194,60 @@ pub fn register_all_builtins() {
         "crypto_hmac_sha256",
         builtin_crypto_hmac_sha256 as suji_runtime::builtins::BuiltinFn,
     );
+
+    // Register CSV functions
+    register_builtin(
+        "csv_parse",
+        builtin_csv_parse as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "csv_generate",
+        builtin_csv_generate as suji_runtime::builtins::BuiltinFn,
+    );
+
+    // Register OS functions
+    register_builtin(
+        "os_name",
+        builtin_os_name as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_hostname",
+        builtin_os_hostname as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_uptime_ms",
+        builtin_os_uptime_ms as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_tmp_dir",
+        builtin_os_tmp_dir as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_home_dir",
+        builtin_os_home_dir as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_work_dir",
+        builtin_os_work_dir as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_exit",
+        builtin_os_exit as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_pid",
+        builtin_os_pid as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_ppid",
+        builtin_os_ppid as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_uid",
+        builtin_os_uid as suji_runtime::builtins::BuiltinFn,
+    );
+    register_builtin(
+        "os_gid",
+        builtin_os_gid as suji_runtime::builtins::BuiltinFn,
+    );
 }

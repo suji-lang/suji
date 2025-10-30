@@ -1,0 +1,8 @@
+import std:println
+import std:path
+
+# Test dirname and basename
+dir = path:dirname("/foo/bar")
+base = path:basename("/foo/bar")
+
+println(dir + "/" + base)  # /foo/bar

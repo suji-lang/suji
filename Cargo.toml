@@ -10,7 +10,7 @@ default-members = [
 
 [package]
 name = "suji_lang"
-version = "0.1.18"
+version = "0.1.19"
 edition = "2024"
 default-run = "suji_root"
 
@@ -33,7 +33,7 @@ path = "crates/suji-cli/src/main.rs"
 
 [workspace.package]
 edition = "2024"
-version = "0.1.18"
+version = "0.1.19"
 authors = ["suji contributors"]
 
 [workspace.dependencies]
@@ -60,3 +60,7 @@ sha1 = "0.10"
 sha2 = "0.10"
 hmac = "0.12"
 digest = "0.10"
+csv = "1.4"
+sysinfo = "0.37"
+hostname = "0.4"
+libc = "0.2"

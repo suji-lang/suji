@@ -37,18 +37,22 @@ This guide covers the SUJI language: core concepts, syntax, standard library, an
   - [Deep Nesting](#deep-nesting)
   - [Optional Braces](#optional-braces)
 - [Standard Library](#standard-library)
-  - [JSON Module](#json-module)
-  - [YAML Module](#yaml-module)
-  - [TOML Module](#toml-module)
-  - [Random Module](#random-module)
-  - [Time Module](#time-module)
-  - [UUID Module](#uuid-module)
-  - [Encoding Module](#encoding-module)
-  - [Math Module](#math-module)
-  - [Crypto Module](#crypto-module)
-  - [env](#env)
-  - [io (Process Streams)](#io-process-streams)
-  - [print and println](#print-and-println)
+  - [JSON Parsing and Generation (`std:json`)](#json-parsing-and-generation-stdjson)
+  - [YAML Parsing and Generation (`std:yaml`)](#yaml-parsing-and-generation-stdyaml)
+  - [TOML Parsing and Generation (`std:toml`)](#toml-parsing-and-generation-stdtoml)
+  - [Random Number Generation (`std:random`)](#random-number-generation-stdrandom)
+  - [Time and Date Functions (`std:time`)](#time-and-date-functions-stdtime)
+  - [UUID Generation and Validation (`std:uuid`)](#uuid-generation-and-validation-stduuid)
+  - [Text Encoding and Decoding (`std:encoding`)](#text-encoding-and-decoding-stdencoding)
+  - [Mathematical Functions (`std:math`)](#mathematical-functions-stdmath)
+  - [Cryptographic Hashing (`std:crypto`)](#cryptographic-hashing-stdcrypto)
+  - [Operating System (`std:os`)](#operating-system-stdos)
+  - [Path Utilities (`std:path`)](#path-utilities-stdpath)
+  - [Environment File Loading (`std:dotenv`)](#environment-file-loading-stddotenv)
+  - [CSV Parsing and Generation (`std:csv`)](#csv-parsing-and-generation-stdcsv)
+  - [Environment Variables (`std:env`)](#environment-variables-stdenv)
+  - [I/O and Streams (`std:io`)](#io-and-streams-stdio)
+  - [Print Functions (`std:print`, `std:println`)](#print-functions-stdprint-stdprintln)
 - [Examples](#examples)
 - [Installation](#installation)
 - [CLI & REPL Usage](#cli--repl-usage)
@@ -805,7 +809,7 @@ process = |x| {
 
 ## Standard Library
 
-### JSON Module
+### JSON Parsing and Generation (`std:json`)
 
 ```suji
 import std:json
@@ -819,7 +823,17 @@ user = { name: "Bob", age: 25 }
 json_output = json:generate(user)
 ```
 
-### YAML Module
+**Available Functions:**
+- `parse(text)` → Parses JSON string into SUJI values (maps, lists, strings, numbers, booleans, nil)
+- `generate(value)` → Converts SUJI value to JSON string
+
+**Notes:**
+- Preserves number precision using decimal semantics
+- `nil` maps to JSON `null`
+- Maps become JSON objects; lists become JSON arrays
+- Raises a `RuntimeError` on malformed JSON
+
+### YAML Parsing and Generation (`std:yaml`)
 
 ```suji
 import std:yaml
@@ -833,7 +847,17 @@ config = { name: "Bob", settings: { theme: "dark" } }
 yaml_output = yaml:generate(config)
 ```
 
-### TOML Module
+**Available Functions:**
+- `parse(text)` → Parses YAML string into SUJI values
+- `generate(value)` → Converts SUJI value to YAML string
+
+**Notes:**
+- Supports nested structures and lists
+- `nil` maps to YAML `null`
+- More lenient parsing than JSON (unquoted strings, comments)
+- Raises a `RuntimeError` on malformed YAML
+
+### TOML Parsing and Generation (`std:toml`)
 
 ```suji
 import std:toml
@@ -847,7 +871,17 @@ config = { name: "Bob", active: true }
 toml_output = toml:generate(config)
 ```
 
-### Random Module
+**Available Functions:**
+- `parse(text)` → Parses TOML string into SUJI values
+- `generate(value)` → Converts SUJI value to TOML string
+
+**Notes:**
+- TOML is designed for configuration files
+- Supports tables (maps) and arrays (lists)
+- Keys must be valid TOML identifiers
+- Raises a `RuntimeError` on malformed TOML
+
+### Random Number Generation (`std:random`)
 
 ```suji
 import std:random
@@ -871,7 +905,22 @@ sampled = random:sample(items, 2)
 println(i)
 ```
 
-### Time Module
+**Available Functions:**
+- `seed(value)` → Seeds the RNG with a number for deterministic results
+- `random()` → Returns random number in [0, 1)
+- `integer(min, max)` → Returns random integer in [min, max)
+- `pick(list)` → Returns random element from list
+- `shuffle(list)` → Returns new list with elements in random order
+- `sample(list, n)` → Returns list of n random elements (without replacement)
+
+**Notes:**
+- RNG is thread-local and isolated per execution context
+- Without `seed()`, uses non-deterministic randomness
+- `pick()` raises error on empty list
+- `sample(list, n)` raises error if n > list length
+- `shuffle()` and `sample()` return new lists (original unchanged)
+
+### Time and Date Functions (`std:time`)
 
 Work with time, dates, and sleep:
 
@@ -901,7 +950,23 @@ formatted = time:format_iso(epoch, "Z")
 println("Formatted: ${formatted}")
 ```
 
-### UUID Module
+**Available Functions:**
+- `now()` → Returns map with current time information:
+  - `iso` - ISO-8601 formatted string
+  - `epoch_ms` - Milliseconds since Unix epoch
+  - `tz` - Timezone offset string (e.g., "+00:00")
+- `sleep(milliseconds)` → Pauses execution for given duration, returns nil
+- `parse_iso(iso_string)` → Parses ISO-8601 string, returns map like `now()`
+- `format_iso(epoch_ms, timezone)` → Formats epoch milliseconds as ISO-8601 string
+
+**Notes:**
+- All timestamps are in UTC unless otherwise specified
+- `sleep()` blocks the current execution thread
+- ISO-8601 format: `YYYY-MM-DDTHH:MM:SS.sssZ`
+- Timezone can be "Z" (UTC) or offset like "+05:30"
+- Raises a `RuntimeError` on invalid ISO-8601 strings
+
+### UUID Generation and Validation (`std:uuid`)
 
 Generate and validate UUIDs:
 
@@ -923,7 +988,19 @@ println(uuid:is_valid(id))                    # true
 println(uuid:is_valid("not-a-uuid"))          # false
 ```
 
-### Encoding Module
+**Available Functions:**
+- `v4()` → Generates random UUID (version 4)
+- `v5(namespace, name)` → Generates deterministic UUID (version 5) from namespace and name
+- `is_valid(uuid_string)` → Returns true if string is valid UUID format
+
+**Notes:**
+- UUIDs are returned as lowercase strings with hyphens
+- v4 uses cryptographically secure randomness
+- v5 is deterministic: same namespace+name always produces same UUID
+- Common namespaces: DNS (`6ba7b810-9dad-11d1-80b4-00c04fd430c8`), URL, OID, X.500
+- `is_valid()` accepts UUIDs with or without hyphens
+
+### Text Encoding and Decoding (`std:encoding`)
 
 Encode and decode text in various formats:
 
@@ -947,7 +1024,22 @@ encoded_url = encoding:percent_encode(query)
 println("URL: ${encoded_url}")  # "hello%20world%20%26%20stuff"
 ```
 
-### Math Module
+**Available Functions:**
+- `base64_encode(text)` → Encodes string to Base64
+- `base64_decode(encoded)` → Decodes Base64 string
+- `hex_encode(text)` → Encodes string to hexadecimal
+- `hex_decode(encoded)` → Decodes hexadecimal string (case-insensitive)
+- `percent_encode(text)` → URL/percent-encodes string (RFC 3986)
+- `percent_decode(encoded)` → Decodes percent-encoded string
+
+**Notes:**
+- All encoding functions work with UTF-8 strings
+- Base64 uses standard alphabet (not URL-safe variant)
+- Hex encoding produces lowercase output
+- Percent encoding encodes all non-alphanumeric characters except `-_.~`
+- Raises `RuntimeError::InvalidOperation` on malformed encoded input
+
+### Mathematical Functions (`std:math`)
 
 Mathematical constants and functions:
 
@@ -975,7 +1067,29 @@ radians = degrees * math:PI / 180
 println(math:sin(radians))     # 0.7071... (sin of 45 degrees)
 ```
 
-### Crypto Module
+**Available Constants:**
+- `PI` → π (3.14159265358979323846...)
+- `E` → Euler's number (2.71828182845904523536...)
+
+**Available Functions:**
+- `sin(x)` → Sine of x (x in radians)
+- `cos(x)` → Cosine of x (x in radians)
+- `tan(x)` → Tangent of x (x in radians)
+- `asin(x)` → Arcsine of x (returns radians), domain: [-1, 1]
+- `acos(x)` → Arccosine of x (returns radians), domain: [-1, 1]
+- `atan(x)` → Arctangent of x (returns radians)
+- `log(x)` → Natural logarithm (base e), domain: x > 0
+- `log10(x)` → Base-10 logarithm, domain: x > 0
+- `exp(x)` → e^x (exponential function)
+- `sqrt(x)` → Square root, domain: x ≥ 0
+
+**Notes:**
+- All trigonometric functions use radians (not degrees)
+- To convert degrees to radians: `radians = degrees * math:PI / 180`
+- Domain violations raise a `RuntimeError`
+- Results are decimal numbers (not IEEE-754 floats)
+
+### Cryptographic Hashing (`std:crypto`)
 
 Cryptographic hashing and HMAC:
 
@@ -1005,7 +1119,268 @@ match computed_sig == signature {
 }
 ```
 
-### env
+**Available Functions:**
+- `md5(text)` → MD5 hash (32-character hex string)
+- `sha1(text)` → SHA-1 hash (40-character hex string)
+- `sha256(text)` → SHA-256 hash (64-character hex string)
+- `sha512(text)` → SHA-512 hash (128-character hex string)
+- `hmac_sha256(key, message)` → HMAC-SHA256 (64-character hex string)
+
+**Notes:**
+- All hash functions return lowercase hexadecimal strings
+- MD5 and SHA-1 are cryptographically weak; use SHA-256 or SHA-512 for security
+- HMAC provides message authentication with a secret key
+- All functions accept UTF-8 strings as input
+- Deterministic: same input always produces same output
+
+### Operating System (`std:os`)
+
+Access operating system information and process utilities:
+
+```suji
+import std:os
+import std:println
+
+# Get OS name
+os_name = os:name()  # "linux", "darwin", or "windows"
+println("Running on: ${os_name}")
+
+# Get hostname
+hostname = os:hostname()
+println("Hostname: ${hostname}")
+
+# Get process information
+pid = os:pid()
+ppid = os:ppid()
+println("PID: ${pid}, Parent PID: ${ppid}")
+
+# Get directories
+tmp = os:tmp_dir()
+home = os:home_dir()
+work = os:work_dir()
+println("Temp dir: ${tmp}")
+println("Home dir: ${home}")
+println("Working dir: ${work}")
+
+# Get system uptime
+uptime = os:uptime_ms()
+uptime_seconds = uptime / 1000
+println("System uptime: ${uptime_seconds} seconds")
+
+# Get user/group IDs (Unix-like systems)
+uid = os:uid()
+gid = os:gid()
+println("UID: ${uid}, GID: ${gid}")
+```
+
+**Available Functions:**
+- `name()` → Returns OS name: `"linux"`, `"darwin"`, or `"windows"`
+- `hostname()` → Returns system hostname as string
+- `uptime_ms()` → Returns system uptime in milliseconds since boot
+- `tmp_dir()` → Returns path to system temporary directory
+- `home_dir()` → Returns path to user's home directory
+- `work_dir()` → Returns current working directory path
+- `exit(code)` → Terminates process with given exit code (never returns)
+- `pid()` → Returns current process ID
+- `ppid()` → Returns parent process ID
+- `uid()` → Returns user ID (Unix/macOS: actual UID; Windows: returns 0)
+- `gid()` → Returns group ID (Unix/macOS: actual GID; Windows: returns 0)
+
+**Notes:**
+- `uid()` and `gid()` return `0` on Windows (platform placeholder)
+- `exit(code)` terminates the entire process immediately
+- All directory paths are returned with platform-appropriate separators
+
+### Path Utilities (`std:path`)
+
+Cross-platform path manipulation utilities:
+
+```suji
+import std:path
+import std:println
+
+# Join path components
+path = path:join(["home", "user", "documents", "file.txt"])
+println(path)  # "home/user/documents/file.txt" (Unix) or "home\user\documents\file.txt" (Windows)
+
+# Get directory and filename
+full_path = "/home/user/documents/report.pdf"
+dir = path:dirname(full_path)   # "/home/user/documents"
+file = path:basename(full_path)  # "report.pdf"
+println("Directory: ${dir}")
+println("Filename: ${file}")
+
+# Get file extension
+ext = path:extname("report.pdf")  # ".pdf"
+println("Extension: ${ext}")
+
+# Check if path is absolute
+is_abs_unix = path:is_abs("/home/user")     # true (Unix)
+is_abs_win = path:is_abs("C:\\Users\\user")  # true (Windows)
+is_abs_rel = path:is_abs("documents/file")  # false
+println("Is absolute: ${is_abs_unix}")
+
+# Normalize paths (resolve . and ..)
+normalized = path:normalize("a/b/../c/./d")  # "a/c/d"
+println("Normalized: ${normalized}")
+
+# Handle edge cases
+hidden_ext = path:extname(".bashrc")  # "" (hidden files have no extension)
+no_ext = path:extname("README")       # ""
+multi_ext = path:extname("archive.tar.gz")  # ".gz"
+```
+
+**Available Functions:**
+- `join(parts_list)` → Joins path components with platform separator
+- `dirname(path)` → Returns directory portion of path
+- `basename(path)` → Returns filename portion of path
+- `extname(path)` → Returns file extension (including dot), or empty string
+- `normalize(path)` → Resolves `.` and `..`, removes redundant separators
+- `is_abs(path)` → Returns true if path is absolute
+
+**Notes:**
+- Automatically detects platform using `std:os:name()`
+- Unix/macOS use `/` separator; Windows uses `\` separator
+- `extname()` returns empty string for hidden files (e.g., `.bashrc`)
+- `normalize()` is purely lexical; does not resolve symlinks or check filesystem
+- Empty path `""` is treated as current directory where applicable
+
+### Environment File Loading (`std:dotenv`)
+
+Load environment variables from `.env` files into the process environment:
+
+```suji
+import std:dotenv
+import std:env
+import std:println
+
+# Load .env file (default: ".env" in current directory)
+loaded = dotenv:load(nil, nil)  # Uses defaults: path=".env", override=false
+println("Loaded keys: ${loaded::keys()}")
+
+# Access loaded variables
+db_url = env:var::get("DATABASE_URL", "not set")
+println("Database URL: ${db_url}")
+
+# Load from custom path
+config = dotenv:load(".env.production", nil)
+println("Loaded ${config::length()} variables")
+
+# Override existing environment variables
+env:var["EXISTING_KEY"] = "original_value"
+dotenv:load(".env", false)  # Will NOT override EXISTING_KEY
+println(env:var["EXISTING_KEY"])  # "original_value"
+
+dotenv:load(".env", true)   # WILL override EXISTING_KEY
+println(env:var["EXISTING_KEY"])  # New value from .env file
+```
+
+**Function:**
+- `load(path, override)` → Loads environment variables from file
+  - `path` (default: `".env"`) - Path to env file
+  - `override` (default: `false`) - Whether to override existing variables
+  - Returns a map of keys that were loaded
+
+**Parsing Rules:**
+- Format: `KEY=VALUE` (one per line)
+- Lines starting with `#` are comments (ignored)
+- Blank lines are ignored
+- Whitespace around keys and values is trimmed
+- Lines without `=` are silently skipped
+- Empty keys (after trimming) are skipped
+- Values are raw strings (no quote parsing or variable expansion)
+
+**Error Handling:**
+- Missing file returns empty map `{}` (graceful degradation)
+- File read errors raise `RuntimeError::StreamError`
+- Malformed lines are silently skipped
+
+**Example .env file:**
+```
+# Database configuration
+DATABASE_URL=postgresql://localhost:5432/mydb
+DATABASE_POOL_SIZE=10
+
+# API settings
+API_KEY=secret-key-here
+API_TIMEOUT=30
+```
+
+### CSV Parsing and Generation (`std:csv`)
+
+Parse and generate CSV data with proper handling of quotes, escapes, and custom delimiters:
+
+```suji
+import std:csv
+import std:println
+
+# Parse CSV string
+csv_text = "name,age,city\nAlice,30,NYC\nBob,25,LA"
+rows = csv:parse(csv_text, nil)  # nil uses default delimiter ","
+println(rows::length())  # 3
+println(rows[0])  # ["name", "age", "city"]
+println(rows[1])  # ["Alice", "30", "NYC"]
+
+# Generate CSV from data
+data = [
+    ["name", "age", "city"],
+    ["Alice", "30", "NYC"],
+    ["Bob", "25", "LA"]
+]
+csv_output = csv:generate(data, nil)  # nil uses default delimiter ","
+println(csv_output)
+# name,age,city
+# Alice,30,NYC
+# Bob,25,LA
+
+# Round-trip example
+original = "a,b,c\n1,2,3"
+parsed = csv:parse(original, nil)
+regenerated = csv:generate(parsed, nil)
+# regenerated matches original (modulo trailing newline)
+
+# Custom delimiter (pipe-separated)
+psv_text = "name|age|city\nAlice|30|NYC"
+rows = csv:parse(psv_text, "|")
+println(rows[0])  # ["name", "age", "city"]
+
+# Handle quoted fields with embedded delimiters and newlines
+complex = '"Smith, John",42,"New\nYork"'
+parsed = csv:parse(complex, nil)
+println(parsed[0][0])  # "Smith, John" (comma preserved)
+println(parsed[0][2])  # "New\nYork" (newline preserved)
+
+# Generate with proper quoting
+data_with_commas = [["Last, First", "30", "City"]]
+output = csv:generate(data_with_commas, nil)
+# Output: "Last, First",30,City
+```
+
+**Available Functions:**
+- `parse(text, delimiter)` → Parses CSV text into list of rows
+  - `text` - CSV string to parse
+  - `delimiter` (default: `","`) - Single-character delimiter
+  - Returns list of lists (rows of string fields)
+
+- `generate(rows, delimiter)` → Generates CSV text from data
+  - `rows` - List of lists (each inner list is a row)
+  - `delimiter` (default: `","`) - Single-character delimiter
+  - Returns CSV string
+
+**Notes:**
+- All parsed values are strings; use `string::to_number()` for numeric conversion
+- `generate()` requires all rows to be lists of strings (raises error otherwise)
+- Handles quoted fields, escaped quotes, and newlines within fields correctly
+- Delimiter must be a single character string
+- Empty input: `parse("")` returns `[]`, `generate([])` returns `""`
+
+**Error Cases:**
+- Malformed CSV raises `RuntimeError::InvalidOperation`
+- Non-list rows raise `RuntimeError::TypeError`
+- Non-string cells raise `RuntimeError::TypeError`
+- Invalid delimiter (non-string or multi-char) raises `RuntimeError::TypeError`
+
+### Environment Variables (`std:env`)
 
 #### Environment variables
 
@@ -1050,7 +1425,7 @@ loop through argv::keys() with k {
 }
 ```
 
-### io (Process Streams)
+### I/O and Streams (`std:io`)
 
 Access standard streams as `stream` values. Operations may block.
 
@@ -1086,7 +1461,7 @@ content = f::read_all()
 f::close()
 ```
 
-### print and println
+### Print Functions (`std:print`, `std:println`)
 
 Convenience output functions that write to streams. Default target is `std:io:stdout`.
 
@@ -1246,3 +1621,4 @@ cargo test
 - **v0.1.16**: Export expressions (maps and leaf values), import path resolution (files and directories), special `__builtins__` import object, standard library directory (`std/`) with delegation to builtins.
 - **v0.1.17**: Match syntax changes (optional trailing commas for braced arms), new standard library modules: `std:time`, `std:uuid`, `std:encoding`, `std:math`, `std:crypto`.
 - **v0.1.18**: Lazy module loading; inclusive ranges (`..=`); complex indexing expressions; short-circuit to `break`/`continue`/`return` with `&&`/`||`.
+- **v0.1.19**: New standard library modules: `std:os` (OS/process information), `std:path` (cross-platform path utilities), `std:dotenv` (.env file loader), `std:csv` (CSV parsing/generation).

@@ -11,8 +11,11 @@ pub fn get_std_sources() -> HashMap<PathBuf, &'static str> {
     let mut map = HashMap::new();
     map.insert(PathBuf::from("yaml.si"), include_str!("../../std/yaml.si"));
     map.insert(PathBuf::from("crypto.si"), include_str!("../../std/crypto.si"));
+    map.insert(PathBuf::from("dotenv.si"), include_str!("../../std/dotenv.si"));
     map.insert(PathBuf::from("print.si"), include_str!("../../std/print.si"));
+    map.insert(PathBuf::from("csv.si"), include_str!("../../std/csv.si"));
     map.insert(PathBuf::from("math.si"), include_str!("../../std/math.si"));
+    map.insert(PathBuf::from("path.si"), include_str!("../../std/path.si"));
     map.insert(PathBuf::from("json.si"), include_str!("../../std/json.si"));
     map.insert(PathBuf::from("uuid.si"), include_str!("../../std/uuid.si"));
     map.insert(PathBuf::from("toml.si"), include_str!("../../std/toml.si"));
@@ -21,6 +24,7 @@ pub fn get_std_sources() -> HashMap<PathBuf, &'static str> {
     map.insert(PathBuf::from("encoding.si"), include_str!("../../std/encoding.si"));
     map.insert(PathBuf::from("println.si"), include_str!("../../std/println.si"));
     map.insert(PathBuf::from("io.si"), include_str!("../../std/io.si"));
+    map.insert(PathBuf::from("os.si"), include_str!("../../std/os.si"));
     map.insert(PathBuf::from("random.si"), include_str!("../../std/random.si"));
     map
 }

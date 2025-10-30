@@ -1,0 +1,13 @@
+import std:println
+import std:dotenv
+import std:io
+import std:os
+
+tmp_path = os:tmp_dir() + "/.env.test_spec_01"
+s = io:open(tmp_path)
+s::write("TEST_KEY=test_value\n")
+s::close()
+
+loaded = dotenv:load(tmp_path, false)
+
+println(loaded["TEST_KEY"])  # test_value

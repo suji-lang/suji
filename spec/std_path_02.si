@@ -1,0 +1,7 @@
+import std:println
+import std:path
+
+# Test normalize with . and ..
+normalized = path:normalize("a/./b/../c")
+
+println(normalized)  # a/c

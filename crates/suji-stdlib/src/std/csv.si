@@ -1,0 +1,16 @@
+# std:csv module - CSV parsing and generation
+import __builtins__:csv_parse
+import __builtins__:csv_generate
+
+parse = |text, delimiter = ","| {
+    csv_parse(text, delimiter)
+}
+
+generate = |rows, delimiter = ","| {
+    csv_generate(rows, delimiter)
+}
+
+export {
+    parse: parse,
+    generate: generate,
+}

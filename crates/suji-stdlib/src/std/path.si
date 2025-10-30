@@ -1,0 +1,206 @@
+# std:path module - cross-PLATFORM path utilities (pure SUJI)
+import std:os
+
+PLATFORM = os:name()
+SEPARATOR = match PLATFORM {
+    "windows" => "\\",
+    _ => "/",
+}
+
+# Check if a path is absolute
+is_abs = |path| {
+    path::length() == 0 && return false
+
+    match PLATFORM {
+        "windows" => {
+            # Windows: C:\ or C:/ or \\ (UNC)
+            # Match drive letter (C:\, D:/) or UNC path (\\server\share)
+            path ~ /^[A-Za-z]:[\\\/]/ || path ~ /^\\\\/
+        },
+        _ => {
+            # Unix: starts with /
+            path::starts_with("/")
+        },
+    }
+}
+
+# Join path parts with platform separator
+join = |parts| {
+    match parts::length() {
+        0 => return "",
+        1 => return parts[0],
+    }
+
+    result = ""
+    first = true
+
+    loop through parts with part {
+        match is_abs(part) || first {
+            true => {
+                result = part
+                first = false
+                continue
+            }
+        }
+
+        # Don't add separator if result already ends with one
+        match result::ends_with(SEPARATOR) {
+            true => result = result + part,
+            false => result = result + SEPARATOR + part,
+        }
+    }
+
+    result
+}
+
+# Trim trailing separators (but preserve root)
+trim_separator = |path| {
+    loop {
+        match path::length() {
+            0 | 1 => return path,
+        }
+
+        match path[-1] == SEPARATOR {
+            true => path = path[:-1],
+            false => break,
+        }
+    }
+
+    path
+}
+
+# Find last index of separator in path
+last_separator = |path, separator=SEPARATOR| {
+    last_sep = -1
+
+    loop through 0..path::length() with i {
+        match path[i] == separator {
+            true => last_sep = i,
+        }
+    }
+
+    last_sep
+}
+
+# Get the directory name (parent directory) of a path
+dirname = |path| {
+    path::length() == 0 && return "."
+    path = path |> trim_separator
+    path::contains(SEPARATOR) || return "."
+
+    # Find last separator
+    last_sep = last_separator(path)
+
+    # Windows: preserve drive letter for root paths
+    match PLATFORM == "windows" && last_sep == 2 && path[1] == ":" {
+        true => return path[0:3],
+    }
+
+    match last_sep == 0 {
+        true => "/",
+        false => path[0:last_sep],
+    }
+}
+
+# Get the base filename of a path
+basename = |path| {
+    path::length() == 0 && return ""
+    path = trim_separator(path)
+    path::length() == 1 && return path
+
+    last_sep = last_separator(path)
+    last_sep == -1 && return path
+
+    path[last_sep + 1:]
+}
+
+# Get the file extension
+extname = |path| {
+    base = basename(path)
+    base::length() == 0 && return ""
+    last_dot = last_separator(base, ".")
+
+    # No dot, or dot is first character (hidden file)
+    match last_dot <= 0 {
+        true => "",
+        false => base[last_dot:],
+    }
+}
+
+# Normalize a path by resolving . and .. segments
+normalize = |path| {
+    path::length() == 0 && return "."
+
+    absolute = is_abs(path)
+    root = ""
+    work_path = path
+
+    match absolute {
+        true => {
+            match PLATFORM {
+                "windows" => {
+                    match path::starts_with("\\\\") {
+                        true => {
+                            root = "\\\\"
+                            work_path = path[2:]
+                        },
+                        false => {
+                            # Drive letter: X:\
+                            root = path[0:3]
+                            work_path = path[3:]
+                        },
+                    }
+                },
+                _ => {
+                    root = "/"
+                    work_path = path[1:]
+                },
+            }
+        },
+    }
+
+    stack = []
+    parts = work_path::split(SEPARATOR)
+
+    loop through parts with part {
+        (part::length() == 0 || part == ".") && continue
+
+        match part {
+            ".." => {
+                match stack::length() {
+                    0 => {
+                        match absolute {
+                            false => stack::push(part),
+                        }
+                    },
+                    _ => {
+                        match stack[-1] {
+                            ".." => stack::push(part),
+                            _ => stack::pop(),
+                        }
+                    },
+                }
+            },
+            _ => stack::push(part),
+        }
+    }
+
+    match stack::length() {
+        0 => {
+            match root::length() {
+                0 => ".",
+                _ => root,
+            }
+        },
+        _ => root + stack::join(SEPARATOR),
+    }
+}
+
+export {
+    is_abs: is_abs,
+    join: join,
+    dirname: dirname,
+    basename: basename,
+    extname: extname,
+    normalize: normalize,
+}

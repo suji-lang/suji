@@ -1,0 +1,66 @@
+# std:dotenv module - load environment variables from .env files (pure SUJI)
+import std:io
+import std:env
+
+# Parse a single line, return nil or {key: "...", value: "..."}
+parse_line = |line| {
+    line = line::trim()
+
+    match {
+        line::length() == 0 => return nil,
+        line::starts_with("#") => return nil,
+    }
+
+    # Find first '=' delimiter
+    eq_idx = line::index_of("=")
+    eq_idx == -1 && return nil
+
+    # Split key/value at '='
+    key = line[0:eq_idx]::trim()
+    value = line[eq_idx + 1:]::trim()
+
+    match {
+        key::length() == 0 => return nil,
+        value::length() == 0 => return nil,
+    }
+
+    return { "key": key, "value": value }
+}
+
+# Load environment variables from a .env file
+#   path: path to .env file (default: ".env")
+#   override: whether to override existing environment variables (default: false)
+# Returns: map of keys that were loaded
+load = |path=".env", override=false| {
+    loaded = {}
+    stream = io:open(path)
+    lines = stream::read_lines()
+    stream::close()
+
+    loop through lines with line {
+        parsed = parse_line(line)
+
+        match parsed {
+            nil => continue,
+            _ => {
+                key = parsed:key
+                value = parsed:value
+
+                # Only set if: override=true OR key doesn't exist in env:var
+                should_set = override || !env:var::contains(key)
+
+                match should_set {
+                    true => {
+                        env:var[key] = value
+                        loaded[key] = value
+                    }
+                }
+            }
+        }
+    }
+
+    loaded
+}
+
+export { load: load }
+

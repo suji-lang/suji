@@ -1,0 +1,15 @@
+import std:println
+import std:dotenv
+import std:env
+import std:io
+import std:os
+
+tmp_path = os:tmp_dir() + "/.env.test_spec_03"
+s = io:open(tmp_path)
+s::write("TEST_KEY=new_value\n")
+s::close()
+
+env:var["TEST_KEY"] = "original"
+dotenv:load(tmp_path, true)
+
+println(env:var["TEST_KEY"])  # new_value
