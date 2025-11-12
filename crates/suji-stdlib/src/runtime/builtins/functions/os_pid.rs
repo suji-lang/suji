@@ -1,6 +1,6 @@
 //! Built-in: os:pid() -> number (process ID).
 
-use suji_runtime::value::{DecimalNumber, RuntimeError, Value};
+use suji_values::value::{DecimalNumber, RuntimeError, Value};
 
 /// Returns the current process ID.
 pub fn builtin_os_pid(args: &[Value]) -> Result<Value, RuntimeError> {

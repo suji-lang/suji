@@ -1,6 +1,6 @@
 [package]
 name = "suji-stdlib"
-version = "0.1.19"
+version = "0.1.20"
 edition = "2024"
 build = "build.rs"
 
@@ -16,9 +16,11 @@ random = []
 
 [dependencies]
 suji-ast = { path = "../suji-ast" }
+suji-interpreter = { path = "../suji-interpreter" }
 suji-lexer = { path = "../suji-lexer" }
-suji-parser = { path = "../suji-parser" }
 suji-runtime = { path = "../suji-runtime" }
+suji-parser = { path = "../suji-parser" }
+suji-values = { path = "../suji-values" }
 serde_json = { workspace = true, optional = false }
 serde_yaml2 = { workspace = true, optional = false }
 toml = { workspace = true, optional = false }

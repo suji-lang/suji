@@ -1,8 +1,8 @@
-use suji_lang::runtime::value::DecimalNumber;
+use suji_values::DecimalNumber;
 mod common;
 
 use common::{eval_program, eval_string_expr};
-use suji_lang::runtime::value::Value;
+use suji_values::Value;
 
 #[test]
 fn test_method_calls() {
@@ -96,7 +96,8 @@ fn test_method_error_handling() {
     assert!(eval_string_expr(r#""hello"::contains(42)"#).is_err());
     assert!(eval_string_expr(r#""hello"::replace("world")"#).is_err());
     assert!(eval_string_expr(r#""hello"::repeat(-1)"#).is_err());
-    assert!(eval_string_expr(r#""hello"::trim("test")"#).is_err());
+    assert!(eval_string_expr(r#""hello"::trim("a", "b")"#).is_err()); // Too many args
+    assert!(eval_string_expr(r#""hello"::trim(42)"#).is_err()); // Wrong type
     assert!(eval_string_expr(r#""hello"::upper("test")"#).is_err());
     assert!(eval_string_expr(r#""hello"::lower("test")"#).is_err());
     assert!(eval_string_expr(r#""hello"::reverse("test")"#).is_err());

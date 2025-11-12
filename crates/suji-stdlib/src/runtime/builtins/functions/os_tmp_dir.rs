@@ -1,6 +1,6 @@
 //! Built-in: os:tmp_dir() -> string (temporary directory path).
 
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Returns the platform-specific temporary directory path.
 pub fn builtin_os_tmp_dir(args: &[Value]) -> Result<Value, RuntimeError> {

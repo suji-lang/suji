@@ -1,7 +1,7 @@
 //! Built-in: toml:generate(value) -> string.
 
 use super::super::toml::suji_to_toml_value;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Convert SUJI value to TOML string.
 pub fn builtin_toml_generate(args: &[Value]) -> Result<Value, RuntimeError> {
@@ -44,7 +44,7 @@ pub fn builtin_toml_generate(args: &[Value]) -> Result<Value, RuntimeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_runtime::value::DecimalNumber;
+    use suji_values::value::DecimalNumber;
 
     #[test]
     fn test_toml_generate_simple_values() {
@@ -89,11 +89,11 @@ mod tests {
     fn test_toml_generate_maps() {
         let mut map = indexmap::IndexMap::new();
         map.insert(
-            suji_runtime::value::MapKey::String("name".to_string()),
+            suji_values::value::MapKey::String("name".to_string()),
             Value::String("Alice".to_string()),
         );
         map.insert(
-            suji_runtime::value::MapKey::String("age".to_string()),
+            suji_values::value::MapKey::String("age".to_string()),
             Value::Number(DecimalNumber::from_i64(30)),
         );
 
@@ -120,7 +120,7 @@ mod tests {
     fn test_toml_generate_non_string_map_key_error() {
         let mut map = indexmap::IndexMap::new();
         map.insert(
-            suji_runtime::value::MapKey::Number(suji_runtime::value::OrderedDecimal::new(
+            suji_values::value::MapKey::Number(suji_values::value::OrderedDecimal::new(
                 rust_decimal::Decimal::from(42),
             )),
             Value::String("value".to_string()),

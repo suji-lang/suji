@@ -1,4 +1,4 @@
-use suji_lang::runtime::value::{DecimalNumber, Value};
+use suji_values::{DecimalNumber, Value};
 
 mod common;
 use common::{eval_program, eval_string_expr};

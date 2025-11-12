@@ -1,4 +1,4 @@
-use suji_lang::ast::{BinaryOp, Expr, Literal, Stmt};
+use suji_ast::{BinaryOp, Expr, Literal, Stmt};
 mod common;
 use common::{eval_program, parse_expression};
 

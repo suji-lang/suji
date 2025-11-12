@@ -4,7 +4,7 @@ use super::types::JsonError;
 use indexmap::IndexMap;
 use rust_decimal::prelude::ToPrimitive;
 use serde_json::{Map as JsonMap, Value as JsonValue};
-use suji_runtime::value::{DecimalNumber, MapKey, RuntimeError, Value};
+use suji_values::value::{DecimalNumber, MapKey, RuntimeError, Value};
 
 /// Convert JSON value to SUJI value
 pub fn json_to_suji_value(json_value: JsonValue) -> Result<Value, RuntimeError> {

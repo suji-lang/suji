@@ -1,6 +1,6 @@
 //! Built-in: csv:generate(rows, delimiter) -> string.
 
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Generate CSV string from SUJI list of lists.
 pub fn builtin_csv_generate(args: &[Value]) -> Result<Value, RuntimeError> {
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn test_csv_generate_non_string_cells() {
         let rows = Value::List(vec![Value::List(vec![
-            Value::Number(suji_runtime::value::DecimalNumber::parse("1").unwrap()),
+            Value::Number(suji_values::value::DecimalNumber::parse("1").unwrap()),
             Value::String("b".to_string()),
         ])]);
         let result = builtin_csv_generate(&[rows]);

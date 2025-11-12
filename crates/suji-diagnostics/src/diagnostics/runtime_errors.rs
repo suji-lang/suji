@@ -1,6 +1,6 @@
 use super::error_codes::*;
 use super::error_template::ErrorTemplate;
-use suji_runtime::value::RuntimeError;
+use suji_values::RuntimeError;
 
 /// Trait for converting runtime errors to diagnostic templates
 pub trait ErrorTemplateRouter {
@@ -116,6 +116,7 @@ pub fn error_code_for_variant(error: &RuntimeError) -> u32 {
         RuntimeError::DestructureTypeError => RUNTIME_DESTRUCTURE_TYPE_ERROR,
         RuntimeError::DestructureArityMismatch { .. } => RUNTIME_DESTRUCTURE_ARITY_MISMATCH,
         RuntimeError::DestructureInvalidTarget { .. } => RUNTIME_DESTRUCTURE_INVALID_TARGET,
+        RuntimeError::Parse(_) => PARSE_GENERIC_ERROR,
         // WithSpan wraps another error, unwrap and recurse
         RuntimeError::WithSpan { error, .. } => error_code_for_variant(error),
     }
@@ -548,6 +549,14 @@ impl RuntimeErrorExt for RuntimeError {
                 ).with_suggestion(format!("Cannot concatenate {} and {}", left_type, right_type))
                 .with_suggestion("List concatenation requires both operands to be lists".to_string())
                 .with_suggestion("Use list::push() to add individual items to a list".to_string())
+            }
+            // Parse errors that bubble up to runtime
+            RuntimeError::Parse(parse_error) => {
+                ErrorContext::new(
+                    error_code,
+                    "Parse error",
+                    format!("{}", parse_error),
+                ).with_suggestion("Check syntax: missing semicolons, unmatched braces, etc.".to_string())
             }
             // WithSpan wraps another error, unwrap and recurse
             RuntimeError::WithSpan { error, .. } => error.to_error_context(),

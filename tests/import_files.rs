@@ -5,20 +5,35 @@ use std::rc::Rc;
 
 use tempfile::tempdir;
 
-use suji_lang::parser::parse_program;
-use suji_lang::runtime::builtins::setup_global_env;
-use suji_lang::runtime::env::Env;
-use suji_lang::runtime::eval::eval_program_with_modules;
-use suji_lang::runtime::module::ModuleRegistry;
-use suji_lang::runtime::value::Value;
+use suji_interpreter::{AstInterpreter, eval_module_source_callback};
+use suji_parser::parse_program;
+use suji_runtime::{Executor, ModuleRegistry, setup_global_env};
+use suji_values::Env;
+use suji_values::Value;
 
 fn eval_in_dir(dir: &PathBuf, source: &str) -> Result<Option<Value>, Box<dyn std::error::Error>> {
     let stmts = parse_program(source)?;
     let env = Rc::new(Env::new());
     setup_global_env(&env);
-    let registry = ModuleRegistry::new();
+
+    // Register builtins BEFORE creating the module registry
+    suji_stdlib::runtime::builtins::register_all_builtins();
+    let mut registry = ModuleRegistry::new();
+    registry.set_source_evaluator(eval_module_source_callback);
+    suji_stdlib::setup_module_registry(&mut registry);
     registry.set_base_dir(dir);
-    Ok(eval_program_with_modules(&stmts, env, &registry)?)
+
+    // Use AstInterpreter to evaluate statements
+    let interpreter = AstInterpreter;
+    let mut last_value = None;
+    for stmt in &stmts {
+        match interpreter.execute_stmt(stmt, env.clone(), &registry) {
+            Ok(Some(v)) => last_value = Some(v),
+            Ok(None) => {}
+            Err(e) => return Err(e.into()),
+        }
+    }
+    Ok(last_value)
 }
 
 #[test]

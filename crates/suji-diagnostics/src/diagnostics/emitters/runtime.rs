@@ -1,4 +1,4 @@
-use suji_runtime::value::RuntimeError;
+use suji_values::RuntimeError;
 
 use crate::diagnostics::context::DiagnosticContext;
 use crate::diagnostics::error_builder::ErrorBuilder;

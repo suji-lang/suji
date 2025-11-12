@@ -1,0 +1,17 @@
+[package]
+name = "suji-values"
+version = "0.1.20"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+suji-ast = { path = "../suji-ast" }
+suji-parser = { path = "../suji-parser" }
+regex = { workspace = true }
+rust_decimal = { workspace = true }
+indexmap = { workspace = true }
+once_cell = { workspace = true }
+thiserror = { workspace = true }
+

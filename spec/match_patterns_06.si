@@ -1,0 +1,9 @@
+import std:println
+
+x = -5
+result = match x {
+    -10 | -5 | 0 => "hit",
+    _ => "miss",
+}
+
+println(result)  # hit

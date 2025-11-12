@@ -1,7 +1,7 @@
 //! Adapter to connect virtual_std to suji-runtime's ModuleRegistry
 
 use super::virtual_std::{self, StdResolution};
-use suji_runtime::module::VirtualStdResult;
+use suji_runtime::VirtualStdResult;
 
 /// Resolver function that adapts virtual_std API to ModuleRegistry's callback type
 pub fn virtual_std_resolver(segments: &[&str]) -> Option<VirtualStdResult> {

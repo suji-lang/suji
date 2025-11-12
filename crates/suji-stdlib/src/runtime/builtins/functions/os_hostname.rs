@@ -1,6 +1,6 @@
 //! Built-in: os:hostname() -> string (system hostname).
 
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Returns the system hostname.
 pub fn builtin_os_hostname(args: &[Value]) -> Result<Value, RuntimeError> {

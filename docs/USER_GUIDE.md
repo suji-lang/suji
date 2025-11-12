@@ -184,6 +184,11 @@ words = text::split()             # ["hello", "world"]
 upper = text::upper()             # "HELLO WORLD"
 reversed = text::reverse()        # "dlrow olleh"
 contains_world = text::contains("world")  # true
+
+# Trim with optional custom character set
+padded = "***hello***world***"
+trimmed = padded::trim("*")       # "hello***world" (only trims edges)
+whitespace = "  hello  "::trim()  # "hello" (default whitespace trim)
 ```
 
 ### Lists
@@ -1450,15 +1455,21 @@ Open files are streams as well:
 ```suji
 import std:io
 
-# Write
-out = io:open("output.txt")
+# Open with create and truncate controls (defaults: create=false, truncate=false)
+# Create file if it doesn't exist
+out = io:open("output.txt", true)
 out::write("Hello, world!\n")
 out::close()
 
-# Read
+# Read existing file (will error if file doesn't exist since create defaults to false)
 f = io:open("output.txt")
 content = f::read_all()
 f::close()
+
+# Truncate existing file (empty it before writing)
+out2 = io:open("output.txt", false, true)
+out2::write("New content\n")
+out2::close()
 ```
 
 ### Print Functions (`std:print`, `std:println`)
@@ -1622,3 +1633,4 @@ cargo test
 - **v0.1.17**: Match syntax changes (optional trailing commas for braced arms), new standard library modules: `std:time`, `std:uuid`, `std:encoding`, `std:math`, `std:crypto`.
 - **v0.1.18**: Lazy module loading; inclusive ranges (`..=`); complex indexing expressions; short-circuit to `break`/`continue`/`return` with `&&`/`||`.
 - **v0.1.19**: New standard library modules: `std:os` (OS/process information), `std:path` (cross-platform path utilities), `std:dotenv` (.env file loader), `std:csv` (CSV parsing/generation).
+- **v0.1.20**: String::`trim()` with optional custom character set; negative integer literals in match patterns; `std:io:open(path, create=false, truncate=false)`.

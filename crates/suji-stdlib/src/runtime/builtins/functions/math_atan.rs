@@ -1,5 +1,5 @@
 use crate::runtime::builtins::math::{from_f64, to_f64};
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn builtin_math_atan(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {

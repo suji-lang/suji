@@ -1,6 +1,6 @@
 //! Built-in: os:gid() -> number (group ID).
 
-use suji_runtime::value::{DecimalNumber, RuntimeError, Value};
+use suji_values::value::{DecimalNumber, RuntimeError, Value};
 
 #[cfg(unix)]
 use libc;

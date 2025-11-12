@@ -1,6 +1,6 @@
 //! Built-in: os:work_dir() -> string (current working directory).
 
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Returns the current working directory path.
 pub fn builtin_os_work_dir(args: &[Value]) -> Result<Value, RuntimeError> {

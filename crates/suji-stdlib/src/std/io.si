@@ -4,9 +4,13 @@ import __builtins__:io_stdout
 import __builtins__:io_stderr
 import __builtins__:io_open
 
+open = |path, create=false, truncate=false| {
+    return io_open(path, create, truncate)
+}
+
 export {
     stdin: io_stdin,
     stdout: io_stdout,
     stderr: io_stderr,
-    open: io_open,
+    open: open,
 }

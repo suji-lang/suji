@@ -37,12 +37,20 @@ This document defines how AI coding agents (and human collaborators using them) 
 - **suji-repl**: interactive REPL engine (used by CLI)
   - `crates/suji-repl/src/lib.rs` (REPL loop, line evaluation)
 
-- **suji-runtime**: evaluator/runtime for executing AST
-  - `crates/suji-runtime/src/lib.rs` (crate exports)
-  - `crates/suji-runtime/src/runtime/eval/` (expression/statement evaluators)
+- **suji-values**: Value types, environment, methods, and errors (SHARED DATA LAYER)
+  - `crates/suji-values/src/value/` (Value types, RuntimeError)
+  - `crates/suji-values/src/env.rs` (Environment for variable bindings)
+  - `crates/suji-values/src/methods/` (Methods on values; `common.rs` shared helpers)
+
+- **suji-runtime**: Execution coordination layer (RUNTIME LAYER)
+  - `crates/suji-runtime/src/executor.rs` (Executor trait abstraction)
+  - `crates/suji-runtime/src/module_registry.rs` (ModuleRegistry, parse-agnostic)
+  - `crates/suji-runtime/src/builtins.rs` (Builtin function registry)
+
+- **suji-interpreter**: AST interpreter (INTERPRETER IMPLEMENTATION)
+  - `crates/suji-interpreter/src/eval/` (expression/statement evaluators)
     - Notable: `function_call.rs` (call invocation), `expressions/binary.rs` (binary ops)
-  - `crates/suji-runtime/src/runtime/methods/` (methods on values; `common.rs` shared helpers)
-  - Other runtime modules under `crates/suji-runtime/src/runtime/` (values, env, helpers)
+  - `crates/suji-interpreter/src/interpreter.rs` (AstInterpreter implementation)
 
 - **suji-stdlib**: standard library builtins
   - `crates/suji-stdlib/src/lib.rs` (crate exports)
@@ -71,9 +79,14 @@ This document defines how AI coding agents (and human collaborators using them) 
   - Interpolation: `crates/suji-lexer/src/lexer/states/interpolation.rs`
 - **Operator precedence/associativity**: `crates/suji-parser/src/parser/precedence.rs`
 - **Expression/statement parsing**: under `crates/suji-parser/src/parser/`
-- **Function/method invocation (runtime)**: `crates/suji-runtime/src/runtime/eval/function_call.rs`
-- **Binary expression evaluation**: `crates/suji-runtime/src/runtime/eval/expressions/binary.rs`
-- **Value methods (runtime)**: `crates/suji-runtime/src/runtime/methods/` (see `common.rs`)
+- **Function/method invocation (runtime)**: `crates/suji-interpreter/src/eval/function_call.rs`
+- **Binary expression evaluation**: `crates/suji-interpreter/src/eval/expressions/binary.rs`
+- **Value methods**: `crates/suji-values/src/methods/` (see `common.rs`)
+- **Value types**: `crates/suji-values/src/value/types.rs`
+- **RuntimeError**: `crates/suji-values/src/value/errors.rs`
+- **Environment**: `crates/suji-values/src/env.rs`
+- **Executor trait**: `crates/suji-runtime/src/executor.rs`
+- **Module system**: `crates/suji-runtime/src/module_registry.rs`
 - **Diagnostics helpers/messages**: `crates/suji-diagnostics/src/diagnostics/`
 - **Built-in modules and functions**:
   - Modules: `crates/suji-stdlib/src/runtime/builtins/modules/` (e.g., `std.rs`, `json.rs`)
@@ -84,6 +97,27 @@ This document defines how AI coding agents (and human collaborators using them) 
 - **Spec tests and conventions**: `spec/*.si` (one expectation per file; import `std:println`; last line `println(...)  # expected`)
 - **Verification scripts**: `scripts/verify_spec.sh`, `scripts/verify_examples.sh`
 - **Examples**: `examples/*.si`
+
+### Runtime Architecture & Error Handling
+
+The runtime is split into focused crates to enable multiple execution backends:
+
+**Crate Purposes:**
+- **suji-values**: Shared value types, errors, environment, and methods (DATA LAYER)
+- **suji-runtime**: Executor trait, ModuleRegistry, and builtin registry (COORDINATION LAYER)
+- **suji-interpreter**: AST-walking interpreter implementation (IMPLEMENTATION)
+
+**Dependency Flow** (no cycles):
+```
+suji-ast → suji-values → suji-runtime → suji-interpreter → suji-cli/suji-repl
+```
+
+**Error Handling:**
+Errors stay with their domains to avoid circular dependencies:
+- **LexError**: in `suji-lexer` (where lexing happens)
+- **ParseError**: in `suji-parser` (wraps LexError via `#[from]`)
+- **RuntimeError**: in `suji-values` (wraps ParseError via `#[from]`)
+
 
 ### Local Dev Basics
 - **Build**:
@@ -151,7 +185,11 @@ make lint
 - **Parser**: precedence and constructs are under `crates/suji-parser/src/parser/*`. Update precedence rules if new operators are introduced.
 
 ### Runtime/Eval Notes
-- Runtime implementation under `crates/suji-runtime/src/runtime/` mirrors language features. Changing evaluation often requires updating both the parser output and runtime handlers (expressions, statements, methods, etc.).
+- Runtime is split into three main crates: `suji-values` (shared types/methods), `suji-modules` (module system), and `suji-interpreter` (AST execution)
+- Evaluation logic is under `crates/suji-interpreter/src/eval/`
+- Methods are generic over `Executor` trait (defined in `suji-values`) to support multiple backends
+- Module system is parse-agnostic: returns source code, interpreter handles parsing
+- Changing evaluation often requires updating the interpreter; value types and methods are shared across backends
 
 ### Performance Guidelines
 - Keep hot paths allocation-lean and branch-predictable (lexer, parser inner loops, runtime tight loops).

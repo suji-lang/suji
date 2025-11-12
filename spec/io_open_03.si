@@ -1,0 +1,15 @@
+import std:println
+import std:io
+import std:os
+
+p = os:tmp_dir() + "/suji_io_open_03.txt"
+
+s = io:open(p, true, false)
+s::write("A")
+s::close()
+
+s2 = io:open(p, false, false)
+text = s2::read_all()
+s2::close()
+
+println(text)  # A

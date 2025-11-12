@@ -1,0 +1,15 @@
+[package]
+name = "suji-interpreter"
+version = "0.1.20"
+edition = "2024"
+
+[dependencies]
+suji-values = { path = "../suji-values" }
+suji-runtime = { path = "../suji-runtime" }
+suji-ast = { path = "../suji-ast" }
+suji-parser = { path = "../suji-parser" }
+suji-lexer = { path = "../suji-lexer" }
+indexmap = { workspace = true }
+once_cell = { workspace = true }
+regex = { workspace = true }
+

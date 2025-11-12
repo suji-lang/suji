@@ -1,4 +1,4 @@
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn builtin_uuid_v5(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 2 {

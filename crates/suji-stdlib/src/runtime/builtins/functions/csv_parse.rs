@@ -1,6 +1,6 @@
 //! Built-in: csv:parse(text, delimiter) -> list of lists.
 
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Parse CSV text to SUJI list of lists.
 pub fn builtin_csv_parse(args: &[Value]) -> Result<Value, RuntimeError> {
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn test_csv_parse_wrong_type() {
         let result = builtin_csv_parse(&[Value::Number(
-            suji_runtime::value::DecimalNumber::parse("42").unwrap(),
+            suji_values::value::DecimalNumber::parse("42").unwrap(),
         )]);
         assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
     }

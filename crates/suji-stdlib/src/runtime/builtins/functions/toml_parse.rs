@@ -1,7 +1,7 @@
 //! Built-in: toml:parse(string) -> value.
 
 use super::super::toml::toml_to_suji_value;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Parse TOML string to SUJI value.
 pub fn builtin_toml_parse(args: &[Value]) -> Result<Value, RuntimeError> {
@@ -34,7 +34,7 @@ pub fn builtin_toml_parse(args: &[Value]) -> Result<Value, RuntimeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_runtime::value::DecimalNumber;
+    use suji_values::value::DecimalNumber;
 
     #[test]
     fn test_toml_parse_simple_values() {
@@ -44,7 +44,7 @@ mod tests {
             Value::Map({
                 let mut map = indexmap::IndexMap::new();
                 map.insert(
-                    suji_runtime::value::MapKey::String("value".to_string()),
+                    suji_values::value::MapKey::String("value".to_string()),
                     Value::Boolean(true),
                 );
                 map
@@ -55,7 +55,7 @@ mod tests {
             Value::Map({
                 let mut map = indexmap::IndexMap::new();
                 map.insert(
-                    suji_runtime::value::MapKey::String("value".to_string()),
+                    suji_values::value::MapKey::String("value".to_string()),
                     Value::Boolean(false),
                 );
                 map
@@ -66,7 +66,7 @@ mod tests {
             Value::Map({
                 let mut map = indexmap::IndexMap::new();
                 map.insert(
-                    suji_runtime::value::MapKey::String("value".to_string()),
+                    suji_values::value::MapKey::String("value".to_string()),
                     Value::Number(DecimalNumber::from_i64(42)),
                 );
                 map
@@ -77,7 +77,7 @@ mod tests {
             Value::Map({
                 let mut map = indexmap::IndexMap::new();
                 map.insert(
-                    suji_runtime::value::MapKey::String("value".to_string()),
+                    suji_values::value::MapKey::String("value".to_string()),
                     Value::String("hello".to_string()),
                 );
                 map
@@ -91,7 +91,7 @@ mod tests {
             builtin_toml_parse(&[Value::String("values = [1, 2, 3]".to_string())]).unwrap();
         if let Value::Map(map) = result {
             if let Some(Value::List(items)) =
-                map.get(&suji_runtime::value::MapKey::String("values".to_string()))
+                map.get(&suji_values::value::MapKey::String("values".to_string()))
             {
                 assert_eq!(items.len(), 3);
                 assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(1)));
@@ -112,11 +112,11 @@ mod tests {
         if let Value::Map(map) = result {
             assert_eq!(map.len(), 2);
             assert_eq!(
-                map.get(&suji_runtime::value::MapKey::String("name".to_string())),
+                map.get(&suji_values::value::MapKey::String("name".to_string())),
                 Some(&Value::String("Alice".to_string()))
             );
             assert_eq!(
-                map.get(&suji_runtime::value::MapKey::String("age".to_string())),
+                map.get(&suji_values::value::MapKey::String("age".to_string())),
                 Some(&Value::Number(DecimalNumber::from_i64(30)))
             );
         } else {

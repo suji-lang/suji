@@ -1,6 +1,6 @@
 # SUJI
 
-This is **suji**: a small, expressive language with dynamic but strong typing, higher‑order functions, pattern matching, built‑in string interpolation, regex, and seamless shell integration. It has a strong focus on pipes and pipelines with support for both shell-like `|` pipes and F#-like pipes, `|>` and `<|`.
+This is **Suji**: a small, expressive language with dynamic but strong typing, higher‑order functions, pattern matching, built‑in string interpolation, regex, and seamless shell integration. It has a strong focus on pipes and pipelines with support for both shell-like `|` pipes and F#-like pipes, `|>` and `<|`.
 
 ```suji
 import std:io
@@ -33,11 +33,13 @@ For the full language tour see the User Guide: [`docs/USER_GUIDE.md`](docs/USER_
   - `suji-ast/`: AST types and helpers
   - `suji-cli/`: CLI entry point (binary)
   - `suji-diagnostics/`: Error reporter
+  - `suji-interpreter/`: AST-walking interpreter
   - `suji-lexer/`: Lexical scanner
   - `suji-parser/`: Parser and precedence
   - `suji-repl/`: REPL entry point (binary)
-  - `suji-runtime/`: Evaluator/runtime
+  - `suji-runtime/`: Executor trait, module system, and builtins
   - `suji-stdlib/`: Standard library implementations
+  - `suji-values/`: Value types, errors, environment, and methods
 - `examples/`: Sample `suji` scripts
 - `spec/`: Language specification tests
 - `tests/`: Rust integration tests

@@ -2,11 +2,11 @@
 mod common;
 
 use std::rc::Rc;
-use suji_lang::parser::parse_program;
-use suji_lang::runtime::builtins::setup_global_env;
-use suji_lang::runtime::env::Env;
-use suji_lang::runtime::eval::eval_stmt;
-use suji_lang::runtime::value::RuntimeError;
+use suji_interpreter::{AstInterpreter, eval_module_source_callback};
+use suji_parser::parse_program;
+use suji_runtime::{Executor, ModuleRegistry, setup_global_env};
+use suji_values::Env;
+use suji_values::RuntimeError;
 
 /// Helper to evaluate a program and get the error (if any)
 fn eval_program_for_error(source: &str) -> Result<(), RuntimeError> {
@@ -17,10 +17,17 @@ fn eval_program_for_error(source: &str) -> Result<(), RuntimeError> {
 
     let env = Rc::new(Env::new());
     setup_global_env(&env);
-    let mut loop_stack = Vec::new();
 
-    for stmt in statements {
-        eval_stmt(&stmt, env.clone(), &mut loop_stack)?;
+    // Register builtins and setup module registry
+    suji_stdlib::runtime::builtins::register_all_builtins();
+    let mut module_registry = ModuleRegistry::new();
+    module_registry.set_source_evaluator(eval_module_source_callback);
+    suji_stdlib::setup_module_registry(&mut module_registry);
+
+    // Use AstInterpreter to evaluate statements
+    let interpreter = AstInterpreter;
+    for stmt in &statements {
+        interpreter.execute_stmt(stmt, env.clone(), &module_registry)?;
     }
 
     Ok(())

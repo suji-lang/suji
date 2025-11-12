@@ -1,4 +1,4 @@
-use suji_lang::ast::{CompoundOp, Expr, Literal, Stmt};
+use suji_ast::{CompoundOp, Expr, Literal, Stmt};
 mod common;
 use common::parse_statement;
 

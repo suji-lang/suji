@@ -1,4 +1,4 @@
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn builtin_time_format_iso(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.is_empty() || args.len() > 2 {

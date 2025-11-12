@@ -1,6 +1,6 @@
 //! JSON-specific types and utilities.
 
-use suji_runtime::value::RuntimeError;
+use suji_values::value::RuntimeError;
 
 /// JSON-specific error types
 #[derive(Debug, Clone)]

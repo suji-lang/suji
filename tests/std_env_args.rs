@@ -1,15 +1,21 @@
-use suji_lang::runtime::env::Env;
-use suji_lang::runtime::module::ModuleRegistry;
-use suji_lang::runtime::value::{MapKey, Value};
+use suji_interpreter::AstInterpreter;
+use suji_runtime::ModuleRegistry;
+use suji_values::Env;
+use suji_values::{MapKey, Value};
 
 #[test]
 fn std_env_args_and_argv_present_and_shaped() {
     let env = std::rc::Rc::new(Env::new());
-    let registry = ModuleRegistry::new();
+
+    // Register builtins BEFORE creating the module registry
+    suji_stdlib::runtime::builtins::register_all_builtins();
+    let mut registry = ModuleRegistry::new();
+    suji_stdlib::setup_module_registry(&mut registry);
+    let executor = AstInterpreter;
 
     // Load std module via registry
     let std_val = registry
-        .resolve_module_path(&env, "std", false)
+        .resolve_module_path(&executor, &env, "std", false)
         .expect("std module should load");
     let std_map = match std_val {
         Value::Map(m) => m,
@@ -22,7 +28,7 @@ fn std_env_args_and_argv_present_and_shaped() {
         .expect("std:env");
     let env_val = match env_val {
         Value::Module(handle) => registry
-            .force_load_module(handle)
+            .force_load_module(&executor, handle)
             .expect("force load std:env"),
         other => other.clone(),
     };

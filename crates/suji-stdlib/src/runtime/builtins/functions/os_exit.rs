@@ -1,6 +1,6 @@
 //! Built-in: os:exit(code) -> (terminates process, never returns).
 
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Terminates the process with the given exit code.
 pub fn builtin_os_exit(args: &[Value]) -> Result<Value, RuntimeError> {

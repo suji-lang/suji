@@ -1,8 +1,8 @@
-use suji_lang::runtime::value::DecimalNumber;
+use suji_values::DecimalNumber;
 mod common;
 
 use common::{eval_program, eval_string_expr};
-use suji_lang::runtime::value::{MapKey, Value};
+use suji_values::{MapKey, Value};
 
 #[test]
 fn test_map_literals() {

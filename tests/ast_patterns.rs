@@ -1,5 +1,5 @@
-use suji_lang::ast::*;
-use suji_lang::token::Span;
+use suji_ast::Span;
+use suji_ast::*;
 
 #[test]
 fn test_pattern_is_exhaustive() {

@@ -1,6 +1,6 @@
 //! YAML-specific error types.
 
-use suji_runtime::value::RuntimeError;
+use suji_values::value::RuntimeError;
 
 /// YAML-specific error types
 #[derive(Debug, thiserror::Error)]

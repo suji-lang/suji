@@ -1,7 +1,7 @@
 //! Built-in: yaml:generate(value) -> string.
 
 use super::super::yaml::suji_to_yaml_value;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Convert SUJI value to YAML string.
 pub fn builtin_yaml_generate(args: &[Value]) -> Result<Value, RuntimeError> {
@@ -46,9 +46,9 @@ mod tests {
     use std::rc::Rc;
     use suji_ast::ast::Stmt;
     use suji_lexer::token::Span;
-    use suji_runtime::env::Env;
-    use suji_runtime::value::DecimalNumber;
-    use suji_runtime::value::{FunctionValue, MapKey};
+    use suji_values::Env;
+    use suji_values::value::DecimalNumber;
+    use suji_values::value::{FunctionBody, FunctionValue, MapKey};
 
     #[test]
     fn test_yaml_generate_simple_values() {
@@ -122,10 +122,10 @@ mod tests {
         // Test function (should fail)
         let func = Value::Function(FunctionValue {
             params: vec![],
-            body: Stmt::Block {
+            body: FunctionBody::Ast(Stmt::Block {
                 statements: vec![],
                 span: Span::default(),
-            },
+            }),
             env: Rc::new(Env::new()),
         });
         let result = builtin_yaml_generate(&[func]);

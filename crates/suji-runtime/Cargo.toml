@@ -1,18 +1,11 @@
 [package]
 name = "suji-runtime"
-version = "0.1.19"
+version = "0.1.20"
 edition = "2024"
-
-[lib]
-path = "src/lib.rs"
 
 [dependencies]
 suji-ast = { path = "../suji-ast" }
-suji-parser = { path = "../suji-parser" }
-regex = { workspace = true }
-rand = { workspace = true }
-rust_decimal = { workspace = true }
+suji-values = { path = "../suji-values" }
 indexmap = { workspace = true }
 once_cell = { workspace = true }
-thiserror = { workspace = true }
-suji-lexer = { path = "../suji-lexer" }
+

@@ -1,4 +1,4 @@
-use suji_runtime::runtime::value::{ModuleHandle, Value};
+use suji_values::{ModuleHandle, Value};
 
 #[test]
 fn test_module_type_name() {

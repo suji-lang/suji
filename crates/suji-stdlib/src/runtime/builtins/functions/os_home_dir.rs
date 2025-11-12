@@ -1,6 +1,6 @@
 //! Built-in: os:home_dir() -> string (user home directory path).
 
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Returns the user's home directory path.
 pub fn builtin_os_home_dir(args: &[Value]) -> Result<Value, RuntimeError> {

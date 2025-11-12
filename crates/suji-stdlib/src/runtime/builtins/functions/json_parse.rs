@@ -1,7 +1,7 @@
 //! Built-in: json:parse(string) -> value.
 
 use super::super::json::json_to_suji_value;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Parse JSON string to SUJI value.
 pub fn builtin_json_parse(args: &[Value]) -> Result<Value, RuntimeError> {
@@ -52,7 +52,7 @@ mod tests {
         );
         assert_eq!(
             builtin_json_parse(&[Value::String("42".to_string())]).unwrap(),
-            Value::Number(suji_runtime::value::DecimalNumber::parse("42").unwrap())
+            Value::Number(suji_values::value::DecimalNumber::parse("42").unwrap())
         );
         assert_eq!(
             builtin_json_parse(&[Value::String("\"hello\"".to_string())]).unwrap(),
@@ -67,15 +67,15 @@ mod tests {
             assert_eq!(items.len(), 3);
             assert_eq!(
                 items[0],
-                Value::Number(suji_runtime::value::DecimalNumber::parse("1").unwrap())
+                Value::Number(suji_values::value::DecimalNumber::parse("1").unwrap())
             );
             assert_eq!(
                 items[1],
-                Value::Number(suji_runtime::value::DecimalNumber::parse("2").unwrap())
+                Value::Number(suji_values::value::DecimalNumber::parse("2").unwrap())
             );
             assert_eq!(
                 items[2],
-                Value::Number(suji_runtime::value::DecimalNumber::parse("3").unwrap())
+                Value::Number(suji_values::value::DecimalNumber::parse("3").unwrap())
             );
         } else {
             panic!("Expected list");
@@ -91,13 +91,13 @@ mod tests {
         if let Value::Map(map) = result {
             assert_eq!(map.len(), 2);
             assert_eq!(
-                map.get(&suji_runtime::value::MapKey::String("name".to_string())),
+                map.get(&suji_values::value::MapKey::String("name".to_string())),
                 Some(&Value::String("Alice".to_string()))
             );
             assert_eq!(
-                map.get(&suji_runtime::value::MapKey::String("age".to_string())),
+                map.get(&suji_values::value::MapKey::String("age".to_string())),
                 Some(&Value::Number(
-                    suji_runtime::value::DecimalNumber::parse("30").unwrap()
+                    suji_values::value::DecimalNumber::parse("30").unwrap()
                 ))
             );
         } else {
@@ -114,7 +114,7 @@ mod tests {
     #[test]
     fn test_json_parse_wrong_argument_type() {
         let result = builtin_json_parse(&[Value::Number(
-            suji_runtime::value::DecimalNumber::parse("42").unwrap(),
+            suji_values::value::DecimalNumber::parse("42").unwrap(),
         )]);
         assert!(matches!(result, Err(RuntimeError::TypeError { .. })));
     }

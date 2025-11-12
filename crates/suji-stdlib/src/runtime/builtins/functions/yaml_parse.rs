@@ -1,7 +1,7 @@
 //! Built-in: yaml:parse(string) -> value.
 
 use super::super::yaml::yaml_to_suji_value;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Parse YAML string to SUJI value.
 pub fn builtin_yaml_parse(args: &[Value]) -> Result<Value, RuntimeError> {
@@ -40,7 +40,7 @@ pub fn builtin_yaml_parse(args: &[Value]) -> Result<Value, RuntimeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_runtime::value::DecimalNumber;
+    use suji_values::value::DecimalNumber;
 
     #[test]
     fn test_yaml_parse_simple_values() {
@@ -87,11 +87,11 @@ mod tests {
         if let Value::Map(map) = result {
             assert_eq!(map.len(), 2);
             assert_eq!(
-                map.get(&suji_runtime::value::MapKey::String("name".to_string())),
+                map.get(&suji_values::value::MapKey::String("name".to_string())),
                 Some(&Value::String("Alice".to_string()))
             );
             assert_eq!(
-                map.get(&suji_runtime::value::MapKey::String("age".to_string())),
+                map.get(&suji_values::value::MapKey::String("age".to_string())),
                 Some(&Value::Number(DecimalNumber::from_i64(30)))
             );
         } else {

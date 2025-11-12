@@ -5,7 +5,7 @@ use tempfile::TempDir;
 mod common;
 
 use common::eval_program;
-use suji_lang::runtime::value::Value;
+use suji_values::Value;
 
 /// Helper to create a temporary .env file with given content
 fn create_temp_env_file(content: &str) -> (TempDir, String) {

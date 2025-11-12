@@ -1,0 +1,5 @@
+import std:println
+
+s = "***hello***world***"
+
+println(s::trim("*"))  # hello***world

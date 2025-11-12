@@ -1,7 +1,7 @@
 mod common;
 
 use common::eval_program;
-use suji_lang::runtime::value::Value;
+use suji_values::Value;
 
 fn eval_path(code: &str) -> Value {
     match eval_program(code) {

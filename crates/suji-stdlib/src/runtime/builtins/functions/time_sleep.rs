@@ -1,4 +1,4 @@
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn builtin_time_sleep(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {

@@ -1,6 +1,6 @@
 [package]
 name = "suji-cli"
-version = "0.1.19"
+version = "0.1.20"
 edition = "2024"
 
 [[bin]]
@@ -8,10 +8,11 @@ name = "suji"
 path = "src/main.rs"
 
 [dependencies]
-suji-parser = { path = "../suji-parser" }
+suji-diagnostics = { path = "../suji-diagnostics" }
+suji-interpreter = { path = "../suji-interpreter" }
 suji-runtime = { path = "../suji-runtime" }
 suji-stdlib = { path = "../suji-stdlib" }
-suji-diagnostics = { path = "../suji-diagnostics" }
+suji-values = { path = "../suji-values" }
 
 [features]
 default = ["repl"]

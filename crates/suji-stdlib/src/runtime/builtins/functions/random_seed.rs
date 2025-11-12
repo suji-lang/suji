@@ -1,5 +1,5 @@
 use crate::runtime::builtins::random::rng_seed_with;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn builtin_random_seed(args: &[Value]) -> Result<Value, RuntimeError> {
     match args.len() {

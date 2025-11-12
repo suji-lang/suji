@@ -1,5 +1,5 @@
-use suji_lang::lexer::Lexer;
-use suji_lang::token::Token;
+use suji_lexer::Lexer;
+use suji_lexer::token::Token;
 
 // Single quote string tests
 #[test]

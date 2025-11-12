@@ -1,5 +1,5 @@
-use suji_lang::ast::*;
-use suji_lang::parser::parse_program;
+use suji_ast::*;
+use suji_parser::parse_program;
 
 mod common;
 

@@ -1,5 +1,5 @@
 use indexmap::IndexMap;
-use suji_runtime::value::{DecimalNumber, MapKey, Value};
+use suji_values::value::{DecimalNumber, MapKey, Value};
 
 pub fn map_now(epoch_ms: i64, iso: String, tz: String) -> Value {
     let mut map = IndexMap::new();

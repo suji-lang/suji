@@ -1,7 +1,7 @@
 mod common;
 
 use common::{assert_import_works, eval_program_with_modules};
-use suji_lang::runtime::value::{DecimalNumber, Value};
+use suji_values::{DecimalNumber, Value};
 
 #[test]
 fn test_export_single_per_file_and_parsing() {
@@ -22,15 +22,11 @@ fn test_export_evaluation_and_functions() {
 
     if let Value::Map(map) = result {
         assert_eq!(
-            map.get(&suji_lang::runtime::value::MapKey::String(
-                "value".to_string()
-            )),
+            map.get(&suji_values::MapKey::String("value".to_string())),
             Some(&Value::Number(DecimalNumber::from_i64(10)))
         );
         assert_eq!(
-            map.get(&suji_lang::runtime::value::MapKey::String(
-                "doubled".to_string()
-            )),
+            map.get(&suji_values::MapKey::String("doubled".to_string())),
             Some(&Value::Number(DecimalNumber::from_i64(20)))
         );
     } else {
@@ -42,9 +38,7 @@ fn test_export_evaluation_and_functions() {
         .unwrap();
 
     if let Value::Map(map) = result {
-        let add_func = map.get(&suji_lang::runtime::value::MapKey::String(
-            "add".to_string(),
-        ));
+        let add_func = map.get(&suji_values::MapKey::String("add".to_string()));
         assert!(matches!(add_func, Some(Value::Function(_))));
     } else {
         panic!("Export should return a map");
@@ -53,7 +47,7 @@ fn test_export_evaluation_and_functions() {
 
 #[test]
 fn test_export_parsing_variations_and_empty_export() {
-    use suji_lang::parser::parse_program;
+    use suji_parser::parse_program;
     assert!(parse_program("export { }").is_ok());
     assert!(parse_program("export { a: 1 }").is_ok());
     assert!(parse_program("export { a: 1, b: 2 }").is_ok());

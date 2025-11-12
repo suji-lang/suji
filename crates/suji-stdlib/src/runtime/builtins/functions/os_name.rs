@@ -1,6 +1,6 @@
 //! Built-in: os:name() -> string (operating system name).
 
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 /// Returns the operating system name ("linux", "darwin", or "windows").
 pub fn builtin_os_name(args: &[Value]) -> Result<Value, RuntimeError> {

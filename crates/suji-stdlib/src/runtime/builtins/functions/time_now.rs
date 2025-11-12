@@ -1,5 +1,5 @@
 use crate::runtime::builtins::time::map_now;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn builtin_time_now(args: &[Value]) -> Result<Value, RuntimeError> {
     if !args.is_empty() {

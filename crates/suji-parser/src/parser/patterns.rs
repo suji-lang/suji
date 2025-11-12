@@ -4,7 +4,6 @@ use suji_lexer::token::Token;
 impl Parser {
     /// Parse pattern for match statements
     pub(super) fn parse_pattern(&mut self) -> ParseResult<suji_ast::ast::Pattern> {
-        // For now, implement basic patterns - can be expanded later
         if self.match_token(Token::Underscore) {
             let span = self.previous().span.clone();
             return Ok(suji_ast::ast::Pattern::Wildcard { span });
@@ -49,7 +48,35 @@ impl Parser {
             }
         }
 
-        // Literal pattern - parse simple literals directly to avoid `:` conflicts
+        if self.match_token(Token::Minus) {
+            let minus_span = self.previous().span.clone();
+            if let Token::Number(n) = &self.peek().token {
+                let n = n.clone();
+                let number_span = self.advance().span.clone();
+                // Prepend minus sign to create negative number
+                let negative_n = format!("-{}", n);
+                // Combine spans from minus to number
+                let combined_span = suji_lexer::token::Span::new(
+                    minus_span.start,
+                    number_span.end,
+                    minus_span.line,
+                    minus_span.column,
+                );
+                return Ok(suji_ast::ast::Pattern::Literal {
+                    value: suji_ast::ast::ValueLike::Number(negative_n),
+                    span: combined_span,
+                });
+            } else {
+                // Minus not followed by a number - error
+                let current = self.peek();
+                return Err(ParseError::ExpectedToken {
+                    expected: Token::Number(String::new()),
+                    found: current.token,
+                    span: current.span,
+                });
+            }
+        }
+
         if let Token::Number(n) = &self.peek().token {
             let n = n.clone();
             let span = self.advance().span.clone();

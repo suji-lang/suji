@@ -1,6 +1,6 @@
 use crate::runtime::builtins::math::{ensure_positive_decimal, from_decimal, to_decimal};
 use rust_decimal::MathematicalOps;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn builtin_math_log(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 1 {

@@ -3,16 +3,13 @@
 //! Common test utilities for SUJI Language tests.
 
 use std::rc::Rc;
-use suji_lang::ast::{Expr, Stmt};
-use suji_lang::lexer::Lexer;
-use suji_lang::parser::{ParseResult, Parser, parse_program};
-use suji_lang::runtime::builtins::setup_global_env;
-use suji_lang::runtime::env::Env;
-use suji_lang::runtime::eval::{
-    eval_expr, eval_program_with_modules as eval_program_with_modules_impl,
-};
-use suji_lang::runtime::module::ModuleRegistry;
-use suji_lang::runtime::value::Value;
+use suji_ast::{Expr, Stmt};
+use suji_interpreter::{AstInterpreter, eval_module_source_callback};
+use suji_lexer::Lexer;
+use suji_parser::{ParseResult, Parser, parse_program};
+use suji_runtime::{Executor, ModuleRegistry, setup_global_env};
+use suji_values::Env;
+use suji_values::Value;
 
 /// Parse a single expression from source code (test utility)
 pub fn parse_expression(input: &str) -> ParseResult<Expr> {
@@ -39,29 +36,64 @@ pub fn create_test_env() -> Rc<Env> {
 pub fn eval_string_expr(input: &str) -> Result<Value, Box<dyn std::error::Error>> {
     let expr = parse_expression(input)?;
     let env = create_test_env();
-    Ok(eval_expr(&expr, env)?)
+
+    // Create interpreter and module registry
+    let interpreter = AstInterpreter;
+    let mut module_registry = ModuleRegistry::new();
+    module_registry.set_source_evaluator(eval_module_source_callback);
+    suji_stdlib::setup_module_registry(&mut module_registry);
+
+    Ok(interpreter.execute_expr(&expr, env, &module_registry)?)
 }
 
 /// Helper to evaluate a program (multiple statements)
 pub fn eval_program(input: &str) -> Result<Value, Box<dyn std::error::Error>> {
     let statements = parse_program(input)?;
     let env = create_test_env();
-    let module_registry = ModuleRegistry::new();
 
-    let result = eval_program_with_modules_impl(&statements, env, &module_registry)?;
-    Ok(result.unwrap_or(Value::Nil))
+    // Register builtins BEFORE creating the module registry
+    // so that __builtins__ module is populated correctly
+    suji_stdlib::runtime::builtins::register_all_builtins();
+    let mut module_registry = ModuleRegistry::new();
+    module_registry.set_source_evaluator(eval_module_source_callback);
+    suji_stdlib::setup_module_registry(&mut module_registry);
+
+    // Use AstInterpreter to evaluate statements
+    let interpreter = AstInterpreter;
+    let mut last_value = None;
+    for stmt in &statements {
+        match interpreter.execute_stmt(stmt, env.clone(), &module_registry) {
+            Ok(Some(v)) => last_value = Some(v),
+            Ok(None) => {}
+            Err(e) => return Err(e.into()),
+        }
+    }
+    Ok(last_value.unwrap_or(Value::Nil))
 }
 
 /// Helper to evaluate a program with module support
 pub fn eval_program_with_modules(input: &str) -> Result<Option<Value>, Box<dyn std::error::Error>> {
     let statements = parse_program(input)?;
     let env = create_test_env();
-    let module_registry = ModuleRegistry::new();
-    Ok(eval_program_with_modules_impl(
-        &statements,
-        env,
-        &module_registry,
-    )?)
+
+    // Register builtins BEFORE creating the module registry
+    // so that __builtins__ module is populated correctly
+    suji_stdlib::runtime::builtins::register_all_builtins();
+    let mut module_registry = ModuleRegistry::new();
+    module_registry.set_source_evaluator(eval_module_source_callback);
+    suji_stdlib::setup_module_registry(&mut module_registry);
+
+    // Use AstInterpreter to evaluate statements
+    let interpreter = AstInterpreter;
+    let mut last_value = None;
+    for stmt in &statements {
+        match interpreter.execute_stmt(stmt, env.clone(), &module_registry) {
+            Ok(Some(v)) => last_value = Some(v),
+            Ok(None) => {}
+            Err(e) => return Err(e.into()),
+        }
+    }
+    Ok(last_value)
 }
 
 /// Try to evaluate, returning true if successful, false if failed

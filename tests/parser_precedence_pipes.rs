@@ -1,6 +1,6 @@
 mod common;
 use common::parse_expression;
-use suji_lang::ast::{BinaryOp, Expr};
+use suji_ast::{BinaryOp, Expr};
 
 #[test]
 fn stream_pipe_binds_tighter_than_apply_forward() {

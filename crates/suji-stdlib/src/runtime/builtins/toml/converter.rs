@@ -2,7 +2,7 @@
 
 use super::types::TomlError;
 use indexmap::IndexMap;
-use suji_runtime::value::{DecimalNumber, MapKey, RuntimeError, Value};
+use suji_values::value::{DecimalNumber, MapKey, RuntimeError, Value};
 use toml::{Value as TomlValue, map::Map as TomlMap};
 
 /// Convert TOML value to SUJI value

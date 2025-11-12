@@ -1,8 +1,8 @@
-use suji_lang::ast::*;
+use suji_ast::*;
 
 mod common;
 use common::parse_expression;
-use suji_lang::parser::parse_program;
+use suji_parser::parse_program;
 
 #[test]
 fn test_parse_range_exclusive() {

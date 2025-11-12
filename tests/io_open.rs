@@ -4,11 +4,11 @@ use std::path::PathBuf;
 mod common;
 
 use common::eval_program;
-use suji_lang::runtime::value::{DecimalNumber, Value};
+use suji_values::{DecimalNumber, Value};
 
 fn temp_path(name: &str) -> PathBuf {
     let mut path = std::env::temp_dir();
-    path.push(format!("nnlang_test_{}_{}", name, std::process::id()));
+    path.push(format!("suji_test_{}_{}", name, std::process::id()));
     path
 }
 
@@ -24,11 +24,11 @@ fn test_io_open_write_and_read_all() {
     let source = format!(
         r#"import std:io
 
-f = io:open("{path}")
+f = io:open("{path}", true, false)
 f::write("hello\nworld")
 f::close()
 
-f = io:open("{path}")
+f = io:open("{path}", false, false)
 f::read_all()
 "#,
         path = path.display()
@@ -108,7 +108,7 @@ fn test_io_open_write_returns_bytes() {
     let program = format!(
         r#"import std:io
 
-f = io:open("{path}")
+f = io:open("{path}", true, false)
 f::write("abc")
 "#,
         path = path.display()
@@ -128,7 +128,7 @@ fn test_io_open_closed_stream_errors() {
     let program = format!(
         r#"import std:io
 
-f = io:open("{path}")
+f = io:open("{path}", true, false)
 f::close()
 f::read_all()
 "#,

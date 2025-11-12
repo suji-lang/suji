@@ -3,18 +3,18 @@ use rustyline::error::ReadlineError;
 use rustyline::{DefaultEditor, Result as RustylineResult};
 use std::rc::Rc;
 use suji_diagnostics::{DiagnosticContext, DiagnosticKind, print_diagnostic};
+use suji_interpreter::{AstInterpreter, eval_module_source_callback};
 use suji_parser::{ParseError, parse_program};
-use suji_runtime::env::Env;
-use suji_runtime::eval::eval_program_with_modules;
-use suji_runtime::module::ModuleRegistry;
-use suji_runtime::value::{RuntimeError, Value};
-use suji_stdlib::setup_global_env;
+use suji_runtime::{Executor, ModuleRegistry};
+use suji_stdlib::{setup_global_env, setup_module_registry};
+use suji_values::{Env, RuntimeError, Value};
 
 /// REPL state and configuration
 pub struct Repl {
     editor: DefaultEditor,
     env: Rc<Env>,
     module_registry: ModuleRegistry,
+    interpreter: AstInterpreter,
     input_buffer: String,
     line_number: usize,
 }
@@ -28,10 +28,19 @@ impl Repl {
         let env = Rc::new(Env::new());
         setup_global_env(&env);
 
+        // Create interpreter instance
+        let interpreter = AstInterpreter;
+
+        // Create and configure module registry
+        let mut module_registry = ModuleRegistry::new();
+        module_registry.set_source_evaluator(eval_module_source_callback);
+        setup_module_registry(&mut module_registry);
+
         Ok(Repl {
             editor,
             env,
-            module_registry: ModuleRegistry::new(),
+            module_registry,
+            interpreter,
             input_buffer: String::new(),
             line_number: 1,
         })
@@ -145,27 +154,33 @@ impl Repl {
             return;
         }
 
-        // Parse the input
+        // Parse the input first to preserve parse vs runtime error distinction
         match parse_program(input) {
             Ok(statements) => {
-                // Evaluate the statements
-                match eval_program_with_modules(
-                    &statements,
-                    self.env.clone(),
-                    &self.module_registry,
-                ) {
-                    Ok(Some(value)) => {
-                        // Print the result if it's not null
-                        if !matches!(value, Value::Nil) {
-                            println!("{}", value);
+                // Evaluate using execute_stmt for each statement
+                let mut last_value = None;
+                for stmt in &statements {
+                    match self.interpreter.execute_stmt(
+                        stmt,
+                        self.env.clone(),
+                        &self.module_registry,
+                    ) {
+                        Ok(Some(value)) => {
+                            last_value = Some(value);
+                        }
+                        Ok(None) => {}
+                        Err(e) => {
+                            self.print_runtime_error(&e, input);
+                            return;
                         }
                     }
-                    Ok(None) => {
-                        // Program completed without a value - nothing to print
-                    }
-                    Err(e) => {
-                        self.print_runtime_error(&e, input);
-                    }
+                }
+
+                // Print the result if it's not nil
+                if let Some(value) = last_value
+                    && !matches!(value, Value::Nil)
+                {
+                    println!("{}", value);
                 }
             }
             Err(e) => {

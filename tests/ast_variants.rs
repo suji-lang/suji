@@ -1,4 +1,4 @@
-use suji_lang::ast::*;
+use suji_ast::*;
 
 #[test]
 fn test_loop_bindings() {

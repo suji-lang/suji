@@ -1,6 +1,6 @@
 //! Built-in: os:uptime_ms() -> number (milliseconds since boot).
 
-use suji_runtime::value::{DecimalNumber, RuntimeError, Value};
+use suji_values::value::{DecimalNumber, RuntimeError, Value};
 use sysinfo::System;
 
 /// Returns system uptime in milliseconds since boot.

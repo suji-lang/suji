@@ -1,6 +1,6 @@
 use rust_decimal::Decimal;
 use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
-use suji_runtime::value::{DecimalNumber, RuntimeError, Value};
+use suji_values::value::{DecimalNumber, RuntimeError, Value};
 
 pub fn to_f64(arg: &Value, name: &str) -> Result<f64, RuntimeError> {
     match arg {

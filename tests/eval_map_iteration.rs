@@ -1,8 +1,8 @@
-use suji_lang::runtime::value::DecimalNumber;
+use suji_values::DecimalNumber;
 mod common;
 
 use common::eval_program;
-use suji_lang::runtime::value::Value;
+use suji_values::Value;
 
 #[test]
 fn test_map_iteration_no_bindings() {

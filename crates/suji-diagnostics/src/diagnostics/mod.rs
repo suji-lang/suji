@@ -1,7 +1,7 @@
 //! Diagnostics: rich error reporting utilities.
 use suji_lexer::LexError;
 use suji_parser::ParseError;
-use suji_runtime::value::RuntimeError;
+use suji_values::RuntimeError;
 
 mod context;
 mod emitters;

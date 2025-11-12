@@ -1,0 +1,19 @@
+import std:println
+import std:io
+import std:os
+
+p = os:tmp_dir() + "/suji_io_open_04.txt"
+
+s = io:open(p, true, false)
+s::write("A")
+s::close()
+
+s2 = io:open(p, false, true)
+s2::write("B")
+s2::close()
+
+s3 = io:open(p, false, false)
+out = s3::read_all()
+s3::close()
+
+println(out)  # B

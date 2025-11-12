@@ -1,7 +1,7 @@
 mod common;
 
 use common::eval_program;
-use suji_lang::runtime::value::{DecimalNumber, Value};
+use suji_values::{DecimalNumber, Value};
 
 #[test]
 fn test_conditional_match_basic() {

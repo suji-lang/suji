@@ -2,7 +2,7 @@
 
 use super::types::YamlError;
 use indexmap::IndexMap;
-use suji_runtime::value::{DecimalNumber, MapKey, RuntimeError, Value};
+use suji_values::value::{DecimalNumber, MapKey, RuntimeError, Value};
 use yaml_rust2::Yaml;
 
 /// Convert YAML value to SUJI value

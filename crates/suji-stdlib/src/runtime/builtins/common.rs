@@ -1,4 +1,4 @@
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn one_string_arg<'a>(args: &'a [Value], fname: &str) -> Result<&'a str, RuntimeError> {
     if args.len() != 1 {

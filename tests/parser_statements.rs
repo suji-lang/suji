@@ -1,6 +1,6 @@
-use suji_lang::ast::ExportBody;
-use suji_lang::ast::{Expr, Literal, Stmt};
-use suji_lang::parser::parse_program;
+use suji_ast::ExportBody;
+use suji_ast::{Expr, Literal, Stmt};
+use suji_parser::parse_program;
 
 mod common;
 use common::parse_statement;

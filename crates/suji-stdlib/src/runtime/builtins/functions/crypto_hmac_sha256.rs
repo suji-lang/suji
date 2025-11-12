@@ -1,6 +1,6 @@
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
-use suji_runtime::value::{RuntimeError, Value};
+use suji_values::value::{RuntimeError, Value};
 
 pub fn builtin_crypto_hmac_sha256(args: &[Value]) -> Result<Value, RuntimeError> {
     if args.len() != 2 {

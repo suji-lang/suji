@@ -1,6 +1,6 @@
 [package]
 name = "suji-diagnostics"
-version = "0.1.19"
+version = "0.1.20"
 edition = "2024"
 
 [lib]
@@ -13,4 +13,4 @@ regex = { workspace = true }
 suji-ast = { path = "../suji-ast" }
 suji-lexer = { path = "../suji-lexer" }
 suji-parser = { path = "../suji-parser" }
-suji-runtime = { path = "../suji-runtime" }
+suji-values = { path = "../suji-values" }
