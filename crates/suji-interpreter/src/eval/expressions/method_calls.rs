@@ -1,6 +1,7 @@
+use crate::eval::utils::evaluate_exprs;
 use crate::eval::{EvalResult, call_function, eval_expr};
 use std::rc::Rc;
-use suji_ast::ast::{Expr, Literal};
+use suji_ast::{Expr, Literal};
 use suji_runtime::ModuleRegistry;
 use suji_values::methods::{ValueRef, call_method};
 use suji_values::{Env, FunctionValue, Value};
@@ -14,10 +15,7 @@ pub fn eval_method_call(
     registry: Option<&ModuleRegistry>,
 ) -> EvalResult<Value> {
     // Evaluate arguments first
-    let mut arg_values = Vec::new();
-    for arg in args {
-        arg_values.push(eval_expr(arg, env.clone(), registry)?);
-    }
+    let arg_values = evaluate_exprs(args, env.clone(), registry)?;
 
     // For method calls, we need to determine if we have a mutable or immutable receiver
     match target {
@@ -62,8 +60,8 @@ pub fn eval_method_call(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal};
+    use suji_ast::{Expr, Literal};
+    use suji_lexer::Span;
     use suji_runtime::setup_global_env;
     use suji_values::DecimalNumber;
     use suji_values::Env;

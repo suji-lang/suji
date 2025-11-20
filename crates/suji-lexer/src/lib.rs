@@ -1,6 +1,9 @@
-pub mod lexer;
-pub use lexer::core::Lexer;
-pub mod token {
-    pub use crate::lexer::token::*;
-}
-pub use lexer::states::LexError;
+mod lexer;
+mod span;
+mod states;
+mod token;
+mod utils;
+
+pub use lexer::{LexError, Lexer};
+pub use span::Span;
+pub use token::{SpannedToken, Token};

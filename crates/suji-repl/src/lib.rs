@@ -4,7 +4,8 @@ use rustyline::{DefaultEditor, Result as RustylineResult};
 use std::rc::Rc;
 use suji_diagnostics::{DiagnosticContext, DiagnosticKind, print_diagnostic};
 use suji_interpreter::{AstInterpreter, eval_module_source_callback};
-use suji_parser::{ParseError, parse_program};
+use suji_lexer::Lexer;
+use suji_parser::{ParseError, Parser};
 use suji_runtime::{Executor, ModuleRegistry};
 use suji_stdlib::{setup_global_env, setup_module_registry};
 use suji_values::{Env, RuntimeError, Value};
@@ -155,7 +156,15 @@ impl Repl {
         }
 
         // Parse the input first to preserve parse vs runtime error distinction
-        match parse_program(input) {
+        let tokens = match Lexer::lex(input) {
+            Ok(tokens) => tokens,
+            Err(e) => {
+                self.print_parse_error(&ParseError::Lex(e), input);
+                return;
+            }
+        };
+        let mut parser = Parser::new(tokens);
+        match parser.parse() {
             Ok(statements) => {
                 // Evaluate using execute_stmt for each statement
                 let mut last_value = None;

@@ -1,0 +1,11 @@
+import std:println
+import std:os
+import std:io
+
+path = os:tmp_dir() + "/suji_test_fs_06.txt"
+f = io:open(path, true, true)
+f::write("test")
+f::close()
+
+os:rm(path)
+println("done")  # done

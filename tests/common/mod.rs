@@ -6,7 +6,7 @@ use std::rc::Rc;
 use suji_ast::{Expr, Stmt};
 use suji_interpreter::{AstInterpreter, eval_module_source_callback};
 use suji_lexer::Lexer;
-use suji_parser::{ParseResult, Parser, parse_program};
+use suji_parser::{ParseResult, Parser};
 use suji_runtime::{Executor, ModuleRegistry, setup_global_env};
 use suji_values::Env;
 use suji_values::Value;
@@ -23,6 +23,13 @@ pub fn parse_statement(input: &str) -> ParseResult<Stmt> {
     let tokens = Lexer::lex(input)?;
     let mut parser = Parser::new(tokens);
     parser.statement()
+}
+
+/// Parse a complete program (test utility)
+pub fn parse_program(input: &str) -> ParseResult<Vec<Stmt>> {
+    let tokens = Lexer::lex(input)?;
+    let mut parser = Parser::new(tokens);
+    parser.parse()
 }
 
 /// Helper to create a test environment with built-ins

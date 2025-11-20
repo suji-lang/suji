@@ -1,0 +1,12 @@
+import std:println
+import std:os
+import std:io
+
+path = os:tmp_dir() + "/suji_stat_test_04.txt"
+f = io:open(path, true, true)
+f::write("hello")
+f::close()
+
+stat = os:stat(path)
+
+println(stat:size)  # 5

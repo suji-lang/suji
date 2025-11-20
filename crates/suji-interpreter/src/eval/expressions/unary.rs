@@ -1,5 +1,5 @@
 use super::EvalResult;
-use suji_ast::ast::UnaryOp;
+use suji_ast::UnaryOp;
 use suji_values::{RuntimeError, Value};
 
 /// Evaluate a unary operation

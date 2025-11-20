@@ -9,7 +9,7 @@ default-members = [
 
 [package]
 name = "suji-tests"
-version = "0.1.20"
+version = "0.1.21"
 edition = "2024"
 publish = false
 
@@ -25,10 +25,11 @@ suji-stdlib = { path = "crates/suji-stdlib" }
 # Test utilities
 indexmap = { workspace = true }
 tempfile = { workspace = true }
+regex = { workspace = true }
 
 [workspace.package]
 edition = "2024"
-version = "0.1.20"
+version = "0.1.21"
 authors = ["suji contributors"]
 
 [workspace.dependencies]

@@ -157,6 +157,7 @@ pub fn register_all_builtins() {
         "os_hostname",
         builtin_os_hostname as suji_runtime::BuiltinFn,
     );
+    register_builtin("os_mkdir", builtin_os_mkdir as suji_runtime::BuiltinFn);
     register_builtin(
         "os_uptime_ms",
         builtin_os_uptime_ms as suji_runtime::BuiltinFn,
@@ -173,6 +174,9 @@ pub fn register_all_builtins() {
     register_builtin("os_exit", builtin_os_exit as suji_runtime::BuiltinFn);
     register_builtin("os_pid", builtin_os_pid as suji_runtime::BuiltinFn);
     register_builtin("os_ppid", builtin_os_ppid as suji_runtime::BuiltinFn);
+    register_builtin("os_rm", builtin_os_rm as suji_runtime::BuiltinFn);
+    register_builtin("os_rmdir", builtin_os_rmdir as suji_runtime::BuiltinFn);
+    register_builtin("os_stat", builtin_os_stat as suji_runtime::BuiltinFn);
     register_builtin("os_uid", builtin_os_uid as suji_runtime::BuiltinFn);
     register_builtin("os_gid", builtin_os_gid as suji_runtime::BuiltinFn);
 }

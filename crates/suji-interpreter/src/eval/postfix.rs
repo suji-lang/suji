@@ -1,6 +1,6 @@
 use super::EvalResult;
 use std::rc::Rc;
-use suji_ast::ast::{Expr, Literal};
+use suji_ast::{Expr, Literal};
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::{DecimalNumber, RuntimeError, Value};
@@ -62,8 +62,8 @@ pub fn eval_postfix_decrement(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal};
+    use suji_ast::{Expr, Literal};
+    use suji_lexer::Span;
     use suji_runtime::setup_global_env;
     use suji_values::Env;
 

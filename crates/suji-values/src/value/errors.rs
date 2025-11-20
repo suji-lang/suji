@@ -1,5 +1,5 @@
 use super::types::ControlFlow;
-use suji_ast::Span;
+use suji_lexer::Span;
 use suji_parser::ParseError;
 
 /// Runtime errors that can occur during evaluation
@@ -155,19 +155,34 @@ pub enum RuntimeError {
 impl RuntimeError {
     /// Wrap this error with a source span
     pub fn with_span(self, span: Span) -> RuntimeError {
-        // Check if already wrapped to avoid double-wrapping
-        if matches!(self, RuntimeError::WithSpan { .. }) {
-            return self;
+        // Don't wrap ControlFlow errors - they're signals, not real errors
+        // If this error (or any error it wraps) is ControlFlow, extract and return it unwrapped
+        if matches!(self.without_span(), RuntimeError::ControlFlow { .. }) {
+            // Recursively unwrap to get the actual ControlFlow error
+            return match self {
+                RuntimeError::WithSpan { error, .. } => Self::unwrap_to_control_flow(*error),
+                RuntimeError::ControlFlow { .. } => self,
+                _ => unreachable!("without_span indicated ControlFlow but match didn't find it"),
+            };
         }
 
-        // Don't wrap ControlFlow errors - they're signals, not real errors
-        if matches!(self, RuntimeError::ControlFlow { .. }) {
+        // Check if already wrapped to avoid double-wrapping
+        if matches!(self, RuntimeError::WithSpan { .. }) {
             return self;
         }
 
         RuntimeError::WithSpan {
             error: Box::new(self),
             span,
+        }
+    }
+
+    /// Helper to recursively unwrap WithSpan layers to get to the ControlFlow error
+    fn unwrap_to_control_flow(err: RuntimeError) -> RuntimeError {
+        match err {
+            RuntimeError::WithSpan { error, .. } => Self::unwrap_to_control_flow(*error),
+            cf @ RuntimeError::ControlFlow { .. } => cf,
+            other => other, // Shouldn't happen but return as-is
         }
     }
 

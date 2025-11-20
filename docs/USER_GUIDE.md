@@ -138,6 +138,18 @@ println((10 / 3)::round())  # 3
 # 1 / 0  # runtime error: division by zero
 ```
 
+**Available Methods:**
+- `to_string()` → Converts number to string
+- `is_int()` → Returns `true` if number is an integer
+- `abs()` → Returns absolute value
+- `ceil()` → Rounds up to nearest integer
+- `floor()` → Rounds down to nearest integer
+- `round()` → Rounds to nearest integer
+- `sqrt()` → Returns square root
+- `pow(exponent)` → Raises number to power
+- `min(other)` → Returns minimum of two numbers
+- `max(other)` → Returns maximum of two numbers
+
 ### Booleans
 
 ```suji
@@ -149,6 +161,9 @@ result = true && false  # false
 result = true || false  # true
 result = !true          # false
 ```
+
+**Available Methods:**
+- `to_string()` → Converts boolean to string ("true" or "false")
 
 ### Strings
 
@@ -190,6 +205,23 @@ padded = "***hello***world***"
 trimmed = padded::trim("*")       # "hello***world" (only trims edges)
 whitespace = "  hello  "::trim()  # "hello" (default whitespace trim)
 ```
+
+**Available Methods:**
+- `length()` → Returns string length
+- `split(separator)` → Splits string into list (default separator: space)
+- `to_number()` → Converts string to number
+- `to_list()` → Converts string to list of characters
+- `index_of(substring)` → Returns index of substring (-1 if not found)
+- `contains(substring)` → Returns `true` if string contains substring
+- `starts_with(prefix)` → Returns `true` if string starts with prefix
+- `ends_with(suffix)` → Returns `true` if string ends with suffix
+- `replace(old, new)` → Replaces all occurrences of old with new
+- `trim(chars)` → Trims characters from edges (default: whitespace)
+- `upper()` → Converts to uppercase
+- `lower()` → Converts to lowercase
+- `reverse()` → Reverses the string
+- `repeat(count)` → Repeats string count times
+- `to_string()` → Returns the string itself
 
 ### Lists
 
@@ -234,6 +266,27 @@ first_or_default = empty::first("n/a") # "n/a"
 last_or_zero = empty::last(0)           # 0
 ```
 
+**Available Methods:**
+- `push(item)` → Appends item to end of list
+- `pop()` → Removes and returns last item
+- `length()` → Returns number of items
+- `join(separator)` → Joins items into string (default separator: space)
+- `index_of(elem)` → Returns index of element (-1 if not found)
+- `filter(closure)` → Returns new list with elements matching closure
+- `map(closure)` → Transforms each element using closure
+- `fold(initial, closure)` → Reduces list to single value
+- `sum()` → Returns sum of numbers in list
+- `product()` → Returns product of numbers in list
+- `contains(elem)` → Returns `true` if list contains element
+- `reverse()` → Returns reversed list
+- `sort()` → Returns sorted list
+- `min()` → Returns minimum number (numbers only)
+- `max()` → Returns maximum number (numbers only)
+- `first(default)` → Returns first element or default
+- `last(default)` → Returns last element or default
+- `average()` → Returns average of numbers (nil if empty)
+- `to_string()` → Converts list to string representation
+
 ### Maps
 
 Key-value dictionaries:
@@ -263,6 +316,17 @@ size = config::length()                 # 5
 email = config::get("email", "N/A")     # "alice@example.com"
 ```
 
+**Available Methods:**
+- `delete(key)` → Removes key and returns `true` if it existed
+- `contains(key)` → Returns `true` if map contains key
+- `keys()` → Returns list of all keys
+- `values()` → Returns list of all values
+- `to_list()` → Returns list of [key, value] tuples
+- `length()` → Returns number of key-value pairs
+- `get(key, default)` → Returns value for key or default (nil if omitted)
+- `merge(other_map)` → Merges other map into this map (mutates)
+- `to_string()` → Converts map to string representation
+
 ### Tuples
 
 Immutable, fixed-length collections:
@@ -278,6 +342,11 @@ length = point::length()        # 2
 as_list = point::to_list()      # [10, 20]
 as_string = point::to_string()  # "(10, 20)"
 ```
+
+**Available Methods:**
+- `length()` → Returns number of elements
+- `to_list()` → Converts tuple to list
+- `to_string()` → Converts tuple to string representation
 
 ### Regular Expressions
 
@@ -317,6 +386,16 @@ io:stdout::write("Hello, world!\n")
 io:stderr::write("Warning: something happened\n")
 ```
 
+**Available Methods:**
+- `read(chunk_kb)` → Reads chunk from stream (default: 8KB, returns nil on EOF)
+- `read_line()` → Reads single line (returns nil on EOF)
+- `read_all()` → Reads all content until EOF
+- `read_lines()` → Reads all lines as list
+- `write(text)` → Writes text to stream
+- `is_terminal()` → Returns `true` if stream is a terminal
+- `close()` → Closes the stream
+- `to_string()` → Returns string representation of stream
+
 ### Nil
 
 Represents the absence of a value:
@@ -328,6 +407,38 @@ result = match nothing {
     _ => "Has value",
 }
 ```
+
+### Type Checking Methods
+
+All values support type checking methods that return `true` if the value is of the specified type, and `false` otherwise:
+
+```suji
+import std:println
+
+# Number type checking
+x = 42
+println(x::is_number())    # true
+println(x::is_string())    # false
+println(x::is_list())      # false
+```
+
+**Available Methods:**
+- `is_number()` → Returns `true` if value is a number
+- `is_bool()` → Returns `true` if value is a boolean
+- `is_string()` → Returns `true` if value is a string
+- `is_list()` → Returns `true` if value is a list
+- `is_map()` → Returns `true` if value is a map
+- `is_stream()` → Returns `true` if value is a stream
+- `is_function()` → Returns `true` if value is a function
+- `is_tuple()` → Returns `true` if value is a tuple
+- `is_regex()` → Returns `true` if value is a regex
+
+**Notes:**
+- All type checking methods are available on all values, including `nil`
+- Each method returns `true` only when called on its corresponding type
+- `nil` returns `false` for all type checking methods
+- Useful for runtime type validation and conditional processing
+
 
 ## Operators
 
@@ -917,6 +1028,48 @@ println(i)
 - `pick(list)` → Returns random element from list
 - `shuffle(list)` → Returns new list with elements in random order
 - `sample(list, n)` → Returns list of n random elements (without replacement)
+- `string(allowed_chars, length)` → Generates random string from character set
+- `hex_string(length = 16)` → Generates random hexadecimal string (lowercase)
+- `alpha_string(length = 16, capitals = true)` → Generates random alphabetic string
+- `numeric_string(length = 16)` → Generates random numeric string (digits only)
+- `alphanumeric_string(length = 16, capitals = true)` → Generates random alphanumeric string
+
+**String Generation Examples:**
+
+```suji
+import std:random
+import std:println
+
+# Generate random string from custom character set
+chars = "abcdef0123456789"
+token = random:string(chars, 10)
+println(token)  # e.g., "3a7f2b9c1e"
+
+# Generate hexadecimal string (default length: 16)
+id = random:hex_string()
+println(id)  # e.g., "3a7f2b9c1e4d8f6a"
+
+short_id = random:hex_string(8)
+println(short_id)  # e.g., "7c3e1a5f"
+
+# Generate alphabetic string
+code = random:alpha_string()  # 16 chars, mixed case
+println(code)  # e.g., "aBcDeFgHiJkLmNoP"
+
+lowercase_code = random:alpha_string(10, false)
+println(lowercase_code)  # e.g., "abcdefghij"
+
+# Generate numeric string
+pin = random:numeric_string(4)
+println(pin)  # e.g., "7392"
+
+# Generate alphanumeric string
+session_id = random:alphanumeric_string()
+println(session_id)  # e.g., "aB3dE7gH9jK2mN5p"
+
+api_key = random:alphanumeric_string(32, false)
+println(api_key)  # e.g., "a3b7c2d9e4f1g8h5i0j6k3l7m2n9o4p1"
+```
 
 **Notes:**
 - RNG is thread-local and isolated per execution context
@@ -924,6 +1077,9 @@ println(i)
 - `pick()` raises error on empty list
 - `sample(list, n)` raises error if n > list length
 - `shuffle()` and `sample()` return new lists (original unchanged)
+- String generation functions are implemented in pure SUJI using `random()` and `pick()`
+- Character selection is uniformly random; each position is independently chosen
+- Default length for string functions is 16 characters
 
 ### Time and Date Functions (`std:time`)
 
@@ -1176,6 +1332,22 @@ println("System uptime: ${uptime_seconds} seconds")
 uid = os:uid()
 gid = os:gid()
 println("UID: ${uid}, GID: ${gid}")
+
+# Get file/directory metadata
+stat = os:stat("data.txt")
+println("Size: ${stat:size} bytes")
+println("Modified: ${stat:mtime}")
+println("Is directory: ${stat:is_directory}")
+println("Is symlink: ${stat:is_symlink}")
+
+# Follow symlinks to get target metadata
+target_stat = os:stat("/usr/bin/python3", true)
+println("Target size: ${target_stat:size}")
+
+# Filesystem operations
+os:mkdir("data/output/reports")  # Creates directory (with parents by default)
+os:rm("temporary.txt")           # Removes a file
+os:rmdir("empty_folder")         # Removes an empty directory
 ```
 
 **Available Functions:**
@@ -1190,11 +1362,81 @@ println("UID: ${uid}, GID: ${gid}")
 - `ppid()` → Returns parent process ID
 - `uid()` → Returns user ID (Unix/macOS: actual UID; Windows: returns 0)
 - `gid()` → Returns group ID (Unix/macOS: actual GID; Windows: returns 0)
+- `stat(path, follow_symlinks = false)` → Returns file/directory metadata map
+- `rm(path)` → Removes a file (not directories)
+- `mkdir(path, create_all = true)` → Creates a directory
+- `rmdir(path)` → Removes an empty directory
+
+**File Metadata (`stat`):**
+
+The `stat()` function returns a map with the following fields:
+- `size` → File size in bytes (number)
+- `is_directory` → `true` if path is a directory (boolean)
+- `is_symlink` → `true` if path is a symbolic link (boolean)
+- `link` → Symlink target path if `is_symlink` is `true`, otherwise `nil`
+- `mode` → File permissions as a number
+- `inode` → Inode number (Unix) or 0 (Windows)
+- `uid` → Owner user ID (number)
+- `gid` → Owner group ID (number)
+- `atime` → Last access time in milliseconds since Unix epoch (number)
+- `mtime` → Last modification time in milliseconds since Unix epoch (number)
+- `ctime` → Last status change time in milliseconds since Unix epoch (number)
+
+```suji
+import std:os
+import std:println
+
+# Get file metadata
+info = os:stat("data.txt")
+println("Size: ${info:size} bytes")
+println("Modified: ${info:mtime}")
+println("Is directory: ${info:is_directory}")
+
+# Check if path is a directory
+check_dir = |path| {
+    stat = os:stat(path)
+    stat:is_directory
+}
+
+# Get file size
+get_size = |path| {
+    stat = os:stat(path)
+    stat:size
+}
+```
+
+**Filesystem Operations:**
+
+```suji
+import std:os
+import std:println
+
+# Create directory (with intermediate directories by default)
+os:mkdir("data/output/reports")
+println("Directory created")
+
+# Create directory without creating parents
+os:mkdir("logs/daily", false)  # Requires parent to exist
+
+# Remove a file
+os:rm("temporary.txt")
+println("File removed")
+
+# Remove an empty directory
+os:rmdir("empty_folder")
+println("Directory removed")
+```
 
 **Notes:**
 - `uid()` and `gid()` return `0` on Windows (platform placeholder)
 - `exit(code)` terminates the entire process immediately
 - All directory paths are returned with platform-appropriate separators
+- `stat()` raises an error if path doesn't exist or cannot be accessed
+- When `follow_symlinks = false` (default), returns metadata for symlink itself
+- When `follow_symlinks = true`, follows symlink and returns target metadata
+- `rm()` only removes files; use `rmdir()` for directories
+- `mkdir()` with `create_all = true` (default) creates all intermediate directories
+- `rmdir()` only removes empty directories; raises error if directory contains files
 
 ### Path Utilities (`std:path`)
 
@@ -1634,3 +1876,4 @@ cargo test
 - **v0.1.18**: Lazy module loading; inclusive ranges (`..=`); complex indexing expressions; short-circuit to `break`/`continue`/`return` with `&&`/`||`.
 - **v0.1.19**: New standard library modules: `std:os` (OS/process information), `std:path` (cross-platform path utilities), `std:dotenv` (.env file loader), `std:csv` (CSV parsing/generation).
 - **v0.1.20**: String::`trim()` with optional custom character set; negative integer literals in match patterns; `std:io:open(path, create=false, truncate=false)`.
+- **v0.1.21**: Type checking methods (`is_number()`, `is_bool()`, `is_string()`, `is_list()`, `is_map()`, `is_stream()`, `is_function()`, `is_tuple()`, `is_regex()`); `std:os:stat(path, follow_symlinks)` for file metadata; filesystem operations (`os:rm()`, `os:mkdir()`, `os:rmdir()`); random string generation functions (`random:string()`, `random:hex_string()`, `random:alpha_string()`, `random:numeric_string()`, `random:alphanumeric_string()`).

@@ -1,11 +1,12 @@
 use std::rc::Rc;
-use suji_ast::ast::Stmt;
+use suji_ast::Stmt;
 use suji_runtime::{Executor, ModuleRegistry};
 use suji_values::{Env, RuntimeError, Value};
 
 mod assignments;
 mod exports;
 mod function_call;
+mod implicit_return;
 mod imports;
 mod patterns;
 mod postfix;
@@ -13,6 +14,7 @@ mod postfix;
 mod control_flow;
 mod data_structures;
 mod expressions;
+mod utils;
 
 pub use function_call::call_function;
 pub use imports::*;

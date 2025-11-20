@@ -1,6 +1,6 @@
 [package]
 name = "suji-lexer"
-version = "0.1.20"
+version = "0.1.21"
 edition = "2024"
 
 [lib]
@@ -9,4 +9,3 @@ path = "src/lib.rs"
 [dependencies]
 regex = { workspace = true }
 thiserror = { workspace = true }
-suji-ast = { path = "../suji-ast" }

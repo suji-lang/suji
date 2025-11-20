@@ -1,6 +1,6 @@
 use super::errors::RuntimeError;
 use super::types::{DecimalNumber, MapKey, OrderedDecimal, ParamSpec, Value};
-use suji_ast::ast::Param;
+use suji_ast::Param;
 
 impl Value {
     /// Get the type name of this value for error messages
@@ -76,8 +76,8 @@ impl From<Param> for ParamSpec {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal, Param};
+    use suji_ast::{Expr, Literal, Param};
+    use suji_lexer::Span;
 
     #[test]
     fn test_type_name() {

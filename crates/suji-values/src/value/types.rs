@@ -11,7 +11,7 @@ use std::ops::Neg;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::Arc;
-use suji_ast::ast::Stmt;
+use suji_ast::Stmt;
 
 use super::super::env_overlay::EnvProxy;
 
@@ -376,7 +376,7 @@ pub struct ParamSpec {
     /// Parameter name
     pub name: String,
     /// Optional default value expression (evaluated at call time)
-    pub default: Option<suji_ast::ast::Expr>,
+    pub default: Option<suji_ast::Expr>,
 }
 
 /// Wrapper for map keys that implements Hash and Eq for valid key types

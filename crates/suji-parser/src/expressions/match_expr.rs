@@ -1,0 +1,285 @@
+use crate::{ParseError, ParseResult, Parser};
+use suji_ast::{Expr, MatchArm, Pattern, Stmt};
+use suji_lexer::{Span, Token};
+
+/// Type of content inside braces in match arms
+#[derive(Debug, Clone, PartialEq)]
+enum BracedContentType {
+    MapLiteral,
+    Block,
+}
+
+impl Parser {
+    /// Parse match expression: match expr? { pattern => expr, ... } or match { condition => expr, ... }
+    pub(super) fn parse_match_expression(&mut self) -> ParseResult<Expr> {
+        if self.match_token(Token::Match) {
+            return self.parse_match_expression_impl();
+        }
+
+        let current = self.peek();
+        Err(ParseError::UnexpectedToken {
+            token: current.token,
+            span: current.span,
+        })
+    }
+
+    /// Parse match arm body - either { statements } or single expression/statement
+    pub(super) fn parse_match_arm_body(&mut self, span: Span) -> ParseResult<Stmt> {
+        match self.peek().token {
+            Token::LeftBrace => self.parse_braced_arm_body(span),
+            _ => self.parse_unbraced_arm_body(),
+        }
+    }
+
+    /// Parse match expression: match expr? { pattern => expr, ... } or match { condition => expr, ... }
+    fn parse_match_expression_impl(&mut self) -> ParseResult<Expr> {
+        let span = self.previous().span.clone();
+
+        // Check if next token is LeftBrace for conditional match
+        let scrutinee = if self.check(Token::LeftBrace) {
+            // Conditional match: match { condition => expr, ... }
+            None
+        } else {
+            // Traditional match: match expr { pattern => expr, ... }
+            Some(Box::new(self.expression()?))
+        };
+
+        self.consume(
+            Token::LeftBrace,
+            "Expected '{' after match expression or match { for conditional match",
+        )?;
+
+        let mut arms = Vec::new();
+        while !self.check(Token::RightBrace) && !self.is_at_end() {
+            if scrutinee.is_none() {
+                // Conditional match: parse boolean expression as pattern
+                let condition_expr = if self.check(Token::Underscore) {
+                    // Special case: wildcard in conditional match - treat as "true"
+                    self.advance(); // consume the underscore
+                    Expr::Literal(suji_ast::Literal::Boolean(
+                        true,
+                        self.previous().span.clone(),
+                    ))
+                } else {
+                    self.expression()?
+                };
+                self.consume(
+                    Token::FatArrow,
+                    "Expected '=>' after condition in conditional match",
+                )?;
+
+                // Parse body (either block or single expression)
+                let body = self.parse_match_arm_body(span.clone())?;
+
+                // For conditional match, we treat the condition as a "pattern"
+                arms.push(MatchArm {
+                    pattern: Pattern::Expression(condition_expr),
+                    body,
+                    span: span.clone(),
+                });
+            } else {
+                // Traditional match: parse pattern(s) with alternation using '|'
+                let first_pattern = self.parse_pattern()?;
+                let mut patterns = vec![first_pattern];
+                while self.match_token(Token::Pipe) {
+                    // Expect another pattern after '|'
+                    // If parse_pattern fails, propagate with a clearer message
+                    let next_pattern = match self.parse_pattern() {
+                        Ok(p) => p,
+                        Err(_) => {
+                            let current = self.peek();
+                            return Err(ParseError::UnexpectedToken {
+                                token: current.token,
+                                span: current.span,
+                            });
+                        }
+                    };
+                    patterns.push(next_pattern);
+                }
+
+                self.consume(Token::FatArrow, "Expected '=>' after match pattern")?;
+
+                // Parse body (either block or single expression)
+                let body = self.parse_match_arm_body(span.clone())?;
+
+                // Desugar alternation into multiple arms with identical bodies
+                for pattern in patterns {
+                    arms.push(MatchArm {
+                        pattern,
+                        body: body.clone(),
+                        span: span.clone(),
+                    });
+                }
+            }
+
+            // Comma is optional for braced block arm bodies. Required otherwise.
+            let allow_optional_comma =
+                matches!(arms.last().map(|a| &a.body), Some(Stmt::Block { .. }));
+
+            if allow_optional_comma {
+                if self.check(Token::Comma) {
+                    // Optional comma present; consume and proceed
+                    self.advance();
+                }
+                // Whether or not a comma was present, allow the next token to be
+                // either another arm or the closing '}'. Just normalize newlines.
+                self.skip_newlines();
+            } else {
+                // Require comma for non-braced bodies
+                self.consume(Token::Comma, "Expected ',' after match arm")?;
+                self.skip_newlines();
+            }
+        }
+
+        self.consume(Token::RightBrace, "Expected '}' after match arms")?;
+
+        Ok(Expr::Match {
+            scrutinee,
+            arms,
+            span,
+        })
+    }
+
+    /// Parse braced arm body - either { statements } or { map_literal }
+    fn parse_braced_arm_body(&mut self, span: Span) -> ParseResult<Stmt> {
+        self.advance(); // consume LeftBrace
+
+        match self.detect_braced_content_type() {
+            BracedContentType::MapLiteral => {
+                let expr = self.parse_map()?;
+                Ok(Stmt::Expr(expr))
+            }
+            BracedContentType::Block => {
+                let statements = self.parse_block()?;
+                Ok(Stmt::Block { statements, span })
+            }
+        }
+    }
+
+    /// Parse unbraced arm body - single expression or statement
+    fn parse_unbraced_arm_body(&mut self) -> ParseResult<Stmt> {
+        match self.peek().token {
+            Token::Return => {
+                let expr = self.parse_match_arm_return_expr()?;
+                Ok(Stmt::Expr(expr))
+            }
+            Token::Break => {
+                self.advance(); // consume Break token
+                let span = self.previous().span.clone();
+                // Only consume label if it's on the same line as the break keyword
+                let label = if let Token::Identifier(_) = &self.peek().token {
+                    let next_span = &self.peek().span;
+                    if span.line == next_span.line {
+                        let (name, _span) = self.consume_identifier()?;
+                        Some(name)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                let expr = Expr::Break { label, span };
+                Ok(Stmt::Expr(expr))
+            }
+            Token::Continue => {
+                self.advance(); // consume Continue token
+                let span = self.previous().span.clone();
+                // Only consume label if it's on the same line as the continue keyword
+                let label = if let Token::Identifier(_) = &self.peek().token {
+                    let next_span = &self.peek().span;
+                    if span.line == next_span.line {
+                        let (name, _span) = self.consume_identifier()?;
+                        Some(name)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                let expr = Expr::Continue { label, span };
+                Ok(Stmt::Expr(expr))
+            }
+            _ => {
+                // Fall back to expression
+                let expr = self.expression()?;
+                Ok(Stmt::Expr(expr))
+            }
+        }
+    }
+
+    /// Parse return expression in match arm
+    /// In unbraced match arms, only single-value returns are allowed
+    /// to avoid ambiguity with the match arm separator comma
+    fn parse_match_arm_return_expr(&mut self) -> ParseResult<Expr> {
+        let return_span = self.advance().span.clone(); // consume Return
+
+        if !self.has_expression_after() {
+            return Ok(Expr::Return {
+                values: Vec::new(),
+                span: return_span,
+            });
+        }
+
+        // Parse single return value (no comma-separated multi-value returns in unbraced arms)
+        let value = self.expression()?;
+
+        Ok(Expr::Return {
+            values: vec![value],
+            span: return_span,
+        })
+    }
+
+    /// Check if there's an expression after the current token (not end of arm)
+    fn has_expression_after(&self) -> bool {
+        !self.check(Token::RightBrace)
+            && !self.check(Token::Comma)
+            && !self.check(Token::FatArrow)
+            && !self.is_at_end()
+    }
+
+    /// Detect whether braced content is a map literal or block
+    fn detect_braced_content_type(&self) -> BracedContentType {
+        match &self.peek().token {
+            Token::StringStart => {
+                // Look ahead to see if there's a colon after the string
+                if self.has_colon_after_string() {
+                    BracedContentType::MapLiteral
+                } else {
+                    BracedContentType::Block
+                }
+            }
+            Token::Number(_) => {
+                // Check if there's a colon after the number
+                if self.has_colon_after_number() {
+                    BracedContentType::MapLiteral
+                } else {
+                    BracedContentType::Block
+                }
+            }
+            _ => BracedContentType::Block,
+        }
+    }
+
+    /// Check if there's a colon after a string literal
+    fn has_colon_after_string(&self) -> bool {
+        let start_pos = self.current;
+        let mut pos = start_pos;
+
+        // Skip the string content
+        while pos < self.tokens.len() && !matches!(self.tokens[pos].token, Token::StringEnd) {
+            pos += 1;
+        }
+
+        // Check if there's a colon after the string
+        pos < self.tokens.len()
+            && matches!(self.tokens[pos].token, Token::StringEnd)
+            && pos + 1 < self.tokens.len()
+            && matches!(self.tokens[pos + 1].token, Token::Colon)
+    }
+
+    /// Check if there's a colon after a number literal
+    fn has_colon_after_number(&self) -> bool {
+        self.current + 1 < self.tokens.len()
+            && matches!(self.tokens[self.current + 1].token, Token::Colon)
+    }
+}

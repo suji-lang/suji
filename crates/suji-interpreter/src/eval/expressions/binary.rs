@@ -1,8 +1,9 @@
+use super::binary_ops::{eval_arithmetic_op, eval_comparison_op};
 use super::pipe::eval_pipe_apply_expression;
 use super::{EvalResult, eval_expr};
 use std::rc::Rc;
-use suji_ast::Span;
-use suji_ast::ast::{BinaryOp, Expr, Literal, Stmt};
+use suji_ast::{BinaryOp, Expr, Literal, Stmt};
+use suji_lexer::Span;
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::{FunctionBody, FunctionValue, ParamSpec, RuntimeError, Value};
@@ -23,12 +24,15 @@ pub fn eval_binary_expr(
             if !left_val.is_truthy() {
                 Ok(Value::Boolean(false))
             } else {
-                let right_val = eval_expr(right, env, registry)?;
-                match right_val {
-                    Value::Boolean(b) => Ok(Value::Boolean(b)),
-                    _ => Err(RuntimeError::TypeError {
+                // Evaluate right side
+                match eval_expr(right, env, registry) {
+                    Ok(Value::Boolean(b)) => Ok(Value::Boolean(b)),
+                    Ok(_) => Err(RuntimeError::TypeError {
                         message: "Logical AND requires boolean operands".to_string(),
                     }),
+                    // Propagate control flow from right side (e.g., continue, break, return)
+                    Err(e @ RuntimeError::ControlFlow { .. }) => Err(e),
+                    Err(e) => Err(e),
                 }
             }
         }
@@ -37,12 +41,15 @@ pub fn eval_binary_expr(
             if left_val.is_truthy() {
                 Ok(Value::Boolean(true))
             } else {
-                let right_val = eval_expr(right, env, registry)?;
-                match right_val {
-                    Value::Boolean(b) => Ok(Value::Boolean(b)),
-                    _ => Err(RuntimeError::TypeError {
+                // Evaluate right side
+                match eval_expr(right, env, registry) {
+                    Ok(Value::Boolean(b)) => Ok(Value::Boolean(b)),
+                    Ok(_) => Err(RuntimeError::TypeError {
                         message: "Logical OR requires boolean operands".to_string(),
                     }),
+                    // Propagate control flow from right side (e.g., continue, break, return)
+                    Err(e @ RuntimeError::ControlFlow { .. }) => Err(e),
+                    Err(e) => Err(e),
                 }
             }
         }
@@ -93,119 +100,18 @@ pub fn eval_binary_op(op: &BinaryOp, left: Value, right: Value) -> EvalResult<Va
                 message: format!("Cannot add {} and {}", left.type_name(), right.type_name()),
             }),
         },
-        BinaryOp::Subtract => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a.sub(b))),
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot subtract {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
-        BinaryOp::Multiply => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a.mul(b))),
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot multiply {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
-        BinaryOp::Divide => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => match a.div(b) {
-                Ok(result) => Ok(Value::Number(result)),
-                Err(err) => Err(RuntimeError::InvalidOperation {
-                    message: err.to_string(),
-                }),
-            },
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot divide {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
-        BinaryOp::Modulo => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => match a.rem(b) {
-                Ok(result) => Ok(Value::Number(result)),
-                Err(err) => Err(RuntimeError::InvalidOperation {
-                    message: err.to_string(),
-                }),
-            },
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot modulo {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
-        BinaryOp::Power => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => match a.pow(b) {
-                Ok(result) => Ok(Value::Number(result)),
-                Err(err) => Err(RuntimeError::InvalidOperation {
-                    message: err.to_string(),
-                }),
-            },
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot exponentiate {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
+        BinaryOp::Subtract
+        | BinaryOp::Multiply
+        | BinaryOp::Divide
+        | BinaryOp::Modulo
+        | BinaryOp::Power => eval_arithmetic_op(*op, left, right),
 
         // Comparison operations
         BinaryOp::Equal => Ok(Value::Boolean(left == right)),
         BinaryOp::NotEqual => Ok(Value::Boolean(left != right)),
-        BinaryOp::Less => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a < b)),
-            (Value::String(a), Value::String(b)) => Ok(Value::Boolean(a < b)),
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot compare {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
-        BinaryOp::LessEqual => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a <= b)),
-            (Value::String(a), Value::String(b)) => Ok(Value::Boolean(a <= b)),
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot compare {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
-        BinaryOp::Greater => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a > b)),
-            (Value::String(a), Value::String(b)) => Ok(Value::Boolean(a > b)),
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot compare {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
-        BinaryOp::GreaterEqual => match (&left, &right) {
-            (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a >= b)),
-            (Value::String(a), Value::String(b)) => Ok(Value::Boolean(a >= b)),
-            _ => Err(RuntimeError::TypeError {
-                message: format!(
-                    "Cannot compare {} and {}",
-                    left.type_name(),
-                    right.type_name()
-                ),
-            }),
-        },
+        BinaryOp::Less | BinaryOp::LessEqual | BinaryOp::Greater | BinaryOp::GreaterEqual => {
+            eval_comparison_op(*op, left, right)
+        }
 
         // Range operation
         BinaryOp::Range => expand_range_values(&left, &right),
@@ -318,7 +224,7 @@ pub fn eval_composition_expression(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::ast::BinaryOp;
+    use suji_ast::BinaryOp;
     use suji_values::DecimalNumber;
 
     #[test]

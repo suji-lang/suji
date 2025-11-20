@@ -68,8 +68,8 @@ mod tests {
     use indexmap::IndexMap;
     use regex::Regex;
     use std::rc::Rc;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal, Stmt};
+    use suji_ast::{Expr, Literal, Stmt};
+    use suji_lexer::Span;
 
     #[test]
     fn test_value_display() {

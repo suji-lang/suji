@@ -1,6 +1,6 @@
-use super::{EvalResult, eval_expr};
+use super::{EvalResult, eval_expr, utils::normalize_index};
 use std::rc::Rc;
-use suji_ast::ast::{Expr, Literal};
+use suji_ast::{BinaryOp, CompoundOp, Expr, Literal};
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::{MapKey, RuntimeError, Value};
@@ -87,23 +87,9 @@ fn get_index_value(target: &Value, index: &Value) -> EvalResult<Value> {
             let idx = n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
                 message: "Index out of range".to_string(),
             })?;
-            let normalized_idx = if idx < 0 {
-                items.len() as i64 + idx
-            } else {
-                idx
-            };
+            let normalized_idx = normalize_index(idx, items.len())?;
 
-            if normalized_idx < 0 || normalized_idx >= items.len() as i64 {
-                return Err(RuntimeError::IndexOutOfBounds {
-                    message: format!(
-                        "Index {} out of bounds for list of length {}",
-                        idx,
-                        items.len()
-                    ),
-                });
-            }
-
-            Ok(items[normalized_idx as usize].clone())
+            Ok(items[normalized_idx].clone())
         }
         (Value::Map(map), key) => {
             let map_key = key.clone().try_into_map_key()?;
@@ -174,24 +160,10 @@ fn update_index_value(target: &Value, index: &Value, value: &Value) -> EvalResul
             let idx = n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
                 message: "Index out of range".to_string(),
             })?;
-            let normalized_idx = if idx < 0 {
-                items.len() as i64 + idx
-            } else {
-                idx
-            };
-
-            if normalized_idx < 0 || normalized_idx >= items.len() as i64 {
-                return Err(RuntimeError::IndexOutOfBounds {
-                    message: format!(
-                        "Index {} out of bounds for list of length {}",
-                        idx,
-                        items.len()
-                    ),
-                });
-            }
+            let normalized_idx = normalize_index(idx, items.len())?;
 
             let mut updated_items = items.clone();
-            updated_items[normalized_idx as usize] = value.clone();
+            updated_items[normalized_idx] = value.clone();
             Ok(Value::List(updated_items))
         }
         (Value::Map(map), key) => {
@@ -436,7 +408,7 @@ fn update_nested_structure_in_env(
 
 pub fn eval_compound_assignment(
     target: &Expr,
-    op: suji_ast::ast::ops::CompoundOp,
+    op: CompoundOp,
     value: &Expr,
     env: Rc<Env>,
     registry: Option<&ModuleRegistry>,
@@ -448,7 +420,6 @@ pub fn eval_compound_assignment(
     let rhs_value = eval_expr(value, env.clone(), registry)?;
 
     // Apply the operation by creating a binary expression and evaluating it
-    use suji_ast::ast::ops::{BinaryOp, CompoundOp};
     let binary_op = match op {
         CompoundOp::PlusAssign => BinaryOp::Add,
         CompoundOp::MinusAssign => BinaryOp::Subtract,
@@ -466,8 +437,8 @@ pub fn eval_compound_assignment(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal};
+    use suji_ast::{Expr, Literal};
+    use suji_lexer::Span;
     use suji_runtime::setup_global_env;
     use suji_values::DecimalNumber;
     use suji_values::Env;
@@ -739,7 +710,7 @@ mod tests {
             span: Span::default(),
         };
         let value3 = Expr::Literal(Literal::StringTemplate(
-            vec![suji_ast::ast::StringPart::Text("updated".to_string())],
+            vec![suji_ast::StringPart::Text("updated".to_string())],
             Span::default(),
         ));
 
@@ -939,7 +910,7 @@ mod tests {
             span: Span::default(),
         };
         let value = Expr::Literal(Literal::StringTemplate(
-            vec![suji_ast::ast::StringPart::Text("dark".to_string())],
+            vec![suji_ast::StringPart::Text("dark".to_string())],
             Span::default(),
         ));
 

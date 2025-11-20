@@ -1,6 +1,6 @@
 use crate::eval::{EvalResult, call_function, eval_expr};
 use std::rc::Rc;
-use suji_ast::ast::{BinaryOp, Expr};
+use suji_ast::{BinaryOp, Expr};
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::IoContext;
@@ -15,7 +15,7 @@ enum PipeStage {
         function: Box<FunctionValue>,
         args: Vec<Value>,
     },
-    ShellTemplate(Vec<suji_ast::ast::StringPart>),
+    ShellTemplate(Vec<suji_ast::StringPart>),
 }
 
 const PIPE_INVOCATION_MESSAGE: &str =

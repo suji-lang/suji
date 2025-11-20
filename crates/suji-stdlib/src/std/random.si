@@ -2,9 +2,23 @@
 import __builtins__:random_random as random
 import __builtins__:random_seed as seed
 
+pick = |xs| {
+    xs[
+        (random() * xs::length())::floor()
+    ]
+}
+
+string = |allowed_chars, length| {
+    (0..length)
+        ::map(|n| allowed_chars |> pick)
+        ::join("")
+}
+
 export {
     random: random,
     seed: seed,
+    pick: pick,
+    string: string,
 
     integer: |a, b| {
         lo = a::ceil()
@@ -14,12 +28,6 @@ export {
         i = (random() * n)::floor()
 
         lo + i
-    },
-
-    pick: |xs| {
-        xs[
-            (random() * xs::length())::floor()
-        ]
     },
 
     shuffle: |xs| {
@@ -57,5 +65,31 @@ export {
 
         indexes
             ::map(|i| xs[i])
+    },
+
+    hex_string: |length = 16| {
+        string("0123456789abcdef", length)
+    },
+
+    alpha_string: |length = 16, capitals = true| {
+        chars = match capitals {
+            true => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+            false => "abcdefghijklmnopqrstuvwxyz",
+        }
+
+        string(chars, length)
+    },
+
+    numeric_string: |length = 16| {
+        string("0123456789", length)
+    },
+
+    alphanumeric_string: |length = 16, capitals = true| {
+        chars = match capitals {
+            true => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+            false => "abcdefghijklmnopqrstuvwxyz0123456789",
+        }
+        
+        string(chars, length)
     }
 }

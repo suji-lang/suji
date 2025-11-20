@@ -1,6 +1,5 @@
-use crate::eval::{eval_expr, eval_stmt};
+use crate::eval::{eval_expr, eval_stmt, implicit_return::eval_implicit_return};
 use std::rc::Rc;
-use suji_ast::ast::Stmt;
 use suji_runtime::{ModuleRegistry, call_builtin};
 use suji_values::{ControlFlow, Env, FunctionBody, FunctionValue, RuntimeError, Value};
 
@@ -137,46 +136,25 @@ fn execute_function(
     ) {
         Ok(result) => match result {
             Some(value) => Ok(value),
-            None => handle_implicit_return(body_stmt, context.call_env.clone(), module_registry),
+            None => eval_implicit_return(body_stmt, context.call_env.clone(), module_registry),
         },
-        Err(RuntimeError::ControlFlow {
-            flow: ControlFlow::Return(value),
-        }) => Ok(*value),
-        Err(other) => Err(other),
-    }
-}
-
-/// Handle implicit return logic for functions without explicit returns
-fn handle_implicit_return(
-    body: &Stmt,
-    call_env: Rc<Env>,
-    module_registry: Option<&ModuleRegistry>,
-) -> Result<Value, RuntimeError> {
-    match body {
-        Stmt::Expr(expr) => {
-            // Single expression function body - return its value
-            eval_expr(expr, call_env, module_registry)
-        }
-        Stmt::Block { statements, .. } => {
-            // Block function body - check if last statement was an expression
-            if let Some(last_stmt) = statements.last() {
-                match last_stmt {
-                    Stmt::Expr(expr) => eval_expr(expr, call_env, module_registry),
-                    _ => Ok(Value::Nil), // Last statement was not an expression
-                }
-            } else {
-                Ok(Value::Nil) // Empty block
+        Err(e) => {
+            // Check if it's a Return control flow (may be wrapped in WithSpan)
+            match e.without_span() {
+                RuntimeError::ControlFlow {
+                    flow: ControlFlow::Return(value),
+                } => Ok((**value).clone()),
+                _ => Err(e),
             }
         }
-        _ => Ok(Value::Nil), // Other statement types
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal, Stmt};
+    use suji_ast::{Expr, Literal, Stmt};
+    use suji_lexer::Span;
     use suji_runtime::setup_global_env;
     use suji_values::DecimalNumber;
     use suji_values::Env;
@@ -211,7 +189,7 @@ mod tests {
                 "x".to_string(),
                 Span::default(),
             ))),
-            op: suji_ast::ast::BinaryOp::Add,
+            op: suji_ast::BinaryOp::Add,
             right: Box::new(Expr::Literal(Literal::Number(
                 "1".to_string(),
                 Span::default(),
@@ -250,7 +228,7 @@ mod tests {
                 "x".to_string(),
                 Span::default(),
             ))),
-            op: suji_ast::ast::BinaryOp::Add,
+            op: suji_ast::BinaryOp::Add,
             right: Box::new(Expr::Literal(Literal::Identifier(
                 "y".to_string(),
                 Span::default(),

@@ -1,7 +1,7 @@
 use super::eval_expr;
 use indexmap::IndexMap;
 use std::rc::Rc;
-use suji_ast::ast::{ExportBody, ExportSpec};
+use suji_ast::{ExportBody, ExportSpec};
 use suji_runtime::ModuleRegistry;
 use suji_values::{Env, MapKey, RuntimeError, Value};
 
@@ -55,8 +55,8 @@ pub fn eval_export_body(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal};
+    use suji_ast::{Expr, Literal};
+    use suji_lexer::Span;
     use suji_values::DecimalNumber;
 
     fn create_test_env() -> Rc<Env> {
@@ -73,7 +73,7 @@ mod tests {
                 (
                     "message".to_string(),
                     Expr::Literal(Literal::StringTemplate(
-                        vec![suji_ast::ast::StringPart::Text("Hello, world!".to_string())],
+                        vec![suji_ast::StringPart::Text("Hello, world!".to_string())],
                         Span::default(),
                     )),
                 ),

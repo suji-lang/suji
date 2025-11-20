@@ -1,6 +1,7 @@
+use crate::eval::utils::{evaluate_slice_indices, normalize_index};
 use crate::eval::{EvalResult, eval_expr};
 use std::rc::Rc;
-use suji_ast::ast::Expr;
+use suji_ast::Expr;
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::{MapKey, RuntimeError, Value};
@@ -38,28 +39,13 @@ pub fn eval_index(
                 }
             };
 
-            // Handle negative indices
-            let normalized_idx = if idx < 0 {
-                items.len() as i64 + idx
-            } else {
-                idx
-            };
+            // Handle negative indices and bounds checking
+            let normalized_idx = normalize_index(idx, items.len())?;
 
-            if normalized_idx < 0 || normalized_idx >= items.len() as i64 {
-                return Err(RuntimeError::IndexOutOfBounds {
-                    message: format!(
-                        "Index {} out of bounds for list of length {}",
-                        idx,
-                        items.len()
-                    ),
-                });
-            }
-
-            Ok(items[normalized_idx as usize].clone())
+            Ok(items[normalized_idx].clone())
         }
         Value::String(ref s) => {
             let chars: Vec<char> = s.chars().collect();
-            let len = chars.len() as i64;
 
             match index_value {
                 Value::Number(n) => {
@@ -72,18 +58,9 @@ pub fn eval_index(
                     let idx = n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
                         message: "Index out of range".to_string(),
                     })?;
-                    let normalized_idx = if idx < 0 { len + idx } else { idx };
+                    let normalized_idx = normalize_index(idx, chars.len())?;
 
-                    if normalized_idx < 0 || normalized_idx >= len {
-                        return Err(RuntimeError::IndexOutOfBounds {
-                            message: format!(
-                                "String index {} out of bounds for length {}",
-                                idx, len
-                            ),
-                        });
-                    }
-
-                    Ok(Value::String(chars[normalized_idx as usize].to_string()))
+                    Ok(Value::String(chars[normalized_idx].to_string()))
                 }
                 _ => Err(RuntimeError::TypeError {
                     message: "String index must be a number".to_string(),
@@ -134,68 +111,8 @@ pub fn eval_slice(
     match target_value {
         Value::List(ref items) => {
             let len = items.len() as i64;
-
-            // Evaluate start index
-            let start_idx = match start {
-                Some(expr) => {
-                    let val = eval_expr(expr, env.clone(), registry)?;
-                    match val {
-                        Value::Number(n) => {
-                            if !n.is_integer() {
-                                return Err(RuntimeError::TypeError {
-                                    message: "Slice start must be an integer".to_string(),
-                                });
-                            }
-                            n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
-                                message: "Index out of range".to_string(),
-                            })?
-                        }
-                        _ => {
-                            return Err(RuntimeError::TypeError {
-                                message: "Slice start must be a number".to_string(),
-                            });
-                        }
-                    }
-                }
-                None => 0,
-            };
-
-            // Evaluate end index
-            let end_idx = match end {
-                Some(expr) => {
-                    let val = eval_expr(expr, env, registry)?;
-                    match val {
-                        Value::Number(n) => {
-                            if !n.is_integer() {
-                                return Err(RuntimeError::TypeError {
-                                    message: "Slice end must be an integer".to_string(),
-                                });
-                            }
-                            n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
-                                message: "Index out of range".to_string(),
-                            })?
-                        }
-                        _ => {
-                            return Err(RuntimeError::TypeError {
-                                message: "Slice end must be a number".to_string(),
-                            });
-                        }
-                    }
-                }
-                None => len,
-            };
-
-            // Normalize negative indices
-            let norm_start = if start_idx < 0 {
-                len + start_idx
-            } else {
-                start_idx
-            };
-            let norm_end = if end_idx < 0 { len + end_idx } else { end_idx };
-
-            // Clamp to bounds
-            let clamped_start = norm_start.max(0).min(len) as usize;
-            let clamped_end = norm_end.max(0).min(len) as usize;
+            let (clamped_start, clamped_end) =
+                evaluate_slice_indices(start, end, len, env, registry)?;
 
             // Return slice
             if clamped_start > clamped_end {
@@ -207,68 +124,8 @@ pub fn eval_slice(
         Value::String(ref s) => {
             let len = s.chars().count() as i64;
             let chars: Vec<char> = s.chars().collect();
-
-            // Evaluate start index
-            let start_idx = match start {
-                Some(expr) => {
-                    let val = eval_expr(expr, env.clone(), registry)?;
-                    match val {
-                        Value::Number(n) => {
-                            if !n.is_integer() {
-                                return Err(RuntimeError::TypeError {
-                                    message: "String slice start must be an integer".to_string(),
-                                });
-                            }
-                            n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
-                                message: "Index out of range".to_string(),
-                            })?
-                        }
-                        _ => {
-                            return Err(RuntimeError::TypeError {
-                                message: "String slice start must be a number".to_string(),
-                            });
-                        }
-                    }
-                }
-                None => 0,
-            };
-
-            // Evaluate end index
-            let end_idx = match end {
-                Some(expr) => {
-                    let val = eval_expr(expr, env, registry)?;
-                    match val {
-                        Value::Number(n) => {
-                            if !n.is_integer() {
-                                return Err(RuntimeError::TypeError {
-                                    message: "String slice end must be an integer".to_string(),
-                                });
-                            }
-                            n.to_i64_checked().ok_or_else(|| RuntimeError::TypeError {
-                                message: "Index out of range".to_string(),
-                            })?
-                        }
-                        _ => {
-                            return Err(RuntimeError::TypeError {
-                                message: "String slice end must be a number".to_string(),
-                            });
-                        }
-                    }
-                }
-                None => len,
-            };
-
-            // Normalize negative indices
-            let norm_start = if start_idx < 0 {
-                len + start_idx
-            } else {
-                start_idx
-            };
-            let norm_end = if end_idx < 0 { len + end_idx } else { end_idx };
-
-            // Clamp to bounds
-            let clamped_start = norm_start.max(0).min(len) as usize;
-            let clamped_end = norm_end.max(0).min(len) as usize;
+            let (clamped_start, clamped_end) =
+                evaluate_slice_indices(start, end, len, env, registry)?;
 
             // Return slice
             if clamped_start > clamped_end {
@@ -362,8 +219,8 @@ pub fn eval_map_access_by_name(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal};
+    use suji_ast::{Expr, Literal};
+    use suji_lexer::Span;
     use suji_runtime::setup_global_env;
     use suji_values::DecimalNumber;
     use suji_values::Env;

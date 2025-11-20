@@ -19,6 +19,7 @@ release:
 rust_tests:
 	@echo "Running Rust tests..."
 	cargo test --workspace
+	cargo test --package suji-tests --test integration --test components --test stdlib --test spec
 
 # Run full test suite: Rust tests + spec verification + example verification
 test:

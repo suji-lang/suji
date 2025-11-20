@@ -1,6 +1,6 @@
 // No executor needed
 use super::super::value::{RuntimeError, Value};
-use super::common::ValueRef;
+use super::common::{ValueRef, call_type_checking_method};
 
 /// Function methods: to_string()
 pub fn call_function_method(
@@ -18,6 +18,10 @@ pub fn call_function_method(
                 }
                 Ok(Value::String("<function>".to_string()))
             }
+            "is_number" | "is_bool" | "is_string" | "is_list" | "is_map" | "is_stream"
+            | "is_function" | "is_tuple" | "is_regex" => {
+                call_type_checking_method(method, receiver.get(), args)
+            }
             _ => Err(RuntimeError::MethodError {
                 message: format!("Function has no method '{}'", method),
             }),
@@ -33,9 +37,9 @@ mod tests {
     use super::*;
     use crate::value::{DecimalNumber, FunctionBody};
     use std::rc::Rc;
-    use suji_ast::Span;
-    use suji_ast::ast::Expr;
-    use suji_ast::ast::Stmt;
+    use suji_ast::Expr;
+    use suji_ast::Stmt;
+    use suji_lexer::Span;
 
     #[test]
     fn test_function_to_string() {

@@ -1,0 +1,7 @@
+import std:println
+import std:random
+
+random:seed(42)
+s = random:hex_string(8)
+
+println(s::length())  # 8

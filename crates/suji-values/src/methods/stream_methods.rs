@@ -1,7 +1,7 @@
 // No executor needed
 use super::super::io_context::IoContext;
 use super::super::value::{DecimalNumber, RuntimeError, StreamBackend, StreamHandle, Value};
-use super::common::ValueRef;
+use super::common::{ValueRef, call_type_checking_method};
 use std::io::IsTerminal;
 use std::io::{BufRead, Read, Write};
 use std::rc::Rc;
@@ -203,6 +203,10 @@ pub fn call_stream_method(
                     });
                 }
                 Ok(Value::String(format!("<stream:{}>", stream_handle.name)))
+            }
+            "is_number" | "is_bool" | "is_string" | "is_list" | "is_map" | "is_stream"
+            | "is_function" | "is_tuple" | "is_regex" => {
+                call_type_checking_method(method, receiver.get(), args)
             }
             _ => Err(RuntimeError::MethodError {
                 message: format!("Stream has no method '{}'", method),

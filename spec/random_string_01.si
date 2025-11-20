@@ -1,0 +1,7 @@
+import std:println
+import std:random
+
+random:seed(42)
+s = random:string("abc", 5)
+
+println(s::length())  # 5

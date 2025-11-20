@@ -1,6 +1,6 @@
 // No executor needed
 use super::super::value::{RuntimeError, Value};
-use super::common::ValueRef;
+use super::common::{ValueRef, call_type_checking_method};
 
 /// Number methods: to_string(), is_int(), abs(), ceil(), floor(), round(), sqrt(), pow(), min(), max()
 pub fn call_number_method(
@@ -114,6 +114,10 @@ pub fn call_number_method(
                         message: "max() argument must be a number".to_string(),
                     }),
                 }
+            }
+            "is_number" | "is_bool" | "is_string" | "is_list" | "is_map" | "is_stream"
+            | "is_function" | "is_tuple" | "is_regex" => {
+                call_type_checking_method(method, receiver.get(), args)
             }
             _ => Err(RuntimeError::MethodError {
                 message: format!("Number has no method '{}'", method),

@@ -1,6 +1,6 @@
 // No executor needed
 use super::super::value::{RuntimeError, Value};
-use super::common::ValueRef;
+use super::common::{ValueRef, call_type_checking_method};
 
 /// Nil methods: to_string()
 pub fn call_nil_method(
@@ -17,6 +17,10 @@ pub fn call_nil_method(
                     });
                 }
                 Ok(Value::String("nil".to_string()))
+            }
+            "is_number" | "is_bool" | "is_string" | "is_list" | "is_map" | "is_stream"
+            | "is_function" | "is_tuple" | "is_regex" => {
+                call_type_checking_method(method, receiver.get(), args)
             }
             _ => Err(RuntimeError::MethodError {
                 message: format!("Nil has no method '{}'", method),

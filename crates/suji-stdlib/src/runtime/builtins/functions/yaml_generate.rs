@@ -44,8 +44,8 @@ mod tests {
     use super::*;
     use indexmap::IndexMap;
     use std::rc::Rc;
-    use suji_ast::ast::Stmt;
-    use suji_lexer::token::Span;
+    use suji_ast::Stmt;
+    use suji_lexer::Span;
     use suji_values::Env;
     use suji_values::value::DecimalNumber;
     use suji_values::value::{FunctionBody, FunctionValue, MapKey};

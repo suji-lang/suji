@@ -1,5 +1,5 @@
 use super::value::{RuntimeError, Value};
-use suji_ast::ast::StringPart;
+use suji_ast::StringPart;
 
 /// Evaluate a string template by processing its parts
 pub fn evaluate_string_template<F>(
@@ -7,7 +7,7 @@ pub fn evaluate_string_template<F>(
     eval_expr: F,
 ) -> Result<String, RuntimeError>
 where
-    F: Fn(&suji_ast::ast::Expr) -> Result<Value, RuntimeError>,
+    F: Fn(&suji_ast::Expr) -> Result<Value, RuntimeError>,
 {
     let mut result = String::new();
 
@@ -30,10 +30,10 @@ where
 mod tests {
     use super::*;
     use crate::value::DecimalNumber;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal};
+    use suji_ast::{Expr, Literal};
+    use suji_lexer::Span;
 
-    fn dummy_evaluator(expr: &suji_ast::ast::Expr) -> Result<Value, RuntimeError> {
+    fn dummy_evaluator(expr: &suji_ast::Expr) -> Result<Value, RuntimeError> {
         // Simple evaluator for testing
         match expr {
             Expr::Literal(Literal::Number(n, _)) => {

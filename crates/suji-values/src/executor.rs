@@ -6,7 +6,7 @@
 use super::env::Env;
 use super::value::{FunctionValue, RuntimeError, Value};
 use std::rc::Rc;
-use suji_ast::ast::{Expr, Stmt};
+use suji_ast::{Expr, Stmt};
 
 /// Trait for executing Suji code
 ///

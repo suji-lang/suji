@@ -1,7 +1,9 @@
 //! AST interpreter implementation of the Executor trait.
 
 use std::rc::Rc;
-use suji_ast::ast::{Expr, Stmt};
+use suji_ast::{Expr, Stmt};
+use suji_lexer::Lexer;
+use suji_parser::{ParseError, Parser};
 use suji_runtime::{Executor, ModuleRegistry};
 use suji_values::{Env, FunctionValue, RuntimeError, Value};
 
@@ -48,11 +50,10 @@ impl Executor for AstInterpreter {
         module_registry: &ModuleRegistry,
         expect_export: bool,
     ) -> Result<Value, RuntimeError> {
-        // Parse the source (standardized error handling)
-        let statements =
-            suji_parser::parse_program(source).map_err(|e| RuntimeError::InvalidOperation {
-                message: format!("Parse error: {}", e),
-            })?;
+        // Parse the source
+        let tokens = Lexer::lex(source).map_err(|e| RuntimeError::from(ParseError::from(e)))?;
+        let mut parser = Parser::new(tokens);
+        let statements = parser.parse().map_err(RuntimeError::from)?;
 
         // Evaluate statements using execute_stmt
         let mut last_value = None;

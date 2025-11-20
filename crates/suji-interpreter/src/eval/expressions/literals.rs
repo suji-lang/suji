@@ -1,7 +1,7 @@
 use super::{EvalResult, eval_expr};
 use regex::Regex;
 use std::rc::Rc;
-use suji_ast::ast::Literal;
+use suji_ast::Literal;
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::evaluate_string_template;
@@ -65,8 +65,8 @@ pub fn eval_literal(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::Literal;
+    use suji_ast::Literal;
+    use suji_lexer::Span;
     use suji_runtime::setup_global_env;
     use suji_values::Env;
 

@@ -70,3 +70,58 @@ pub fn eval_closure<'a>(
         }),
     }
 }
+
+/// Handle type-checking methods (is_number, is_bool, is_string, etc.)
+pub fn call_type_checking_method(
+    method: &str,
+    receiver: &Value,
+    args: Vec<Value>,
+) -> Result<Value, RuntimeError> {
+    // Validate arity
+    if !args.is_empty() {
+        return Err(RuntimeError::ArityMismatch {
+            message: format!("{}() takes no arguments", method),
+        });
+    }
+
+    // Determine which type we're checking for
+    let expected_type = match method {
+        "is_number" => Some("number"),
+        "is_bool" => Some("boolean"),
+        "is_string" => Some("string"),
+        "is_list" => Some("list"),
+        "is_map" => Some("map"),
+        "is_stream" => Some("stream"),
+        "is_function" => Some("function"),
+        "is_tuple" => Some("tuple"),
+        "is_regex" => Some("regex"),
+        _ => None,
+    };
+
+    let expected_type = match expected_type {
+        Some(t) => t,
+        None => {
+            return Err(RuntimeError::MethodError {
+                message: format!("Unknown type-checking method '{}'", method),
+            });
+        }
+    };
+
+    // Check if receiver matches expected type
+    let result = match receiver {
+        Value::Nil => false,
+        Value::Number(_) => expected_type == "number",
+        Value::Boolean(_) => expected_type == "boolean",
+        Value::String(_) => expected_type == "string",
+        Value::List(_) => expected_type == "list",
+        Value::Map(_) => expected_type == "map",
+        Value::Tuple(_) => expected_type == "tuple",
+        Value::Function(_) => expected_type == "function",
+        Value::Stream(_) | Value::StreamProxy(_) => expected_type == "stream",
+        Value::Regex(_) => expected_type == "regex",
+        Value::EnvMap(_) => expected_type == "map",
+        Value::Module(_) => false, // Module is not one of the checked types
+    };
+
+    Ok(Value::Boolean(result))
+}

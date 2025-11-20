@@ -4,7 +4,7 @@
 //! to coexist and share the same value types, methods, and runtime infrastructure.
 
 use std::rc::Rc;
-use suji_ast::ast::{Expr, Stmt};
+use suji_ast::{Expr, Stmt};
 use suji_values::{Env, FunctionValue, RuntimeError, Value};
 
 use crate::ModuleRegistry;

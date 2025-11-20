@@ -1,6 +1,6 @@
 [package]
 name = "suji-values"
-version = "0.1.20"
+version = "0.1.21"
 edition = "2024"
 
 [lib]
@@ -8,6 +8,7 @@ path = "src/lib.rs"
 
 [dependencies]
 suji-ast = { path = "../suji-ast" }
+suji-lexer = { path = "../suji-lexer" }
 suji-parser = { path = "../suji-parser" }
 regex = { workspace = true }
 rust_decimal = { workspace = true }

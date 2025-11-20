@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use suji_ast::ast::ImportSpec;
+use suji_ast::ImportSpec;
 use suji_runtime::{Executor, ModuleRegistry};
 use suji_values::{Env, RuntimeError, Value};
 
@@ -93,7 +93,7 @@ pub fn eval_import(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::ast::ImportSpec;
+    use suji_ast::ImportSpec;
 
     fn create_test_env() -> Rc<Env> {
         Rc::new(Env::new())

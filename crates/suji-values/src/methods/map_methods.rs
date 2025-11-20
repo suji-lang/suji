@@ -1,5 +1,5 @@
 use super::super::value::{DecimalNumber, RuntimeError, Value};
-use super::common::ValueRef;
+use super::common::{ValueRef, call_type_checking_method};
 
 /// Map methods: delete(key), contains(key), keys(), values(), to_list(), length(), get(key, default=nil), merge(other_map)
 pub fn call_map_method(
@@ -153,6 +153,10 @@ pub fn call_map_method(
             } else {
                 unreachable!()
             }
+        }
+        "is_number" | "is_bool" | "is_string" | "is_list" | "is_map" | "is_stream"
+        | "is_function" | "is_tuple" | "is_regex" => {
+            call_type_checking_method(method, receiver.get(), args)
         }
         _ => Err(RuntimeError::MethodError {
             message: format!("Map has no method '{}'", method),

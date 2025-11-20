@@ -1,4 +1,5 @@
 mod binary;
+mod binary_ops;
 mod function_calls;
 mod literals;
 mod method_calls;
@@ -11,7 +12,7 @@ pub use literals::*;
 pub use unary::*;
 
 use std::rc::Rc;
-use suji_ast::ast::{BinaryOp, Expr};
+use suji_ast::{BinaryOp, Expr};
 use suji_runtime::ModuleRegistry;
 use suji_values::{ControlFlow, Env, RuntimeError, Value};
 

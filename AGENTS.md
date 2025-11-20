@@ -10,29 +10,32 @@ This document defines how AI coding agents (and human collaborators using them) 
 
 ### Crate map and key files
 
-- **suji-ast**: AST data structures and spans
+- **suji-ast**: AST data structures
   - `crates/suji-ast/src/lib.rs` (crate exports)
-  - `crates/suji-ast/src/ast/` (AST node definitions)
-  - `crates/suji-ast/src/span.rs` (source span types and helpers)
+  - `crates/suji-ast/src/` (AST node definitions: `expr.rs`, `function.rs`, `literal.rs`, `pattern.rs`, `stmt.rs`, etc.)
 
 - **suji-cli**: CLI entry and execution
   - `crates/suji-cli/src/main.rs` (binary entry point; parses args, runs REPL or file)
 
 - **suji-diagnostics**: diagnostics and error reporting utilities
   - `crates/suji-diagnostics/src/lib.rs` (crate exports)
-  - `crates/suji-diagnostics/src/diagnostics/` (diagnostic builders, messages, span formatting)
+  - `crates/suji-diagnostics/src/emitters/` (diagnostic emitters: `lex.rs`, `parse.rs`, `runtime.rs`)
+  - `crates/suji-diagnostics/src/` (error builders, messages: `error_builder.rs`, `lexer_errors.rs`, `parser_errors.rs`, `runtime_errors.rs`)
 
 - **suji-lexer**: lexical scanner for Suji source
   - `crates/suji-lexer/src/lib.rs` (crate exports)
-  - `crates/suji-lexer/src/lexer/core.rs` (scanner core; drives state machine)
-  - `crates/suji-lexer/src/lexer/states/` (state handlers: `string.rs`, `regex.rs`, `shell.rs`, `interpolation.rs`)
-  - `crates/suji-lexer/src/lexer/token.rs` (token kinds and token data)
-  - `crates/suji-lexer/src/lexer/utils.rs` (helpers for scanning)
+  - `crates/suji-lexer/src/lexer.rs` (scanner core; drives state machine)
+  - `crates/suji-lexer/src/states/` (state handlers: `string.rs`, `regex.rs`, `shell.rs`, `interpolation.rs`, `normal.rs`, `context.rs`)
+  - `crates/suji-lexer/src/token.rs` (token kinds and token data)
+  - `crates/suji-lexer/src/utils.rs` (helpers for scanning)
+  - `crates/suji-lexer/src/span.rs` (source span types and helpers)
 
 - **suji-parser**: parser and precedence rules
   - `crates/suji-parser/src/lib.rs` (crate exports)
-  - `crates/suji-parser/src/parser/` (parsing modules)
-  - `crates/suji-parser/src/parser/precedence.rs` (operator precedence and associativity)
+  - `crates/suji-parser/src/expressions/` (expression parsing modules)
+  - `crates/suji-parser/src/statements/` (statement parsing modules)
+  - `crates/suji-parser/src/parser.rs` (main parser implementation)
+  - `crates/suji-parser/src/utils.rs` (parser utilities)
 
 - **suji-repl**: interactive REPL engine (used by CLI)
   - `crates/suji-repl/src/lib.rs` (REPL loop, line evaluation)
@@ -71,14 +74,14 @@ This document defines how AI coding agents (and human collaborators using them) 
 
 ### Where to find X (quick index)
 
-- **Token kinds and tokens**: `crates/suji-lexer/src/lexer/token.rs`
+- **Token kinds and tokens**: `crates/suji-lexer/src/token.rs`
 - **Scanning rules by construct**:
-  - Strings: `crates/suji-lexer/src/lexer/states/string.rs`
-  - Regex: `crates/suji-lexer/src/lexer/states/regex.rs` (disambiguation via `ScannerContext::should_parse_as_regex` in `lexer/core.rs`)
-  - Shell templates: `crates/suji-lexer/src/lexer/states/shell.rs`
-  - Interpolation: `crates/suji-lexer/src/lexer/states/interpolation.rs`
-- **Operator precedence/associativity**: `crates/suji-parser/src/parser/precedence.rs`
-- **Expression/statement parsing**: under `crates/suji-parser/src/parser/`
+  - Strings: `crates/suji-lexer/src/states/string.rs`
+  - Regex: `crates/suji-lexer/src/states/regex.rs` (disambiguation via `ScannerContext::should_parse_as_regex` in `states/context.rs` and used in `states/normal.rs`)
+  - Shell templates: `crates/suji-lexer/src/states/shell.rs`
+  - Interpolation: `crates/suji-lexer/src/states/interpolation.rs`
+- **Operator precedence/associativity**: handled in `crates/suji-parser/src/expressions/binary.rs` (via parsing layer functions)
+- **Expression/statement parsing**: under `crates/suji-parser/src/expressions/` and `crates/suji-parser/src/statements/`
 - **Function/method invocation (runtime)**: `crates/suji-interpreter/src/eval/function_call.rs`
 - **Binary expression evaluation**: `crates/suji-interpreter/src/eval/expressions/binary.rs`
 - **Value methods**: `crates/suji-values/src/methods/` (see `common.rs`)
@@ -87,7 +90,7 @@ This document defines how AI coding agents (and human collaborators using them) 
 - **Environment**: `crates/suji-values/src/env.rs`
 - **Executor trait**: `crates/suji-runtime/src/executor.rs`
 - **Module system**: `crates/suji-runtime/src/module_registry.rs`
-- **Diagnostics helpers/messages**: `crates/suji-diagnostics/src/diagnostics/`
+- **Diagnostics helpers/messages**: `crates/suji-diagnostics/src/emitters/` (emitters), `crates/suji-diagnostics/src/` (error builders and messages)
 - **Built-in modules and functions**:
   - Modules: `crates/suji-stdlib/src/runtime/builtins/modules/` (e.g., `std.rs`, `json.rs`)
   - Functions: `crates/suji-stdlib/src/runtime/builtins/functions/`
@@ -180,14 +183,14 @@ make lint
 - **No binary blobs or oversized literals**: never commit generated binaries or huge inlined data.
 
 ### Lexer and Parser Notes
-- **Lexer**: `crates/suji-lexer/src/lexer/core.rs` implements scanning; state machines live under `crates/suji-lexer/src/lexer/states/` (e.g., `string.rs`, `regex.rs`, `shell.rs`, `interpolation.rs`). `LexState` and `ScannerContext` carry control and position info.
-- **Regex disambiguation**: consult `ScannerContext::should_parse_as_regex` and nearby logic before changing operator/regex parsing.
-- **Parser**: precedence and constructs are under `crates/suji-parser/src/parser/*`. Update precedence rules if new operators are introduced.
+- **Lexer**: `crates/suji-lexer/src/lexer.rs` implements scanning; state machines live under `crates/suji-lexer/src/states/` (e.g., `string.rs`, `regex.rs`, `shell.rs`, `interpolation.rs`, `normal.rs`). `LexState` and `ScannerContext` carry control and position info. `ScannerContext` is defined in `states/context.rs`.
+- **Regex disambiguation**: consult `ScannerContext::should_parse_as_regex` in `states/context.rs` and its usage in `states/normal.rs` before changing operator/regex parsing.
+- **Parser**: precedence and constructs are under `crates/suji-parser/src/expressions/` and `crates/suji-parser/src/statements/`. Update precedence rules in `binary.rs` if new operators are introduced.
 
 ### Runtime/Eval Notes
-- Runtime is split into three main crates: `suji-values` (shared types/methods), `suji-modules` (module system), and `suji-interpreter` (AST execution)
+- Runtime is split into three main crates: `suji-values` (shared types/methods), `suji-runtime` (Executor trait and module system), and `suji-interpreter` (AST execution)
 - Evaluation logic is under `crates/suji-interpreter/src/eval/`
-- Methods are generic over `Executor` trait (defined in `suji-values`) to support multiple backends
+- Methods are generic over `Executor` trait (defined in `suji-runtime`) to support multiple backends
 - Module system is parse-agnostic: returns source code, interpreter handles parsing
 - Changing evaluation often requires updating the interpreter; value types and methods are shared across backends
 

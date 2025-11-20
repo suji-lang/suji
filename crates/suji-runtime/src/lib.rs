@@ -1,9 +1,4 @@
 //! Suji Runtime Crate - Execution coordination layer
-//!
-//! This crate provides the execution coordination layer for Suji, including:
-//! - Executor trait for abstracting execution backends
-//! - Module system (registry, caching, cycle detection)
-//! - Builtin function registry
 
 // Executor trait for abstracting execution backends
 pub mod executor;

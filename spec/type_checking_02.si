@@ -1,0 +1,3 @@
+import std:println
+
+println(42::is_string())  # false

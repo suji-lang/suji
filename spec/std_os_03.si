@@ -1,0 +1,6 @@
+import std:println
+import std:os
+
+stat = os:stat(os:tmp_dir())
+
+println(stat:is_directory)  # true

@@ -1,7 +1,7 @@
 use super::EvalResult;
 use regex::Regex;
 use std::rc::Rc;
-use suji_ast::ast::Pattern;
+use suji_ast::Pattern;
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::{DecimalNumber, RuntimeError, Value};
@@ -69,8 +69,8 @@ pub fn expression_pattern_matches(
 }
 
 /// Check if a ValueLike matches a Value
-pub fn value_like_matches(pattern_value: &suji_ast::ast::ValueLike, value: &Value) -> bool {
-    use suji_ast::ast::ValueLike;
+pub fn value_like_matches(pattern_value: &suji_ast::ValueLike, value: &Value) -> bool {
+    use suji_ast::ValueLike;
 
     match (pattern_value, value) {
         (ValueLike::Number(a), Value::Number(b)) => {
@@ -100,8 +100,8 @@ pub fn value_like_matches(pattern_value: &suji_ast::ast::ValueLike, value: &Valu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Pattern, ValueLike};
+    use suji_ast::{Pattern, ValueLike};
+    use suji_lexer::Span;
     use suji_values::Value;
 
     #[test]

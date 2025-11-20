@@ -1,0 +1,14 @@
+import std:println
+import std:os
+
+parent = os:tmp_dir() + "/suji_test_fs_07_parent"
+child = parent + "/suji_test_fs_07_child"
+
+os:mkdir(parent, true)
+os:mkdir(child, false)
+stat = os:stat(child)
+
+os:rmdir(child)
+os:rmdir(parent)
+
+println(stat:is_directory)  # true

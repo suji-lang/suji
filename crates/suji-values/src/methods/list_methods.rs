@@ -1,5 +1,5 @@
 use super::super::value::{DecimalNumber, RuntimeError, Value};
-use super::common::{ClosureEvaluator, ValueRef, eval_closure};
+use super::common::{ClosureEvaluator, ValueRef, call_type_checking_method, eval_closure};
 
 /// List methods: push(item), pop(), length(), join(separator=" "), index_of(), filter(), map(), fold(), sum(), product()
 ///
@@ -407,6 +407,10 @@ pub fn call_list_method<'a>(
             } else {
                 unreachable!()
             }
+        }
+        "is_number" | "is_bool" | "is_string" | "is_list" | "is_map" | "is_stream"
+        | "is_function" | "is_tuple" | "is_regex" => {
+            call_type_checking_method(method, receiver.get(), args)
         }
         _ => Err(RuntimeError::MethodError {
             message: format!("List has no method '{}'", method),

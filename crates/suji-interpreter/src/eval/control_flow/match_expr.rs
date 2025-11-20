@@ -1,6 +1,6 @@
-use crate::eval::{EvalResult, eval_expr, eval_stmt};
+use crate::eval::{EvalResult, eval_expr, eval_stmt, implicit_return::eval_implicit_return};
 use std::rc::Rc;
-use suji_ast::ast::{Expr, Stmt};
+use suji_ast::Expr;
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::Value;
@@ -8,7 +8,7 @@ use suji_values::Value;
 /// Evaluate a match expression
 pub fn eval_match_expression(
     scrutinee: Option<&Expr>,
-    arms: &[suji_ast::ast::MatchArm],
+    arms: &[suji_ast::MatchArm],
     env: Rc<Env>,
     registry: Option<&ModuleRegistry>,
 ) -> EvalResult<Value> {
@@ -31,22 +31,8 @@ pub fn eval_match_expression(
                     match result {
                         Some(value) => return Ok(value), // Statement returned a value
                         None => {
-                            // No explicit return, check if arm body was a single expression
-                            match &arm.body {
-                                Stmt::Expr(expr) => {
-                                    // Single expression arm body - return its value
-                                    return eval_expr(expr, env, registry);
-                                }
-                                Stmt::Block { statements, .. } => {
-                                    // Block arm body - check if last statement was an expression
-                                    if let Some(Stmt::Expr(expr)) = statements.last() {
-                                        return eval_expr(expr, env, registry);
-                                    } else {
-                                        return Ok(Value::Nil); // Last statement was not an expression or empty block
-                                    }
-                                }
-                                _ => return Ok(Value::Nil), // Other statement types
-                            }
+                            // No explicit return, use shared implicit return logic
+                            return eval_implicit_return(&arm.body, env, registry);
                         }
                     }
                 }

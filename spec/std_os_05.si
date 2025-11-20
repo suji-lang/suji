@@ -1,0 +1,9 @@
+import std:println
+import std:os
+
+path = os:tmp_dir() + "/suji_test_fs_05"
+os:mkdir(path)
+stat = os:stat(path)
+os:rmdir(path)
+
+println(stat:is_directory)  # true

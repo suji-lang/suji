@@ -1,6 +1,7 @@
+use crate::eval::utils::evaluate_exprs;
 use crate::eval::{EvalResult, call_function, eval_expr};
 use std::rc::Rc;
-use suji_ast::ast::{Expr, Stmt, StringPart};
+use suji_ast::{Expr, Stmt, StringPart};
 use suji_runtime::ModuleRegistry;
 use suji_values::Env;
 use suji_values::evaluate_string_template;
@@ -9,7 +10,7 @@ use suji_values::{FunctionBody, FunctionValue, ParamSpec, RuntimeError, Value};
 
 /// Evaluate a function literal
 pub fn eval_function_literal(
-    params: &[suji_ast::ast::Param],
+    params: &[suji_ast::Param],
     body: &Stmt,
     env: Rc<Env>,
 ) -> EvalResult<Value> {
@@ -34,10 +35,7 @@ pub fn eval_function_call(
     match function_value {
         Value::Function(func) => {
             // Evaluate arguments
-            let mut arg_values = Vec::new();
-            for arg in args {
-                arg_values.push(eval_expr(arg, env.clone(), registry)?);
-            }
+            let arg_values = evaluate_exprs(args, env.clone(), registry)?;
 
             // Delegate to call_function
             call_function(&func, arg_values, Some(env), registry, None)
@@ -61,8 +59,8 @@ pub fn eval_shell_command_template(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use suji_ast::Span;
-    use suji_ast::ast::{Expr, Literal, Param, Stmt};
+    use suji_ast::{Expr, Literal, Param, Stmt};
+    use suji_lexer::Span;
     use suji_runtime::setup_global_env;
     use suji_values::DecimalNumber;
     use suji_values::Env;
@@ -115,7 +113,7 @@ mod tests {
                 "x".to_string(),
                 Span::default(),
             ))),
-            op: suji_ast::ast::BinaryOp::Add,
+            op: suji_ast::BinaryOp::Add,
             right: Box::new(Expr::Literal(Literal::Number(
                 "1".to_string(),
                 Span::default(),

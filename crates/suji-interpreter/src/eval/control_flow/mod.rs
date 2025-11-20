@@ -1,3 +1,4 @@
+mod handler;
 mod loops;
 mod match_expr;
 

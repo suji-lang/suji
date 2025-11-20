@@ -1,0 +1,5 @@
+import std:println
+
+n = nil
+
+println(n::is_number())  # false

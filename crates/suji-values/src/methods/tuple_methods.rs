@@ -1,6 +1,6 @@
 // No executor needed
 use super::super::value::{DecimalNumber, RuntimeError, Value};
-use super::common::ValueRef;
+use super::common::{ValueRef, call_type_checking_method};
 
 /// Tuple methods: length(), to_list(), to_string()
 pub fn call_tuple_method(
@@ -33,6 +33,10 @@ pub fn call_tuple_method(
                     });
                 }
                 Ok(Value::String(format!("{}", Value::Tuple(tuple.clone()))))
+            }
+            "is_number" | "is_bool" | "is_string" | "is_list" | "is_map" | "is_stream"
+            | "is_function" | "is_tuple" | "is_regex" => {
+                call_type_checking_method(method, receiver.get(), args)
             }
             _ => Err(RuntimeError::MethodError {
                 message: format!("Tuple has no method '{}'", method),
