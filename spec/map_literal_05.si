@@ -1,0 +1,8 @@
+import std:println
+
+# Empty map as implicit return
+empty_fn = || {
+    {}
+}
+
+println(empty_fn()::length())  # 0

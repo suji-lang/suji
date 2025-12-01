@@ -1,0 +1,5 @@
+import std:println
+
+xs = [10, 20, 30, 40, 50]
+
+println(xs[;])  # [10, 20, 30, 40, 50]

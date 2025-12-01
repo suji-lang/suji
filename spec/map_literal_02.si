@@ -1,0 +1,10 @@
+import std:println
+
+# Map literal with string keys in match arm
+result = match 1 {
+    1 => { "status": "ok", "value": 42 },
+    2 => { "status": "error", "message": "failed" },
+    _ => { "status": "unknown" },
+}
+
+println(result["status"])  # ok

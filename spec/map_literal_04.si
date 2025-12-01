@@ -1,0 +1,10 @@
+import std:println
+
+# Map literal with pipe operator (bare identifier keys still work)
+get_status = |m| {
+    m:status
+}
+
+result = { status: "active", count: 5 } |> get_status
+
+println(result)  # active

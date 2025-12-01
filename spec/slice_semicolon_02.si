@@ -1,0 +1,10 @@
+import std:println
+
+data = {
+    start: 1,
+    end: 4,
+    items: [10, 20, 30, 40, 50]
+}
+
+result = data:items[data:start;data:end]
+println(result)  # [20, 30, 40]

@@ -100,7 +100,7 @@ impl Parser {
     }
 
     /// Parse map literal { key: value, ... }
-    pub(super) fn parse_map(&mut self) -> ParseResult<Expr> {
+    pub(crate) fn parse_map(&mut self) -> ParseResult<Expr> {
         let start_span = self.previous().span.clone();
         let mut pairs = Vec::new();
 

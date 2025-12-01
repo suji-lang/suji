@@ -329,3 +329,167 @@ fn test_map_iteration_nested_maps() {
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(2)));
 }
+
+// ============================================================================
+// Map Literals as Standalone Expressions (0.1.22)
+// ============================================================================
+
+#[test]
+fn test_map_literal_implicit_return_string_keys() {
+    // Map literal with string keys as implicit return in function body
+    let result = eval_program(
+        r#"
+        f = || {
+            { "one": 1, "two": 2 }
+        }
+        result = f()
+        result["one"]
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(1)));
+}
+
+#[test]
+fn test_map_literal_implicit_return_empty() {
+    // Empty map as implicit return
+    let result = eval_program(
+        r#"
+        empty_fn = || {
+            {}
+        }
+        empty_fn()::length()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(0)));
+}
+
+#[test]
+fn test_map_literal_implicit_return_with_parens() {
+    // Parentheses workaround for bare identifier keys
+    let result = eval_program(
+        r#"
+        f = || {
+            ({ one: 1, two: 2 })
+        }
+        result = f()
+        result:one
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(1)));
+}
+
+#[test]
+fn test_map_literal_explicit_vs_implicit_return() {
+    // Explicit and implicit return should produce the same result
+    let result = eval_program(
+        r#"
+        map_explicit = || {
+            return { "one": 1, "two": 2 }
+        }
+        map_implicit = || {
+            { "one": 1, "two": 2 }
+        }
+        map_explicit()["one"] == map_implicit()["one"]
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Boolean(true));
+}
+
+#[test]
+fn test_map_literal_in_match_arm_string_keys() {
+    // Map literal with string keys in match arm
+    let result = eval_program(
+        r#"
+        result = match 1 {
+            1 => { "status": "ok", "value": 42 },
+            _ => { "status": "error" },
+        }
+        result["status"]
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("ok".to_string()));
+}
+
+#[test]
+fn test_map_literal_in_match_arm_empty() {
+    // Empty map in match arm
+    let result = eval_program(
+        r#"
+        result = match 0 {
+            1 => { "x": 1 },
+            _ => {},
+        }
+        result::length()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(0)));
+}
+
+#[test]
+fn test_map_literal_as_function_argument() {
+    // Map literal as function argument (should still work)
+    let result = eval_program(
+        r#"
+        process = |config| {
+            config:name + " processed"
+        }
+        process({ name: "test", enabled: true })
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("test processed".to_string()));
+}
+
+#[test]
+fn test_map_literal_with_pipe_operator() {
+    // Map literal with pipe operator (should still work)
+    let result = eval_program(
+        r#"
+        get_count = |m| {
+            m::length()
+        }
+        result = { a: 1, b: 2, c: 3 } |> get_count
+        result
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(3)));
+}
+
+#[test]
+fn test_block_with_map_access_not_confused() {
+    // Block with map access should NOT be confused with map literal
+    let result = eval_program(
+        r#"
+        process = |config| {
+            config:name + " processed"
+        }
+        process({ name: "test" })
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::String("test processed".to_string()));
+}
+
+#[test]
+fn test_block_syntax_still_works() {
+    // Block syntax should still work for multi-statement function bodies
+    let result = eval_program(
+        r#"
+        counter = || {
+            x = 1
+            y = 2
+            x + y
+        }
+        counter()
+    "#,
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Value::Number(DecimalNumber::from_i64(3)));
+}

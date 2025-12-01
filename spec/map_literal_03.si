@@ -1,0 +1,10 @@
+import std:println
+
+# Map literal as function argument (bare identifier keys still work)
+process = |config| {
+    config:name + " processed"
+}
+
+output = process({ name: "test", enabled: true })
+
+println(output)  # test processed

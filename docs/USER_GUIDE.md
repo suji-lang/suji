@@ -244,9 +244,9 @@ inclusive_desc = 10..=5  # [10, 9, 8, 7, 6, 5]
 # Indexing and slicing
 first = numbers[0]      # 1
 last = numbers[-1]      # 5
-slice = numbers[1:3]    # [2, 3]
-first_two = numbers[:2] # [1, 2]
-from_third = numbers[2:] # [3, 4, 5]
+slice = numbers[1;3]    # [2, 3]
+first_two = numbers[;2] # [1, 2]
+from_third = numbers[2;] # [3, 4, 5]
 
 # List methods
 numbers::push(6)        # [1, 2, 3, 4, 5, 6]
@@ -1759,7 +1759,7 @@ quicksort = |list| {
         1 => list,
         _ => {
             pivot = list[0]
-            rest = list[1:]
+            rest = list[1;]
             left = rest::filter(|x| x < pivot)
             right = rest::filter(|x| x >= pivot)
             return quicksort(left) + [pivot] + quicksort(right)
@@ -1877,3 +1877,4 @@ cargo test
 - **v0.1.19**: New standard library modules: `std:os` (OS/process information), `std:path` (cross-platform path utilities), `std:dotenv` (.env file loader), `std:csv` (CSV parsing/generation).
 - **v0.1.20**: String::`trim()` with optional custom character set; negative integer literals in match patterns; `std:io:open(path, create=false, truncate=false)`.
 - **v0.1.21**: Type checking methods (`is_number()`, `is_bool()`, `is_string()`, `is_list()`, `is_map()`, `is_stream()`, `is_function()`, `is_tuple()`, `is_regex()`); `std:os:stat(path, follow_symlinks)` for file metadata; filesystem operations (`os:rm()`, `os:mkdir()`, `os:rmdir()`); random string generation functions (`random:string()`, `random:hex_string()`, `random:alpha_string()`, `random:numeric_string()`, `random:alphanumeric_string()`).
+- **v0.1.22**: Bugfix: Standalone map literal expressions (implicit returns, match arms); slice syntax changed to use semicolons.

@@ -15,7 +15,7 @@ println(lower)        # hello world
 # Test string indexing with single quotes
 first_char = text[0]
 last_char = text[-1]
-slice = text[0:5]
+slice = text[0;5]
 
 println(first_char)   # h
 println(last_char)    # d

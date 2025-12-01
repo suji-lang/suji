@@ -9,7 +9,7 @@ default-members = [
 
 [package]
 name = "suji-tests"
-version = "0.1.21"
+version = "0.1.22"
 edition = "2024"
 publish = false
 
@@ -29,7 +29,7 @@ regex = { workspace = true }
 
 [workspace.package]
 edition = "2024"
-version = "0.1.21"
+version = "0.1.22"
 authors = ["suji contributors"]
 
 [workspace.dependencies]

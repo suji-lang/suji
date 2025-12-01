@@ -40,9 +40,16 @@ impl Parser {
             return self.parse_export_statement();
         }
 
-        // Block statement
+        // Block statement or map literal expression
         if self.match_token(Token::LeftBrace) {
-            return self.parse_block_statement();
+            if self.is_map_literal_lookahead() {
+                // Parse as map literal expression statement
+                let expr = self.parse_map()?;
+                return Ok(Stmt::Expr(expr));
+            } else {
+                // Parse as block statement
+                return self.parse_block_statement();
+            }
         }
 
         // Expression statement (default)

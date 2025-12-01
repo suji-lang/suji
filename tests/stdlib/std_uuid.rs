@@ -33,7 +33,7 @@ fn test_uuid_v4_version_bit() {
         r#"
         import std:uuid
         id = uuid:v4()
-        id[14:15] == "4"
+        id[14;15] == "4"
     "#,
     );
     assert!(result.is_ok());

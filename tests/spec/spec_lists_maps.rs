@@ -32,42 +32,42 @@ fn test_list_indexing_and_slicing() {
     );
 
     assert_eq!(
-        eval_string_expr("[10, 20, 30, 40][1:3]").unwrap(),
+        eval_string_expr("[10, 20, 30, 40][1;3]").unwrap(),
         Value::List(vec![
             Value::Number(DecimalNumber::from_i64(20)),
             Value::Number(DecimalNumber::from_i64(30))
         ])
     );
     assert_eq!(
-        eval_string_expr("[10, 20, 30, 40][:2]").unwrap(),
+        eval_string_expr("[10, 20, 30, 40][;2]").unwrap(),
         Value::List(vec![
             Value::Number(DecimalNumber::from_i64(10)),
             Value::Number(DecimalNumber::from_i64(20))
         ])
     );
     assert_eq!(
-        eval_string_expr("[10, 20, 30, 40][2:]").unwrap(),
+        eval_string_expr("[10, 20, 30, 40][2;]").unwrap(),
         Value::List(vec![
             Value::Number(DecimalNumber::from_i64(30)),
             Value::Number(DecimalNumber::from_i64(40))
         ])
     );
     assert_eq!(
-        eval_string_expr("[10, 20, 30, 40][-2:]").unwrap(),
+        eval_string_expr("[10, 20, 30, 40][-2;]").unwrap(),
         Value::List(vec![
             Value::Number(DecimalNumber::from_i64(30)),
             Value::Number(DecimalNumber::from_i64(40))
         ])
     );
     assert_eq!(
-        eval_string_expr("[10, 20, 30, 40][:-2]").unwrap(),
+        eval_string_expr("[10, 20, 30, 40][;-2]").unwrap(),
         Value::List(vec![
             Value::Number(DecimalNumber::from_i64(10)),
             Value::Number(DecimalNumber::from_i64(20))
         ])
     );
     assert_eq!(
-        eval_string_expr("[10, 20, 30, 40][:]").unwrap(),
+        eval_string_expr("[10, 20, 30, 40][;]").unwrap(),
         Value::List(vec![
             Value::Number(DecimalNumber::from_i64(10)),
             Value::Number(DecimalNumber::from_i64(20)),
@@ -76,7 +76,7 @@ fn test_list_indexing_and_slicing() {
         ])
     );
     assert_eq!(
-        eval_string_expr("[10, 20, 30, 40][2:2]").unwrap(),
+        eval_string_expr("[10, 20, 30, 40][2;2]").unwrap(),
         Value::List(vec![])
     );
 }

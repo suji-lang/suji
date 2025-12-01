@@ -237,49 +237,13 @@ impl Parser {
             && !self.is_at_end()
     }
 
-    /// Detect whether braced content is a map literal or block
+    /// Detect whether braced content is a map literal or block.
+    /// Uses the shared lookahead helper for consistent disambiguation.
     fn detect_braced_content_type(&self) -> BracedContentType {
-        match &self.peek().token {
-            Token::StringStart => {
-                // Look ahead to see if there's a colon after the string
-                if self.has_colon_after_string() {
-                    BracedContentType::MapLiteral
-                } else {
-                    BracedContentType::Block
-                }
-            }
-            Token::Number(_) => {
-                // Check if there's a colon after the number
-                if self.has_colon_after_number() {
-                    BracedContentType::MapLiteral
-                } else {
-                    BracedContentType::Block
-                }
-            }
-            _ => BracedContentType::Block,
+        if self.is_map_literal_lookahead() {
+            BracedContentType::MapLiteral
+        } else {
+            BracedContentType::Block
         }
-    }
-
-    /// Check if there's a colon after a string literal
-    fn has_colon_after_string(&self) -> bool {
-        let start_pos = self.current;
-        let mut pos = start_pos;
-
-        // Skip the string content
-        while pos < self.tokens.len() && !matches!(self.tokens[pos].token, Token::StringEnd) {
-            pos += 1;
-        }
-
-        // Check if there's a colon after the string
-        pos < self.tokens.len()
-            && matches!(self.tokens[pos].token, Token::StringEnd)
-            && pos + 1 < self.tokens.len()
-            && matches!(self.tokens[pos + 1].token, Token::Colon)
-    }
-
-    /// Check if there's a colon after a number literal
-    fn has_colon_after_number(&self) -> bool {
-        self.current + 1 < self.tokens.len()
-            && matches!(self.tokens[self.current + 1].token, Token::Colon)
     }
 }

@@ -2,6 +2,6 @@ import std:println
 
 # Test basic negative slicing
 xs = [10, 20, 30, 40]
-last_two = xs[-2:]
+last_two = xs[-2;]
 
 println(last_two)  # [30, 40]

@@ -46,7 +46,7 @@ fn test_indexing_slicing_pass_by_value() {
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(1)));
 
     let result = eval_program(
-        "original = [1, 2, 3, 4, 5]\nslice = original[1:4]\nslice[0] = 999\nresult = original[1]",
+        "original = [1, 2, 3, 4, 5]\nslice = original[1;4]\nslice[0] = 999\nresult = original[1]",
     )
     .unwrap();
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));

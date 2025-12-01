@@ -163,19 +163,19 @@ fn test_regex_operations_and_precedence() {
 fn test_string_slicing_and_single_quotes() {
     // String slicing
     assert_eq!(
-        eval_string_expr("\"hello\"[1:3]").unwrap(),
+        eval_string_expr("\"hello\"[1;3]").unwrap(),
         Value::String("el".to_string())
     );
     assert_eq!(
-        eval_string_expr("\"hello\"[:2]").unwrap(),
+        eval_string_expr("\"hello\"[;2]").unwrap(),
         Value::String("he".to_string())
     );
     assert_eq!(
-        eval_string_expr("\"hello\"[2:]").unwrap(),
+        eval_string_expr("\"hello\"[2;]").unwrap(),
         Value::String("llo".to_string())
     );
     assert_eq!(
-        eval_string_expr("\"hello\"[-2:]").unwrap(),
+        eval_string_expr("\"hello\"[-2;]").unwrap(),
         Value::String("lo".to_string())
     );
 

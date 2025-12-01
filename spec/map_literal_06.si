@@ -1,0 +1,8 @@
+import std:println
+
+# Parentheses workaround for bare identifier keys in implicit return
+paren_map = || {
+    ({ one: 1, two: 2 })
+}
+
+println(paren_map():one)  # 1

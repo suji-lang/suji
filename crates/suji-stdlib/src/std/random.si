@@ -89,7 +89,7 @@ export {
             true => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
             false => "abcdefghijklmnopqrstuvwxyz0123456789",
         }
-        
+
         string(chars, length)
     }
 }

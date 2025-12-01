@@ -2,6 +2,6 @@ import std:println
 
 # Test string slicing with 7 to end
 text = "programming"
-end = text[7:]          # "ming"
+end = text[7;]          # "ming"
 
 println(end)        # ming

@@ -7,7 +7,7 @@ quicksort = |list| {
         1 => list,
         _ => {
             pivot = list[0]
-            rest = list[1:]
+            rest = list[1;]
             left = rest::filter(|x| x < pivot)
             right = rest::filter(|x| x >= pivot)
 

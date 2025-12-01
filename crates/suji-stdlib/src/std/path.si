@@ -61,7 +61,7 @@ trim_separator = |path| {
         }
 
         match path[-1] == SEPARATOR {
-            true => path = path[:-1],
+            true => path = path[;-1],
             false => break,
         }
     }
@@ -93,12 +93,12 @@ dirname = |path| {
 
     # Windows: preserve drive letter for root paths
     match PLATFORM == "windows" && last_sep == 2 && path[1] == ":" {
-        true => return path[0:3],
+        true => return path[0;3],
     }
 
     match last_sep == 0 {
         true => "/",
-        false => path[0:last_sep],
+        false => path[0;last_sep],
     }
 }
 
@@ -111,7 +111,7 @@ basename = |path| {
     last_sep = last_separator(path)
     last_sep == -1 && return path
 
-    path[last_sep + 1:]
+    path[last_sep + 1;]
 }
 
 # Get the file extension
@@ -123,7 +123,7 @@ extname = |path| {
     # No dot, or dot is first character (hidden file)
     match last_dot <= 0 {
         true => "",
-        false => base[last_dot:],
+        false => base[last_dot;],
     }
 }
 
@@ -142,18 +142,18 @@ normalize = |path| {
                     match path::starts_with("\\\\") {
                         true => {
                             root = "\\\\"
-                            work_path = path[2:]
+                            work_path = path[2;]
                         },
                         false => {
                             # Drive letter: X:\
-                            root = path[0:3]
-                            work_path = path[3:]
+                            root = path[0;3]
+                            work_path = path[3;]
                         },
                     }
                 },
                 _ => {
                     root = "/"
-                    work_path = path[1:]
+                    work_path = path[1;]
                 },
             }
         },

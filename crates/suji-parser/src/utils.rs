@@ -155,10 +155,10 @@ impl Parser {
     }
 
     /// Parse expressions used as array indices
-    /// Full expressions including postfix operations (calls, methods, indexing, pipelines) are allowed,
-    /// except for colon map access which would conflict with slice syntax (start:end).
+    /// Full expressions including postfix operations (calls, methods, indexing, pipelines) are allowed.
+    /// Map access (:) is now allowed since slice syntax uses semicolon (;) instead.
     pub(super) fn index_expression(&mut self) -> ParseResult<Expr> {
-        self.expression_in_context(ExpressionContext::NoColonAccess)
+        self.expression()
     }
 
     /// Handle statement separators (semicolons and newlines)
@@ -239,5 +239,47 @@ impl Parser {
             }
         }
         Ok(())
+    }
+
+    /// Check if current position looks like a map literal (call after consuming `{`).
+    /// Detects: empty `{}`, string keys, number keys, boolean keys.
+    /// Does NOT detect bare identifier keys to avoid ambiguity with map access.
+    pub(crate) fn is_map_literal_lookahead(&self) -> bool {
+        if self.current >= self.tokens.len() {
+            return false;
+        }
+
+        let first_token = &self.tokens[self.current].token;
+
+        // Empty map: { }
+        if matches!(first_token, Token::RightBrace) {
+            return true;
+        }
+
+        // String key: { "key": ...
+        if matches!(first_token, Token::StringStart) {
+            let mut pos = self.current;
+            while pos < self.tokens.len() && !matches!(self.tokens[pos].token, Token::StringEnd) {
+                pos += 1;
+            }
+            return pos < self.tokens.len()
+                && matches!(self.tokens[pos].token, Token::StringEnd)
+                && pos + 1 < self.tokens.len()
+                && matches!(self.tokens[pos + 1].token, Token::Colon);
+        }
+
+        // Number key: { 42: ...
+        if matches!(first_token, Token::Number(_)) {
+            return self.current + 1 < self.tokens.len()
+                && matches!(self.tokens[self.current + 1].token, Token::Colon);
+        }
+
+        // Boolean key: { true: ... or { false: ...
+        if matches!(first_token, Token::True | Token::False) {
+            return self.current + 1 < self.tokens.len()
+                && matches!(self.tokens[self.current + 1].token, Token::Colon);
+        }
+
+        false
     }
 }

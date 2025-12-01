@@ -1,0 +1,6 @@
+import std:println
+
+text = "hello world"
+substring = text[0;5]
+
+println(substring)  # hello

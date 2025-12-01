@@ -297,12 +297,12 @@ fn test_parse_index_with_method_and_arithmetic() {
 
 #[test]
 fn test_parse_slice_still_works() {
-    // Test that slice syntax is unaffected by our changes
+    // Test that slice syntax works with semicolon (0.1.22+)
     let test_cases = vec![
-        ("list[1:3]", "simple slice"),
-        ("list[:3]", "slice from start"),
-        ("list[1:]", "slice to end"),
-        ("list[:]", "full slice"),
+        ("list[1;3]", "simple slice"),
+        ("list[;3]", "slice from start"),
+        ("list[1;]", "slice to end"),
+        ("list[;]", "full slice"),
     ];
 
     for (code, description) in test_cases {

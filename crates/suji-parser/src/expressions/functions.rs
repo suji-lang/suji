@@ -20,14 +20,25 @@ impl Parser {
     }
 
     /// Parse function body - either { statements } or single expression
+    ///
+    /// Handles disambiguation between map literals and block statements:
+    /// - `|| { key: value }` → map literal (implicit return)
+    /// - `|| { stmt; stmt }` → block statement
     pub(super) fn parse_function_body(&mut self, start_span: Span) -> ParseResult<Stmt> {
         if self.match_token(Token::LeftBrace) {
-            // Traditional block syntax: { statements }
-            let statements = self.parse_block()?;
-            Ok(Stmt::Block {
-                statements,
-                span: start_span,
-            })
+            // Disambiguate: map literal vs block statement
+            if self.is_map_literal_lookahead() {
+                // Parse as map literal expression (implicit return)
+                let expr = self.parse_map()?;
+                Ok(Stmt::Expr(expr))
+            } else {
+                // Traditional block syntax: { statements }
+                let statements = self.parse_block()?;
+                Ok(Stmt::Block {
+                    statements,
+                    span: start_span,
+                })
+            }
         } else {
             // Single expression syntax: expression
             let expr = self.expression()?;

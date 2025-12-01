@@ -13,7 +13,7 @@ fn test_indexing_slicing_comprehensive() {
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(3)));
 
     // Test slicing
-    let result = eval_string_expr("[1, 2, 3, 4][1:3]").unwrap();
+    let result = eval_string_expr("[1, 2, 3, 4][1;3]").unwrap();
     if let Value::List(items) = result {
         assert_eq!(items.len(), 2);
         assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(2)));
@@ -23,7 +23,7 @@ fn test_indexing_slicing_comprehensive() {
     }
 
     // Test slicing with different ranges
-    let result = eval_string_expr("[1, 2, 3, 4, 5][0:2]").unwrap();
+    let result = eval_string_expr("[1, 2, 3, 4, 5][0;2]").unwrap();
     if let Value::List(items) = result {
         assert_eq!(items.len(), 2);
         assert_eq!(items[0], Value::Number(DecimalNumber::from_i64(1)));
@@ -36,7 +36,7 @@ fn test_indexing_slicing_comprehensive() {
     let result = eval_program("list = [1, 2, 3, 4]\nlist[1]").unwrap();
     assert_eq!(result, Value::Number(DecimalNumber::from_i64(2)));
 
-    let result = eval_program("list = [1, 2, 3, 4]\nlist[1:3]").unwrap();
+    let result = eval_program("list = [1, 2, 3, 4]\nlist[1;3]").unwrap();
     if let Value::List(items) = result {
         assert_eq!(items.len(), 2);
     } else {
@@ -165,7 +165,7 @@ fn test_assignment_with_nested_index() {
 fn test_slice_syntax_unaffected() {
     let code = r#"
         nums = [10, 20, 30, 40, 50]
-        nums[1:3]
+        nums[1;3]
     "#;
     let result = eval_code(code).expect("Evaluation failed");
     assert_eq!(result.to_string(), "[20, 30]");
@@ -364,4 +364,83 @@ fn test_very_complex_nested_expression() {
     "#;
     let result = eval_code(code).expect("Evaluation failed");
     assert_eq!(result.to_string(), "40");
+}
+
+// ============================================================================
+// Slice Syntax with Semicolon (0.1.22)
+// ============================================================================
+
+#[test]
+fn test_slice_with_semicolon() {
+    let code = r#"
+        xs = [10, 20, 30, 40, 50]
+        xs[1;3]
+    "#;
+    let result = eval_code(code).expect("Evaluation failed");
+    assert_eq!(result.to_string(), "[20, 30]");
+}
+
+#[test]
+fn test_slice_from_start() {
+    let code = r#"
+        xs = [10, 20, 30, 40, 50]
+        xs[;2]
+    "#;
+    let result = eval_code(code).expect("Evaluation failed");
+    assert_eq!(result.to_string(), "[10, 20]");
+}
+
+#[test]
+fn test_slice_to_end() {
+    let code = r#"
+        xs = [10, 20, 30, 40, 50]
+        xs[2;]
+    "#;
+    let result = eval_code(code).expect("Evaluation failed");
+    assert_eq!(result.to_string(), "[30, 40, 50]");
+}
+
+#[test]
+fn test_slice_full_range() {
+    let code = r#"
+        xs = [10, 20, 30]
+        xs[;]
+    "#;
+    let result = eval_code(code).expect("Evaluation failed");
+    assert_eq!(result.to_string(), "[10, 20, 30]");
+}
+
+#[test]
+fn test_slice_with_map_access() {
+    // The key improvement: map access in slice indices
+    let code = r#"
+        data = {
+            start: 1,
+            end: 4,
+            items: [10, 20, 30, 40, 50]
+        }
+        data:items[data:start;data:end]
+    "#;
+    let result = eval_code(code).expect("Evaluation failed");
+    assert_eq!(result.to_string(), "[20, 30, 40]");
+}
+
+#[test]
+fn test_string_slice_with_semicolon() {
+    let code = r#"
+        text = "hello world"
+        text[0;5]
+    "#;
+    let result = eval_code(code).expect("Evaluation failed");
+    assert_eq!(result.to_string(), "hello");
+}
+
+#[test]
+fn test_slice_negative_indices() {
+    let code = r#"
+        xs = [10, 20, 30, 40, 50]
+        xs[-2;]
+    "#;
+    let result = eval_code(code).expect("Evaluation failed");
+    assert_eq!(result.to_string(), "[40, 50]");
 }

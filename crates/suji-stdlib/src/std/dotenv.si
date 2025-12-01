@@ -16,8 +16,8 @@ parse_line = |line| {
     eq_idx == -1 && return nil
 
     # Split key/value at '='
-    key = line[0:eq_idx]::trim()
-    value = line[eq_idx + 1:]::trim()
+    key = line[0;eq_idx]::trim()
+    value = line[eq_idx + 1;]::trim()
 
     match {
         key::length() == 0 => return nil,

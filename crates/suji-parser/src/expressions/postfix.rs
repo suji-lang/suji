@@ -94,8 +94,8 @@ impl Parser {
 
     /// Finish parsing indexing or slicing
     pub(super) fn finish_index_or_slice(&mut self, target: Expr) -> ParseResult<Expr> {
-        if self.match_token(Token::Colon) {
-            // It's a slice starting with colon: target[:end] or target[:]
+        if self.match_token(Token::Semicolon) {
+            // It's a slice starting with semicolon: target[;end] or target[;]
             let end_expr = if self.check(Token::RightBracket) {
                 None
             } else {
@@ -115,8 +115,8 @@ impl Parser {
             // Parse the first expression
             let first_expr = self.index_expression()?;
 
-            if self.match_token(Token::Colon) {
-                // It's a slice: target[start:end] or target[start:]
+            if self.match_token(Token::Semicolon) {
+                // It's a slice: target[start;end] or target[start;]
                 let end_expr = if self.check(Token::RightBracket) {
                     None
                 } else {

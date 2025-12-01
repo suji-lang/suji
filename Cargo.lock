@@ -975,14 +975,14 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "suji-ast"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "suji-lexer",
 ]
 
 [[package]]
 name = "suji-cli"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "suji-diagnostics",
  "suji-interpreter",
@@ -994,7 +994,7 @@ dependencies = [
 
 [[package]]
 name = "suji-diagnostics"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "ariadne",
  "regex",
@@ -1007,7 +1007,7 @@ dependencies = [
 
 [[package]]
 name = "suji-interpreter"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "indexmap",
  "once_cell",
@@ -1021,7 +1021,7 @@ dependencies = [
 
 [[package]]
 name = "suji-lexer"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "regex",
  "thiserror 2.0.17",
@@ -1029,7 +1029,7 @@ dependencies = [
 
 [[package]]
 name = "suji-parser"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "suji-ast",
  "suji-lexer",
@@ -1038,7 +1038,7 @@ dependencies = [
 
 [[package]]
 name = "suji-repl"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "ariadne",
  "rustyline",
@@ -1053,7 +1053,7 @@ dependencies = [
 
 [[package]]
 name = "suji-runtime"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "indexmap",
  "once_cell",
@@ -1063,7 +1063,7 @@ dependencies = [
 
 [[package]]
 name = "suji-stdlib"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "base64",
  "chrono",
@@ -1099,7 +1099,7 @@ dependencies = [
 
 [[package]]
 name = "suji-tests"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "indexmap",
  "regex",
@@ -1115,7 +1115,7 @@ dependencies = [
 
 [[package]]
 name = "suji-values"
-version = "0.1.21"
+version = "0.1.22"
 dependencies = [
  "indexmap",
  "once_cell",
